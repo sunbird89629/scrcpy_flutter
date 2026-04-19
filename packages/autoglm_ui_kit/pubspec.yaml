@@ -1,7 +1,7 @@
 name: autoglm_ui_kit
-description: Placeholder - overwritten by Task 6.
+description: Shared theme and widgets for AutoGLM Flutter.
 publish_to: none
-version: 0.0.0
+version: 0.1.0
 
 environment:
   sdk: ^3.5.0
