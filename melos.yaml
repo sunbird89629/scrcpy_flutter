@@ -1,0 +1,36 @@
+name: autoglm_flutter
+
+packages:
+  - apps/*
+  - packages/*
+
+command:
+  bootstrap:
+    runPubGetInParallel: false  # workspace mode prefers serial
+
+scripts:
+  analyze:
+    description: Run dart analyze on all packages
+    exec: dart analyze --fatal-infos --fatal-warnings
+
+  format:
+    description: Verify formatting (no changes)
+    exec: dart format --set-exit-if-changed .
+
+  format:fix:
+    description: Apply formatting
+    exec: dart format .
+
+  test:
+    description: Run all tests
+    exec: flutter test
+
+  gen:
+    description: Run build_runner for packages that need it
+    exec: dart run build_runner build --delete-conflicting-outputs
+    packageFilters:
+      dependsOn: build_runner
+
+  gen:i18n:
+    description: Regenerate slang i18n strings (in apps/desktop)
+    run: cd apps/desktop && dart run slang

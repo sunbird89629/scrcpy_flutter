@@ -1,0 +1,14 @@
+name: autoglm_flutter_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.5.0
+
+# Dart 3.5+ pub workspaces - all packages share a resolved dep tree.
+workspace:
+  - apps/desktop
+  - packages/autoglm_core
+  - packages/autoglm_ui_kit
+
+dev_dependencies:
+  melos: ^6.3.0
