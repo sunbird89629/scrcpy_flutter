@@ -15,6 +15,10 @@ class AppShell extends StatelessWidget {
   /// The current route content rendered by the enclosing shell route.
   final Widget child;
 
+  /// Routes that show the device sidebar (placeholder — sub-project #2 will
+  /// fill the actual content).
+  static const _sidebarRoutes = {'/devices', '/chat'};
+
   static const _routes = [
     '/devices',
     '/chat',
@@ -23,15 +27,24 @@ class AppShell extends StatelessWidget {
     '/settings',
   ];
 
+  /// Test hook: locates the device sidebar in the widget tree.
+  static const deviceSidebarKey = ValueKey('app-shell.device-sidebar');
+
   int _selectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
     final i = _routes.indexWhere(location.startsWith);
     return i < 0 ? 0 : i;
   }
 
+  bool _showSidebar(BuildContext context) {
+    final location = GoRouterState.of(context).uri.path;
+    return _sidebarRoutes.any(location.startsWith);
+  }
+
   @override
   Widget build(BuildContext context) {
     final selected = _selectedIndex(context);
+    final showSidebar = _showSidebar(context);
     return Scaffold(
       body: Row(
         children: [
@@ -63,6 +76,22 @@ class AppShell extends StatelessWidget {
             ],
           ),
           const VerticalDivider(thickness: 1, width: 1),
+          if (showSidebar) ...[
+            Container(
+              key: deviceSidebarKey,
+              width: 240,
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              alignment: Alignment.center,
+              child: const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'Device sidebar — sub-project #2 implements',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            const VerticalDivider(thickness: 1, width: 1),
+          ],
           Expanded(child: child),
         ],
       ),
