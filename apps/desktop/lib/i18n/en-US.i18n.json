@@ -23,6 +23,15 @@
       "placeholder": "History (implemented in #4)"
     }
   },
+  "devices_page": {
+    "title": "Connected Devices",
+    "refresh": "Refresh",
+    "no_devices": "No devices connected.",
+    "pair_device": "Pair Device",
+    "ip": "IP Address",
+    "port": "Port",
+    "code": "Pairing Code (6 digits)"
+  },
   "settings": {
     "theme": {
       "label": "Theme",

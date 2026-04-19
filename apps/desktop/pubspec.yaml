@@ -10,6 +10,8 @@ environment:
 resolution: workspace
 
 dependencies:
+  autoglm_adb:
+    path: ../../packages/autoglm_adb
   autoglm_core: ^0.1.0
   autoglm_ui_kit: ^0.1.0
   dio: ^5.7.0

@@ -23,6 +23,15 @@
       "placeholder": "历史（子项目 #4 实现）"
     }
   },
+  "devices_page": {
+    "title": "已连接设备",
+    "refresh": "刷新",
+    "no_devices": "没有已连接的设备",
+    "pair_device": "无线配对",
+    "ip": "IP 地址",
+    "port": "端口",
+    "code": "配对码 (6位)"
+  },
   "settings": {
     "theme": {
       "label": "主题",
