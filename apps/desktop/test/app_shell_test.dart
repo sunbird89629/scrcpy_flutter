@@ -1,7 +1,18 @@
+import 'package:autoglm_core/autoglm_core.dart';
 import 'package:autoglm_desktop/i18n/strings.g.dart';
+import 'package:autoglm_desktop/providers/settings_provider.dart';
 import 'package:autoglm_desktop/router.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+class _MemoryRepo implements SettingsRepository {
+  Settings _current = const Settings();
+  @override
+  Future<Settings> load() async => _current;
+  @override
+  Future<void> save(Settings s) async => _current = s;
+}
 
 void main() {
   setUpAll(LocaleSettings.useDeviceLocale);
@@ -9,8 +20,13 @@ void main() {
   Future<void> pumpAppShell(WidgetTester tester) async {
     final router = createRouter();
     await tester.pumpWidget(
-      TranslationProvider(
-        child: MaterialApp.router(routerConfig: router),
+      ProviderScope(
+        overrides: [
+          settingsRepositoryProvider.overrideWithValue(_MemoryRepo()),
+        ],
+        child: TranslationProvider(
+          child: MaterialApp.router(routerConfig: router),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -35,8 +51,13 @@ void main() {
       (tester) async {
     final router = createRouter();
     await tester.pumpWidget(
-      TranslationProvider(
-        child: MaterialApp.router(routerConfig: router),
+      ProviderScope(
+        overrides: [
+          settingsRepositoryProvider.overrideWithValue(_MemoryRepo()),
+        ],
+        child: TranslationProvider(
+          child: MaterialApp.router(routerConfig: router),
+        ),
       ),
     );
     await tester.pumpAndSettle();
