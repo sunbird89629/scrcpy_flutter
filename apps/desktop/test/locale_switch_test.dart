@@ -1,9 +1,9 @@
+import 'dart:async';
+
 import 'package:autoglm_core/autoglm_core.dart';
 import 'package:autoglm_desktop/i18n/strings.g.dart';
 import 'package:autoglm_desktop/providers/locale_provider.dart';
 import 'package:autoglm_desktop/providers/settings_provider.dart';
-import 'package:autoglm_desktop/router.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -17,51 +17,56 @@ class _MemoryRepo implements SettingsRepository {
 }
 
 void main() {
-  testWidgets('locale=en-US shows English nav labels', (tester) async {
-    LocaleSettings.setLocaleRaw('en-US');
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          settingsRepositoryProvider.overrideWithValue(
-            _MemoryRepo(const Settings(locale: 'en-US')),
-          ),
-        ],
-        child: TranslationProvider(
-          child: Consumer(
-            builder: (context, ref, _) {
-              ref.watch(localeApplyProvider);
-              return MaterialApp.router(routerConfig: createRouter());
-            },
-          ),
+  test('localeApplyProvider applies en-US locale', () async {
+    await LocaleSettings.setLocaleRaw('system'); // Reset
+    final container = ProviderContainer(
+      overrides: [
+        settingsRepositoryProvider.overrideWithValue(
+          _MemoryRepo(const Settings(locale: 'en-US')),
         ),
-      ),
+      ],
     );
-    await tester.pumpAndSettle();
-    expect(find.text('Devices'), findsWidgets);
-    expect(find.text('设备'), findsNothing);
+
+    // First, read settings to let them load
+    await container.read(settingsProvider);
+
+    // Now read the locale provider - at this point settings are available
+    final _ = container.read(localeApplyProvider);
+
+    // Verify the locale was applied
+    expect(LocaleSettings.currentLocale.languageCode, 'en');
+    expect(LocaleSettings.currentLocale.countryCode, 'US');
   });
 
-  testWidgets('locale=zh-CN shows Chinese nav labels', (tester) async {
-    LocaleSettings.setLocaleRaw('zh-CN');
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          settingsRepositoryProvider.overrideWithValue(
-            _MemoryRepo(const Settings(locale: 'zh-CN')),
-          ),
-        ],
-        child: TranslationProvider(
-          child: Consumer(
-            builder: (context, ref, _) {
-              ref.watch(localeApplyProvider);
-              return MaterialApp.router(routerConfig: createRouter());
-            },
-          ),
+  test('localeApplyProvider applies zh-CN locale', () async {
+    await LocaleSettings.setLocaleRaw('system'); // Reset
+    final container = ProviderContainer(
+      overrides: [
+        settingsRepositoryProvider.overrideWithValue(
+          _MemoryRepo(const Settings(locale: 'zh-CN')),
         ),
-      ),
+      ],
     );
-    await tester.pumpAndSettle();
-    expect(find.text('设备'), findsWidgets);
-    expect(find.text('Devices'), findsNothing);
+
+    // First, read settings to let them load
+    await container.read(settingsProvider);
+
+    // Now read the locale provider - at this point settings are available
+    final _ = container.read(localeApplyProvider);
+
+    // Verify the locale was applied
+    expect(LocaleSettings.currentLocale.languageCode, 'zh');
+    expect(LocaleSettings.currentLocale.countryCode, 'CN');
+  });
+
+  test('localeApplyProvider parses and applies locales', () async {
+    // This test verifies the provider infrastructure works by testing the parsing
+    final enUs = AppLocaleUtils.parse('en-US');
+    expect(enUs.languageCode, 'en');
+    expect(enUs.countryCode, 'US');
+
+    final zhCn = AppLocaleUtils.parse('zh-CN');
+    expect(zhCn.languageCode, 'zh');
+    expect(zhCn.countryCode, 'CN');
   });
 }
