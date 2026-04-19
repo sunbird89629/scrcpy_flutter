@@ -1,0 +1,19 @@
+name: autoglm_ui_kit
+description: Placeholder - overwritten by Task 6.
+publish_to: none
+version: 0.0.0
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^7.0.0
