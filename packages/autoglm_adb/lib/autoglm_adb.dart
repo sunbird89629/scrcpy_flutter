@@ -1,2 +1,4 @@
 /// ADB client and binary management for AutoGLM.
-library autoglm_adb;
+library;
+
+export 'src/adb_process_runner.dart';
