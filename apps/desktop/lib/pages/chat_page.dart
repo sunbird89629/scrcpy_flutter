@@ -76,8 +76,8 @@ class _ScreenViewState extends State<_ScreenView> {
     super.initState();
     player = Player();
     controller = VideoController(player);
-    // Connect to the local H264 proxy port
-    final url = 'tcp://127.0.0.1:${widget.server.proxyPort}';
+    // Open FIFO file created by proxy server
+    final url = 'file://${widget.server.proxyFifoPath}';
     print('[ChatPage] Opening video stream at $url');
     player.open(Media(url));
   }

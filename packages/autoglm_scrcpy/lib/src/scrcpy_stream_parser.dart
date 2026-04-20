@@ -47,22 +47,22 @@ class ScrcpyStreamParser {
 
   void _process() {
     if (!_headerParsed) {
-      // Scrcpy v3 protocol:
-      // 1 byte dummy (usually handled by scrcpy-server or skipped)
+      // Scrcpy v3 protocol with send_dummy_byte=true:
+      // 1 byte dummy
       // 64 bytes device name
-      // 4 bytes codec id + 4 bytes width + 4 bytes height (if send_codec_meta)
-      // For simplicity, we assume default scrcpy options used in AutoGLM-GUI.
+      // 4 bytes codec id + 4 bytes width + 4 bytes height
 
-      const headerSize = 64 + 12; // name + codec + resolution
+      const headerSize = 1 + 64 + 12; // dummy + name + codec + resolution
       print('[ScrcpyStreamParser] Buffer length: ${_buffer.length}, needed: $headerSize');
       if (_buffer.length < headerSize) return;
 
-      final nameBytes = Uint8List.fromList(_buffer.sublist(0, 64));
+      // Skip dummy byte
+      final nameBytes = Uint8List.fromList(_buffer.sublist(1, 65));
       final deviceName =
           String.fromCharCodes(nameBytes.takeWhile((c) => c != 0));
 
       final bd = ByteData.sublistView(
-        Uint8List.fromList(_buffer.sublist(64, headerSize)),
+        Uint8List.fromList(_buffer.sublist(65, headerSize)),
       );
       // codec = bd.getUint32(0);
       final width = bd.getUint32(4);

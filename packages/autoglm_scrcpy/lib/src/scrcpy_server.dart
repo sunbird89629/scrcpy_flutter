@@ -39,8 +39,8 @@ class ScrcpyServer {
   /// Stream of scrcpy metadata.
   Stream<ScrcpyMetadata> get metadata => _parser.metadata;
 
-  /// The local port of the H264 proxy server for video players.
-  int get proxyPort => _proxy.port;
+  /// The FIFO path of the H264 proxy server for video players.
+  String get proxyFifoPath => _proxy.fifoPath;
 
   /// Starts the scrcpy server.
   Future<void> start() async {
@@ -54,7 +54,7 @@ class ScrcpyServer {
     await _connect();
     print('[ScrcpyServer] Connected to socket');
     await _proxy.start(packets);
-    print('[ScrcpyServer] Proxy started on port $proxyPort');
+    print('[ScrcpyServer] Proxy FIFO: $proxyFifoPath');
   }
 
   Future<void> _deployServer() async {
