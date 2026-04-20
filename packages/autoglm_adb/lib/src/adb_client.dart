@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:autoglm_adb/src/adb_process_runner.dart';
 import 'package:autoglm_adb/src/exceptions.dart';
 
@@ -19,6 +21,65 @@ class AdbClient {
   Future<String> getVersion() async {
     final result = await runner.runRaw(adbPath, ['version']);
     return result.stdout.toString().trim();
+  }
+
+  /// Runs an adb shell command.
+  Future<ProcessResult> shell(
+    List<String> arguments, {
+    String? deviceId,
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    final args = <String>[];
+    if (deviceId != null) {
+      args.addAll(['-s', deviceId]);
+    }
+    args
+      ..add('shell')
+      ..addAll(arguments);
+    return runner.runRaw(adbPath, args, timeout: timeout);
+  }
+
+  /// Sets up an adb port forward.
+  Future<void> forward(
+    String local,
+    String remote, {
+    String? deviceId,
+    bool noRebind = false,
+  }) async {
+    final args = <String>[];
+    if (deviceId != null) {
+      args.addAll(['-s', deviceId]);
+    }
+    args.add('forward');
+    if (noRebind) {
+      args.add('--no-rebind');
+    }
+    args.addAll([local, remote]);
+    await runner.runRaw(adbPath, args);
+  }
+
+  /// Removes an adb port forward.
+  Future<void> forwardRemove(String local, {String? deviceId}) async {
+    final args = <String>[];
+    if (deviceId != null) {
+      args.addAll(['-s', deviceId]);
+    }
+    args.addAll(['forward', '--remove', local]);
+    await runner.runRaw(adbPath, args);
+  }
+
+  /// Pushes a file to the device.
+  Future<void> push(
+    String localPath,
+    String remotePath, {
+    String? deviceId,
+  }) async {
+    final args = <String>[];
+    if (deviceId != null) {
+      args.addAll(['-s', deviceId]);
+    }
+    args.addAll(['push', localPath, remotePath]);
+    await runner.runRaw(adbPath, args);
   }
 
   /// Pairs a device using Android 11+ wireless debugging.

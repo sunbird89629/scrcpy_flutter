@@ -1,5 +1,6 @@
 import 'package:autoglm_desktop/i18n/strings.g.dart';
 import 'package:autoglm_desktop/providers/adb_provider.dart';
+import 'package:autoglm_desktop/providers/device_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,6 +12,7 @@ class DevicesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final devicesAsync = ref.watch(adbDevicesProvider);
+    final selectedId = ref.watch(selectedDeviceIdProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -40,9 +42,16 @@ class DevicesPage extends ConsumerWidget {
           return ListView.builder(
             itemCount: devices.length,
             itemBuilder: (context, index) {
+              final id = devices[index];
+              final isSelected = id == selectedId;
               return ListTile(
                 leading: const Icon(Icons.smartphone),
-                title: Text(devices[index]),
+                title: Text(id),
+                selected: isSelected,
+                trailing: isSelected ? const Icon(Icons.check_circle) : null,
+                onTap: () {
+                  ref.read(selectedDeviceIdProvider.notifier).state = id;
+                },
               );
             },
           );

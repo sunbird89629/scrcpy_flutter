@@ -13,6 +13,8 @@ dependencies:
   autoglm_adb:
     path: ../../packages/autoglm_adb
   autoglm_core: ^0.1.0
+  autoglm_scrcpy:
+    path: ../../packages/autoglm_scrcpy
   autoglm_ui_kit: ^0.1.0
   dio: ^5.7.0
   flutter:

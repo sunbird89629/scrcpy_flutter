@@ -11,7 +11,7 @@ void main() {
       final metadataFuture = parser.metadata.first;
       final packetsFuture = parser.packets.take(2).toList();
 
-      // Mock Header: 64 bytes name + 4 bytes codec + 
+      // Mock Header: 64 bytes name + 4 bytes codec +
       // 4 bytes width + 4 bytes height
       final header = Uint8List(64 + 12);
       const name = 'TestDevice';
@@ -30,7 +30,7 @@ void main() {
         ..setUint32(8, 5);
       configPacket.setRange(12, 17, [1, 2, 3, 4, 5]);
 
-      // Mock Video Packet: 8 bytes PTS (keyframe bit) + 
+      // Mock Video Packet: 8 bytes PTS (keyframe bit) +
       // 4 bytes length + payload
       final videoPacket = Uint8List(12 + 3);
       ByteData.sublistView(videoPacket)
