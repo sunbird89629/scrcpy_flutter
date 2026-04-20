@@ -1,0 +1,26 @@
+name: autoglm_scrcpy
+description: Scrcpy protocol implementation for AutoGLM.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+
+resolution: workspace
+
+dependencies:
+  autoglm_adb:
+    path: ../autoglm_adb
+  flutter:
+    sdk: flutter
+  path: ^1.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^7.0.0
+
+flutter:
+  assets:
+    - assets/scrcpy-server-v3.3.3

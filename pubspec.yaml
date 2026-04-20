@@ -10,6 +10,7 @@ workspace:
   - packages/autoglm_core
   - packages/autoglm_ui_kit
   - packages/autoglm_adb
+  - packages/autoglm_scrcpy
 
 dev_dependencies:
   melos: ^7.0.0
