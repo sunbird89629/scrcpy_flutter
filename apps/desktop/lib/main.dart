@@ -34,7 +34,7 @@ void main() async {
         ),
       ],
       child: TranslationProvider(
-        child: const AppShell(child: SizedBox.shrink()),
+        child: const AutoGLMApp(),
       ),
     ),
   );

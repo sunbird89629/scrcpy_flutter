@@ -1,6 +1,43 @@
 import 'package:autoglm_desktop/i18n/strings.g.dart';
+import 'package:autoglm_desktop/providers/theme_mode_provider.dart';
+import 'package:autoglm_desktop/router.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+const _themeSeedColor = Colors.deepPurple;
+
+/// The root widget of the AutoGLM application.
+class AutoGLMApp extends ConsumerWidget {
+  /// Creates an [AutoGLMApp].
+  const AutoGLMApp({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+
+    return MaterialApp.router(
+      title: 'AutoGLM',
+      themeMode: themeMode,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: _themeSeedColor),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: _themeSeedColor,
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+      routerConfig: createRouter(),
+      locale: TranslationProvider.of(context).flutterLocale,
+      supportedLocales: AppLocaleUtils.supportedLocales,
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+    );
+  }
+}
 
 /// Application shell with a 5-destination [NavigationRail].
 ///
@@ -15,8 +52,7 @@ class AppShell extends StatelessWidget {
   /// The current route content rendered by the enclosing shell route.
   final Widget child;
 
-  /// Routes that show the device sidebar (placeholder — sub-project #2 will
-  /// fill the actual content).
+  /// Routes that show the device sidebar.
   static const _sidebarRoutes = {'/devices', '/chat'};
 
   static const _routes = [
@@ -85,7 +121,7 @@ class AppShell extends StatelessWidget {
               child: const Padding(
                 padding: EdgeInsets.all(16),
                 child: Text(
-                  'Device sidebar — sub-project #2 implements',
+                  'Device sidebar',
                   textAlign: TextAlign.center,
                 ),
               ),

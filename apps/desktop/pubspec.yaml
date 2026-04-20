@@ -20,6 +20,8 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_riverpod: ^2.5.1
+  flutter_localizations:
+    sdk: flutter
   go_router: ^14.2.0
   logger: ^2.4.0
   media_kit: ^1.1.10

@@ -54,6 +54,7 @@ class ScrcpyStreamParser {
       // For simplicity, we assume default scrcpy options used in AutoGLM-GUI.
 
       const headerSize = 64 + 12; // name + codec + resolution
+      print('[ScrcpyStreamParser] Buffer length: ${_buffer.length}, needed: $headerSize');
       if (_buffer.length < headerSize) return;
 
       final nameBytes = Uint8List.fromList(_buffer.sublist(0, 64));
@@ -72,6 +73,7 @@ class ScrcpyStreamParser {
         width: width,
         height: height,
       );
+      print('[ScrcpyStreamParser] Parsed metadata: $deviceName ${width}x$height');
       _metadataController.add(metadataObj);
 
       _buffer.removeRange(0, headerSize);

@@ -29,6 +29,7 @@ class ScrcpyServer {
 
   Process? _serverProcess;
   Socket? _socket;
+  StreamSubscription<List<int>>? _socketSubscription;
   final _parser = ScrcpyStreamParser();
   final _proxy = ScrcpyProxyServer();
 
@@ -43,11 +44,17 @@ class ScrcpyServer {
 
   /// Starts the scrcpy server.
   Future<void> start() async {
+    print('[ScrcpyServer] Starting...');
     await _deployServer();
+    print('[ScrcpyServer] Server deployed');
     await _setupForward();
+    print('[ScrcpyServer] Port forwarded to $port');
     await _runServer();
+    print('[ScrcpyServer] Server process running');
     await _connect();
+    print('[ScrcpyServer] Connected to socket');
     await _proxy.start(packets);
+    print('[ScrcpyServer] Proxy started on port $proxyPort');
   }
 
   Future<void> _deployServer() async {
@@ -57,16 +64,19 @@ class ScrcpyServer {
     );
     final bytes = data.buffer.asUint8List();
 
-    // 2. Write to temp file
-    final tempDir = await getTemporaryDirectory();
-    final localPath = p.join(tempDir.path, 'scrcpy-server-v3.3.3');
+    // 2. Write to app support dir (more reliable than temp)
+    final supportDir = await getApplicationSupportDirectory();
+    final binDir = Directory(p.join(supportDir.path, 'bin'));
+    binDir.createSync(recursive: true);
+
+    final localPath = p.join(binDir.path, 'scrcpy-server-v3.3.3');
     await File(localPath).writeAsBytes(bytes);
 
     // 3. Push to device
     const remotePath = '/data/local/tmp/scrcpy-server';
     await adbClient.push(localPath, remotePath, deviceId: deviceId);
 
-    // Ensure it's executable
+    // Ensure it's executable on the device
     await adbClient.shell(['chmod', '755', remotePath], deviceId: deviceId);
   }
 
@@ -88,7 +98,6 @@ class ScrcpyServer {
     } on Exception catch (_) {}
 
     // Start scrcpy server via app_process
-    // We use Process.start directly to keep the server running in background
     final args = [
       if (deviceId.isNotEmpty) ...['-s', deviceId],
       'shell',
@@ -134,7 +143,7 @@ class ScrcpyServer {
       throw const AdbException('Failed to connect to scrcpy server socket.');
     }
 
-    _socket!.listen(
+    _socketSubscription = _socket!.listen(
       (data) => _parser.feed(Uint8List.fromList(data)),
       onDone: stop,
       onError: (_) => stop(),
@@ -144,6 +153,8 @@ class ScrcpyServer {
   /// Stops the scrcpy server and cleans up.
   Future<void> stop() async {
     await _proxy.stop();
+    await _socketSubscription?.cancel();
+    _socketSubscription = null;
     await _socket?.close();
     _socket = null;
     _serverProcess?.kill();

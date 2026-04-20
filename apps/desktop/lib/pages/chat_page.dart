@@ -77,7 +77,9 @@ class _ScreenViewState extends State<_ScreenView> {
     player = Player();
     controller = VideoController(player);
     // Connect to the local H264 proxy port
-    player.open(Media('tcp://127.0.0.1:${widget.server.proxyPort}'));
+    final url = 'tcp://127.0.0.1:${widget.server.proxyPort}';
+    print('[ChatPage] Opening video stream at $url');
+    player.open(Media(url));
   }
 
   @override
