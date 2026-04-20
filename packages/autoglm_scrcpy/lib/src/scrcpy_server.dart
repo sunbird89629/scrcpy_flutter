@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:autoglm_adb/autoglm_adb.dart';
 import 'package:autoglm_scrcpy/src/scrcpy_packet.dart';
+import 'package:autoglm_scrcpy/src/scrcpy_proxy_server.dart';
 import 'package:autoglm_scrcpy/src/scrcpy_stream_parser.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
@@ -29,6 +30,7 @@ class ScrcpyServer {
   Process? _serverProcess;
   Socket? _socket;
   final _parser = ScrcpyStreamParser();
+  final _proxy = ScrcpyProxyServer();
 
   /// Stream of parsed scrcpy packets.
   Stream<ScrcpyPacket> get packets => _parser.packets;
@@ -36,12 +38,16 @@ class ScrcpyServer {
   /// Stream of scrcpy metadata.
   Stream<ScrcpyMetadata> get metadata => _parser.metadata;
 
+  /// The local port of the H264 proxy server for video players.
+  int get proxyPort => _proxy.port;
+
   /// Starts the scrcpy server.
   Future<void> start() async {
     await _deployServer();
     await _setupForward();
     await _runServer();
     await _connect();
+    await _proxy.start(packets);
   }
 
   Future<void> _deployServer() async {
@@ -137,6 +143,7 @@ class ScrcpyServer {
 
   /// Stops the scrcpy server and cleans up.
   Future<void> stop() async {
+    await _proxy.stop();
     await _socket?.close();
     _socket = null;
     _serverProcess?.kill();

@@ -1,6 +1,9 @@
 import 'package:autoglm_desktop/providers/scrcpy_provider.dart';
+import 'package:autoglm_scrcpy/autoglm_scrcpy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 
 /// Page for chat and screen streaming.
 class ChatPage extends ConsumerWidget {
@@ -17,7 +20,7 @@ class ChatPage extends ConsumerWidget {
       ),
       body: Row(
         children: [
-          // Left side: Screen Stream Placeholder
+          // Left side: Screen Stream
           Expanded(
             child: ColoredBox(
               color: Colors.black,
@@ -31,7 +34,7 @@ class ChatPage extends ConsumerWidget {
                       ),
                     );
                   }
-                  return const _ScreenPlaceholder();
+                  return _ScreenView(server: server);
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(
@@ -56,33 +59,38 @@ class ChatPage extends ConsumerWidget {
   }
 }
 
-class _ScreenPlaceholder extends ConsumerWidget {
-  const _ScreenPlaceholder();
+class _ScreenView extends StatefulWidget {
+  const _ScreenView({required this.server});
+  final ScrcpyServer server;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final metadataAsync = ref.watch(scrcpyMetadataProvider);
+  State<_ScreenView> createState() => _ScreenViewState();
+}
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(Icons.videocam, size: 64, color: Colors.white),
-        const SizedBox(height: 16),
-        metadataAsync.when(
-          data: (meta) => Text(
-            'Streaming: ${meta.deviceName} (${meta.width}x${meta.height})',
-            style: const TextStyle(color: Colors.white),
-          ),
-          loading: () => const Text(
-            'Waiting for metadata...',
-            style: TextStyle(color: Colors.white70),
-          ),
-          error: (e, _) => Text(
-            'Metadata error: $e',
-            style: const TextStyle(color: Colors.redAccent),
-          ),
-        ),
-      ],
+class _ScreenViewState extends State<_ScreenView> {
+  late final Player player;
+  late final VideoController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    player = Player();
+    controller = VideoController(player);
+    // Connect to the local H264 proxy port
+    player.open(Media('tcp://127.0.0.1:${widget.server.proxyPort}'));
+  }
+
+  @override
+  void dispose() {
+    player.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Video(
+      controller: controller,
+      controls: (state) => const SizedBox.shrink(),
     );
   }
 }

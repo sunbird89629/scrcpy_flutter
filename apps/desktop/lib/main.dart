@@ -6,11 +6,13 @@ import 'package:autoglm_desktop/i18n/strings.g.dart';
 import 'package:autoglm_desktop/providers/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:media_kit/media_kit.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  MediaKit.ensureInitialized();
 
   // Initialize Core Services
   final appSupportDir = await getApplicationSupportDirectory();
@@ -32,7 +34,7 @@ void main() async {
         ),
       ],
       child: TranslationProvider(
-        child: AppShell(child: Container()),
+        child: const AppShell(child: SizedBox.shrink()),
       ),
     ),
   );
