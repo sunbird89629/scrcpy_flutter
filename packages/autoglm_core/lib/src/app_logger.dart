@@ -47,7 +47,8 @@ class AppLogger {
 }
 
 /// Helper for initializing logger.
-void initAppLogger({required String logsDir}) => AppLogger.init(logsDir: logsDir);
+void initAppLogger({required String logsDir}) =>
+    AppLogger.init(logsDir: logsDir);
 
 /// Global logger instance.
 AppLogger get appLogger => AppLogger.instance;

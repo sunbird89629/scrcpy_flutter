@@ -6,7 +6,7 @@ import 'package:autoglm_core/src/settings.dart';
 abstract class SettingsRepository {
   /// Loads settings.
   Future<Settings> load();
-  
+
   /// Saves settings.
   Future<void> save(Settings settings);
 }

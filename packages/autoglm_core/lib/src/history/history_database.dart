@@ -18,7 +18,7 @@ class HistoryDatabase {
   Future<Database> _initDb() async {
     sqfliteFfiInit();
     final databaseFactory = databaseFactoryFfi;
-    
+
     final dir = Directory(p.dirname(dbPath));
     if (!dir.existsSync()) {
       await dir.create(recursive: true);
@@ -58,12 +58,15 @@ class HistoryDatabase {
 
   Future<void> insertConversation(ConversationRecord record) async {
     final d = await db;
-    await d.insert('conversations', record.toJson(), conflictAlgorithm: ConflictAlgorithm.replace);
+    await d.insert('conversations', record.toJson(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  Future<List<ConversationRecord>> listConversations({int limit = 50, int offset = 0}) async {
+  Future<List<ConversationRecord>> listConversations(
+      {int limit = 50, int offset = 0}) async {
     final d = await db;
-    final maps = await d.query('conversations', orderBy: 'last_updated DESC', limit: limit, offset: offset);
+    final maps = await d.query('conversations',
+        orderBy: 'last_updated DESC', limit: limit, offset: offset);
     return maps.map((m) => ConversationRecord.fromJson(m)).toList();
   }
 

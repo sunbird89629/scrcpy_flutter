@@ -33,7 +33,7 @@ void main() {
 
       await manager.addConversation(record);
       final list = await manager.listConversations();
-      
+
       expect(list, hasLength(1));
       expect(list.first.id, 'session-1');
       expect(list.first.taskDescription, 'Do something');
