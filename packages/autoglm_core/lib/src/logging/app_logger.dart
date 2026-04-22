@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart' as pkg;
 import 'package:path/path.dart' as p;
 
@@ -19,7 +20,15 @@ class AppLogger {
     final fileName = 'autoglm-${_dateStamp(today)}.log';
     _file = File(p.join(_logsDir.path, fileName));
     _logger = pkg.Logger(
-      printer: pkg.SimplePrinter(printTime: true, colors: false),
+      level: kDebugMode ? pkg.Level.all : pkg.Level.info,
+      printer: pkg.PrettyPrinter(
+        methodCount: 2,
+        errorMethodCount: 8,
+        lineLength: 120,
+        colors: stdout.hasTerminal,
+        printEmojis: true,
+        printTime: true,
+      ),
       output: pkg.MultiOutput([
         pkg.ConsoleOutput(),
         _FileOutput(_file),
@@ -38,51 +47,67 @@ class AppLogger {
   static bool get isInitialized => _instance != null;
 
   /// Logs a debug-level message.
-  void d(Object message) => _logger.d(message);
+  void d(Object message, [Object? error, StackTrace? stack]) =>
+      _logger.d(message, error: error, stackTrace: stack);
 
   /// Logs an info-level message.
-  void i(Object message) => _logger.i(message);
+  void i(Object message, [Object? error, StackTrace? stack]) =>
+      _logger.i(message, error: error, stackTrace: stack);
+  
+  /// Alias for [i].
+  void info(Object message, [Object? error, StackTrace? stack]) =>
+      i(message, error, stack);
 
   /// Logs a warning-level message.
-  void w(Object message) => _logger.w(message);
+  void w(Object message, [Object? error, StackTrace? stack]) =>
+      _logger.w(message, error: error, stackTrace: stack);
+  
+  /// Alias for [w].
+  void warning(Object message, [Object? error, StackTrace? stack]) =>
+      w(message, error, stack);
 
   /// Logs an error-level message with optional [error] and [stack].
   void e(Object message, [Object? error, StackTrace? stack]) =>
       _logger.e(message, error: error, stackTrace: stack);
+      
+  /// Alias for [e].
+  void error(Object message, [Object? error, StackTrace? stack]) =>
+      e(message, error, stack);
 
-  /// Forces buffered output to disk. Tests should await this before reading
-  /// the log file.
+  /// Forces buffered output to disk.
   Future<void> flush() async {
     await _logger.close();
   }
 
-  /// No-op convenience used in modules where the logger may not yet be
-  /// initialized (e.g. settings load during early boot).
-  static void maybeLog(String Function() messageBuilder) {
-    final inst = _instance;
-    if (inst == null) return;
-    try {
-      inst.i(messageBuilder());
-    } on Object {
-      // Logging must never throw.
-    }
+  /// Logs an info message if initialized, otherwise does nothing.
+  static void maybeLog(Object message) {
+    _instance?.i(message);
+  }
+
+  /// Logs an error message if initialized, otherwise does nothing.
+  static void maybeError(Object message, [Object? error, StackTrace? stack]) {
+    _instance?.e(message, error, stack);
   }
 
   void _pruneOldFiles() {
-    final files = _logsDir
-        .listSync()
-        .whereType<File>()
-        .where((f) => p.basename(f.path).startsWith('autoglm-'))
-        .toList()
-      ..sort(
-        (a, b) => b.statSync().modified.compareTo(a.statSync().modified),
-      );
-    for (final f in files.skip(5)) {
-      try {
-        f.deleteSync();
-      } on Object {
-        // best-effort pruning; failure here is non-critical
+    try {
+      final files = _logsDir
+          .listSync()
+          .whereType<File>()
+          .where((f) => p.basename(f.path).startsWith('autoglm-'))
+          .toList()
+        ..sort(
+          (a, b) => b.statSync().modified.compareTo(a.statSync().modified),
+        );
+      for (final f in files.skip(5)) {
+        try {
+          f.deleteSync();
+        } on Object {
+          // best-effort pruning; failure here is non-critical
+        }
       }
+    } on Object {
+      // best-effort listSync
     }
   }
 
@@ -94,8 +119,8 @@ class AppLogger {
 
 /// Initializes the global [appLogger]. Safe to call multiple times in the same
 /// isolate — subsequent calls overwrite the singleton.
-void initAppLogger(Directory logsDir) {
-  AppLogger._instance = AppLogger(logsDir);
+void initAppLogger({required String logsDir}) {
+  AppLogger._instance = AppLogger(Directory(logsDir));
 }
 
 /// Top-level logger singleton. Throws a [StateError] if called before
@@ -118,6 +143,10 @@ class _FileOutput extends pkg.LogOutput {
   @override
   void output(pkg.OutputEvent event) {
     final content = event.lines.map((l) => '$l\n').join();
-    _file.writeAsStringSync(content, mode: FileMode.append);
+    try {
+      _file.writeAsStringSync(content, mode: FileMode.append);
+    } on Object {
+      // File logging must not crash the app
+    }
   }
 }

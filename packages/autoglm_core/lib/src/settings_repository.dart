@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:autoglm_core/src/logging/app_logger.dart';
 import 'package:autoglm_core/src/settings.dart';
 
 /// Repository for application settings.
@@ -26,7 +27,8 @@ class JsonFileSettingsRepository implements SettingsRepository {
     try {
       final content = await file.readAsString();
       return Settings.fromJson(jsonDecode(content) as Map<String, dynamic>);
-    } on Exception catch (_) {
+    } on Object catch (e, st) {
+      AppLogger.maybeError('Failed to load settings from $filePath', e, st);
       return const Settings();
     }
   }

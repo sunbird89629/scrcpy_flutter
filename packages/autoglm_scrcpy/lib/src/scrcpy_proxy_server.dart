@@ -1,101 +1,134 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:autoglm_scrcpy/src/scrcpy_packet.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
 
-/// A proxy that writes H264 NALUs to a FIFO for media player consumption.
+/// A proxy that serves H264 NALUs over a local TCP socket for VLC/media_kit.
 class ScrcpyProxyServer {
-  RandomAccessFile? _fifoFile;
+  ServerSocket? _server;
   StreamSubscription<ScrcpyPacket>? _subscription;
-  bool _configSent = false;
-  late final String _fifoPath;
+  
+  final List<Socket> _clients = [];
+  ScrcpyPacket? _configPacket;
+  ScrcpyPacket? _lastKeyframe;
+  int _port = 0;
+  final Completer<void> _readyCompleter = Completer<void>();
 
-  /// The FIFO path that the media player should read from.
-  String get fifoPath => _fifoPath;
+  /// The TCP URL that the media player should connect to.
+  String get mediaUrl => 'tcp://127.0.0.1:$_port';
 
-  /// Starts the proxy server by creating a FIFO and writing H264 packets to it.
+  /// Resolves after SPS/PPS + first keyframe have been buffered so a media
+  /// client can immediately get a decodable burst on connect.
+  Future<void> get ready => _readyCompleter.future;
+
+  /// Starts the proxy server by listening on a local TCP port.
   Future<void> start(Stream<ScrcpyPacket> packets) async {
-    // Create FIFO in temp directory
-    final tempDir = await getTemporaryDirectory();
-    _fifoPath = p.join(tempDir.path, 'scrcpy_h264.fifo');
+    _server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    _port = _server!.port;
+    print('[ScrcpyProxyServer] Media listener ready on $mediaUrl');
 
-    // Remove old FIFO if it exists
-    try {
-      await File(_fifoPath).delete();
-    } catch (_) {}
+    _server!.listen((Socket client) {
+      print('[ScrcpyProxyServer] Media client connected: ${client.remoteAddress.address}');
+      
+      // Send initial burst: SPS/PPS + Latest Keyframe combined
+      final builder = BytesBuilder();
+      if (_configPacket != null) {
+        _appendPacketToBuilder(builder, _configPacket!);
+      }
+      if (_lastKeyframe != null) {
+        _appendPacketToBuilder(builder, _lastKeyframe!);
+      }
+      
+      final burst = builder.takeBytes();
+      if (burst.isNotEmpty) {
+        print('[ScrcpyProxyServer] Sending initial burst (${burst.length} bytes)');
+        client.add(burst);
+        client.flush();
+      }
+      
+      _mediaClients_add(client);
+      
+      unawaited(client.done.then((_) {
+        print('[ScrcpyProxyServer] Media client disconnected');
+        _mediaClients_remove(client);
+      }).catchError((Object e) {
+        print('[ScrcpyProxyServer] Media client error: $e');
+        _mediaClients_remove(client);
+      }));
+    });
 
-    // Create FIFO using mkfifo command
-    final result = await Process.run('mkfifo', [_fifoPath]);
-    if (result.exitCode != 0) {
-      throw Exception('Failed to create FIFO: ${result.stderr}');
-    }
-    print('[ScrcpyProxyServer] Created FIFO at $_fifoPath');
-
-    // Open FIFO for writing (non-blocking)
-    _openFifo();
-
-    // Subscribe to packets and write to FIFO
     _subscription = packets.listen(
       (packet) {
-        try {
-          if (packet.type == ScrcpyPacketType.configuration) {
-            _writePacket(packet);
-            _configSent = true;
-            print('[ScrcpyProxyServer] Sent config packet: ${packet.data.length} bytes');
-          } else if (_configSent) {
-            _writePacket(packet);
-            if (packet.isKeyFrame) {
-              print('[ScrcpyProxyServer] Sent keyframe: ${packet.data.length} bytes');
-            }
+        if (packet.type == ScrcpyPacketType.configuration) {
+          _configPacket = packet;
+        } else if (packet.isKeyFrame) {
+          _lastKeyframe = packet;
+        }
+        if (!_readyCompleter.isCompleted &&
+            _configPacket != null &&
+            _lastKeyframe != null) {
+          _readyCompleter.complete();
+        }
+
+        final builder = BytesBuilder();
+        _appendPacketToBuilder(builder, packet);
+        final data = builder.takeBytes();
+
+        for (final client in List<Socket>.from(_clients)) {
+          try {
+            client.add(data);
+          } catch (e) {
+            client.close();
+            _clients.remove(client);
           }
-        } on Exception catch (e) {
-          print('[ScrcpyProxyServer] Error writing packet: $e');
-          _openFifo();
         }
       },
-      onDone: () {
-        print('[ScrcpyProxyServer] Packet stream closed');
-      },
+      onDone: stop,
       onError: (Object e) {
         print('[ScrcpyProxyServer] Packet stream error: $e');
+        stop();
       },
     );
   }
 
-  void _openFifo() {
-    try {
-      _fifoFile?.closeSync();
-      final file = File(_fifoPath);
-      _fifoFile = file.openSync(mode: FileMode.write);
-    } catch (e) {
-      print('[ScrcpyProxyServer] Could not open FIFO: $e');
+  void _mediaClients_add(Socket client) => _clients.add(client);
+  void _mediaClients_remove(Socket client) => _clients.remove(client);
+
+  void _appendPacketToBuilder(BytesBuilder builder, ScrcpyPacket packet) {
+    final data = packet.data;
+    if (data.isEmpty) return;
+
+    if (!_hasStartCode(data)) {
+      builder.add(const [0x00, 0x00, 0x00, 0x01]);
     }
+    builder.add(data);
   }
 
-  void _writePacket(ScrcpyPacket packet) {
-    if (_fifoFile == null) return;
-    try {
-      // Add H264 NAL unit start code (0x00 0x00 0x00 0x01)
-      const nalStartCode = [0x00, 0x00, 0x00, 0x01];
-      _fifoFile!.writeFromSync(nalStartCode);
-      _fifoFile!.writeFromSync(packet.data);
-    } catch (e) {
-      print('[ScrcpyProxyServer] Error writing to FIFO: $e');
-      _openFifo();
-    }
+  bool _hasStartCode(Uint8List data) {
+    if (data.length < 3) return false;
+    if (data[0] == 0 && data[1] == 0 && data[2] == 1) return true;
+    if (data.length < 4) return false;
+    if (data[0] == 0 && data[1] == 0 && data[2] == 0 && data[3] == 1) return true;
+    return false;
   }
 
   /// Stops the proxy server.
   Future<void> stop() async {
     await _subscription?.cancel();
     _subscription = null;
-    try {
-      await _fifoFile?.close();
-      _fifoFile = null;
-      await File(_fifoPath).delete();
-    } catch (_) {}
-    print('[ScrcpyProxyServer] Stopped');
+    for (final client in _clients) {
+      await client.close();
+    }
+    _clients.clear();
+    await _server?.close();
+    _server = null;
+    _configPacket = null;
+    _lastKeyframe = null;
+    if (!_readyCompleter.isCompleted) {
+      _readyCompleter.completeError(
+        StateError('ScrcpyProxyServer stopped before becoming ready'),
+      );
+    }
   }
 }

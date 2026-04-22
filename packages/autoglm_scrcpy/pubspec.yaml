@@ -12,6 +12,8 @@ resolution: workspace
 dependencies:
   autoglm_adb:
     path: ../autoglm_adb
+  autoglm_core:
+    path: ../autoglm_core
   flutter:
     sdk: flutter
   path: ^1.9.0

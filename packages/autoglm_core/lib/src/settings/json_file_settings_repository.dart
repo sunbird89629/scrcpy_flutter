@@ -25,9 +25,7 @@ class JsonFileSettingsRepository implements SettingsRepository {
       final json = jsonDecode(raw) as Map<String, dynamic>;
       return Settings.fromJson(json);
     } on Object catch (e, st) {
-      AppLogger.maybeLog(
-        () => 'Failed to load settings from ${_file.path}: $e\n$st',
-      );
+      AppLogger.maybeError('Failed to load settings from ${_file.path}', e, st);
       return const Settings();
     }
   }

@@ -11,6 +11,8 @@ resolution: workspace
 
 dependencies:
   archive: ^3.6.1
+  autoglm_core:
+    path: ../autoglm_core
   dio: ^5.7.0
   flutter:
     sdk: flutter

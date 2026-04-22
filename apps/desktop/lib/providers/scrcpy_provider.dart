@@ -4,8 +4,7 @@ import 'package:autoglm_scrcpy/autoglm_scrcpy.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Provider for a [ScrcpyServer] instance for the selected device.
-final scrcpyServerProvider =
-    FutureProvider.autoDispose<ScrcpyServer?>((ref) async {
+final scrcpyServerProvider = FutureProvider<ScrcpyServer?>((ref) async {
   final deviceId = ref.watch(selectedDeviceIdProvider);
   if (deviceId == null) return null;
 
@@ -21,8 +20,7 @@ final scrcpyServerProvider =
 });
 
 /// Provider for scrcpy metadata.
-final scrcpyMetadataProvider =
-    StreamProvider.autoDispose<ScrcpyMetadata>((ref) {
+final scrcpyMetadataProvider = StreamProvider<ScrcpyMetadata>((ref) {
   final serverAsync = ref.watch(scrcpyServerProvider);
   return serverAsync.when(
     data: (server) => server?.metadata ?? const Stream.empty(),

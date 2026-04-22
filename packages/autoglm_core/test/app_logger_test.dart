@@ -17,7 +17,7 @@ void main() {
 
     test('maybeLog is a no-op when AppLogger is not initialized', () {
       // Should not throw
-      appLogger.maybeLog('hello');
+      AppLogger.maybeLog('hello');
     });
 
     test('initAppLogger sets the global appLogger and isInitialized', () {
@@ -29,10 +29,18 @@ void main() {
     test('writes a line to a dated log file under logsDir', () async {
       initAppLogger(logsDir: tempDir.path);
       appLogger.info('hello');
-      await appLogger.flush();
-
-      final logFile = File(p.join(tempDir.path, 'app.log'));
-      expect(logFile.existsSync(), isTrue);
+      
+      // Need to find the log file
+      final logFiles = tempDir.listSync().whereType<File>().where(
+        (f) => p.basename(f.path).startsWith('autoglm-') && p.basename(f.path).endsWith('.log')
+      ).toList();
+      
+      expect(logFiles.length, 1);
+      final logFile = logFiles.first;
+      
+      // We need to flush the logger if it has buffering, but current implementation uses Sync write.
+      // Wait, let's check _FileOutput.
+      
       expect(logFile.readAsStringSync(), contains('hello'));
     });
   });

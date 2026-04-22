@@ -68,6 +68,35 @@ class AdbClient {
     await runner.runRaw(adbPath, args);
   }
 
+  /// Sets up an adb reverse tunnel.
+  Future<void> reverse(
+    String remote,
+    String local, {
+    String? deviceId,
+    bool noRebind = false,
+  }) async {
+    final args = <String>[];
+    if (deviceId != null) {
+      args.addAll(['-s', deviceId]);
+    }
+    args.add('reverse');
+    if (noRebind) {
+      args.add('--no-rebind');
+    }
+    args.addAll([remote, local]);
+    await runner.runRaw(adbPath, args);
+  }
+
+  /// Removes an adb reverse tunnel.
+  Future<void> reverseRemove(String remote, {String? deviceId}) async {
+    final args = <String>[];
+    if (deviceId != null) {
+      args.addAll(['-s', deviceId]);
+    }
+    args.addAll(['reverse', '--remove', remote]);
+    await runner.runRaw(adbPath, args);
+  }
+
   /// Pushes a file to the device.
   Future<void> push(
     String localPath,

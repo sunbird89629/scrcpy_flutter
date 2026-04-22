@@ -28,7 +28,7 @@ class ScrcpyStreamParser {
   ScrcpyStreamParser();
 
   final _buffer = <int>[];
-  final _controller = StreamController<ScrcpyPacket>();
+  final _controller = StreamController<ScrcpyPacket>.broadcast();
   final _metadataController = StreamController<ScrcpyMetadata>.broadcast();
 
   bool _headerParsed = false;
@@ -53,8 +53,10 @@ class ScrcpyStreamParser {
       // 4 bytes codec id + 4 bytes width + 4 bytes height
 
       const headerSize = 1 + 64 + 12; // dummy + name + codec + resolution
-      print('[ScrcpyStreamParser] Buffer length: ${_buffer.length}, needed: $headerSize');
-      if (_buffer.length < headerSize) return;
+      if (_buffer.length < headerSize) {
+        print('[ScrcpyStreamParser] Waiting for header: ${_buffer.length}/$headerSize bytes');
+        return;
+      }
 
       // Skip dummy byte
       final nameBytes = Uint8List.fromList(_buffer.sublist(1, 65));
@@ -64,7 +66,7 @@ class ScrcpyStreamParser {
       final bd = ByteData.sublistView(
         Uint8List.fromList(_buffer.sublist(65, headerSize)),
       );
-      // codec = bd.getUint32(0);
+      final codecId = bd.getUint32(0);
       final width = bd.getUint32(4);
       final height = bd.getUint32(8);
 
@@ -73,7 +75,7 @@ class ScrcpyStreamParser {
         width: width,
         height: height,
       );
-      print('[ScrcpyStreamParser] Parsed metadata: $deviceName ${width}x$height');
+      print('[ScrcpyStreamParser] Parsed metadata: $deviceName ${width}x$height (Codec: 0x${codecId.toRadixString(16)})');
       _metadataController.add(metadataObj);
 
       _buffer.removeRange(0, headerSize);
@@ -109,6 +111,7 @@ class ScrcpyStreamParser {
       } else {
         final isKey = (ptsRaw & ptsKeyframe) != 0;
         final pts = ptsRaw & ~ptsKeyframe;
+        print('[ScrcpyStreamParser] Parsed video packet: $length bytes, pts: $pts, keyframe: $isKey');
         _controller.add(
           ScrcpyPacket(
             type: ScrcpyPacketType.video,

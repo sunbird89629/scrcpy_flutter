@@ -1,3 +1,4 @@
+import 'package:autoglm_core/autoglm_core.dart';
 import 'package:autoglm_desktop/providers/scrcpy_provider.dart';
 import 'package:autoglm_scrcpy/autoglm_scrcpy.dart';
 import 'package:flutter/material.dart';
@@ -37,12 +38,15 @@ class ChatPage extends ConsumerWidget {
                   return _ScreenView(server: server);
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(
-                  child: Text(
-                    'Error: $e',
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ),
+                error: (e, st) {
+                  appLogger.e('scrcpyServerProvider error', e, st);
+                  return Center(
+                    child: Text(
+                      'Error: $e',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  );
+                },
               ),
             ),
           ),
@@ -75,11 +79,36 @@ class _ScreenViewState extends State<_ScreenView> {
   void initState() {
     super.initState();
     player = Player();
+
+    if (player.platform is NativePlayer) {
+      final native = player.platform! as NativePlayer;
+      native.setProperty('demuxer-lavf-format', 'h264');
+      native.setProperty(
+        'demuxer-lavf-o',
+        'probesize=524288,analyzeduration=500000,fflags=+nobuffer+discardcorrupt',
+      );
+      native.setProperty('cache', 'no');
+      native.setProperty('cache-pause', 'no');
+      native.setProperty('low-latency', 'yes');
+      native.setProperty('untimed', 'yes');
+      native.setProperty('hr-seek', 'no');
+      native.setProperty('video-latency-hacks', 'yes');
+    }
+
     controller = VideoController(player);
-    // Open FIFO file created by proxy server
-    final url = 'file://${widget.server.proxyFifoPath}';
-    print('[ChatPage] Opening video stream at $url');
-    player.open(Media(url));
+
+    final url = widget.server.proxyUrl;
+    appLogger.i('[ChatPage] Waiting for scrcpy proxy to be ready…');
+    widget.server.proxyReady.then(
+      (_) {
+        if (!mounted) return;
+        appLogger.i('[ChatPage] Opening media at $url');
+        player.open(Media(url));
+      },
+      onError: (Object e, StackTrace st) {
+        appLogger.e('[ChatPage] Proxy never became ready', e, st);
+      },
+    );
   }
 
   @override
@@ -90,9 +119,11 @@ class _ScreenViewState extends State<_ScreenView> {
 
   @override
   Widget build(BuildContext context) {
-    return Video(
-      controller: controller,
-      controls: (state) => const SizedBox.shrink(),
+    return Center(
+      child: Video(
+        controller: controller,
+        controls: (state) => const SizedBox.shrink(),
+      ),
     );
   }
 }
