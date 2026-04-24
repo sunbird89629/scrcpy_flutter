@@ -1,0 +1,22 @@
+name: autoglm_scrcpy_example
+description: Example app demonstrating fvp-based scrcpy streaming.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+
+dependencies:
+  autoglm_scrcpy:
+    path: ../
+  autoglm_adb:
+    path: ../../autoglm_adb
+  autoglm_core:
+    path: ../../autoglm_core
+  flutter:
+    sdk: flutter
+  fvp: ^0.35.2
+  path: ^1.9.0
+  path_provider: ^2.1.4
+  video_player: ^2.11.1
