@@ -1,6 +1,7 @@
 import 'package:autoglm_desktop/i18n/strings.g.dart';
 import 'package:autoglm_desktop/providers/adb_provider.dart';
 import 'package:autoglm_desktop/providers/device_provider.dart';
+import 'package:autoglm_ui_kit/autoglm_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,6 +14,7 @@ class DevicesPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final devicesAsync = ref.watch(adbDevicesProvider);
     final selectedId = ref.watch(selectedDeviceIdProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -30,28 +32,87 @@ class DevicesPage extends ConsumerWidget {
             tooltip: t.devices_page.pair_device,
             onPressed: () => _showPairDialog(context, ref),
           ),
+          const SizedBox(width: AppSpacing.sm),
         ],
       ),
       body: devicesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
+              const SizedBox(height: AppSpacing.md),
+              Text('Error: $e'),
+            ],
+          ),
+        ),
         data: (devices) {
           if (devices.isEmpty) {
-            return Center(child: Text(t.devices_page.no_devices));
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.devices_other,
+                      size: 64, color: theme.colorScheme.outline),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    t.devices_page.no_devices,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ],
+              ),
+            );
           }
-          return ListView.builder(
+          return ListView.separated(
+            padding: AppSpacing.edgeInsetsMd,
             itemCount: devices.length,
+            separatorBuilder: (context, index) =>
+                const SizedBox(height: AppSpacing.sm),
             itemBuilder: (context, index) {
               final id = devices[index];
               final isSelected = id == selectedId;
-              return ListTile(
-                leading: const Icon(Icons.smartphone),
-                title: Text(id),
-                selected: isSelected,
-                trailing: isSelected ? const Icon(Icons.check_circle) : null,
-                onTap: () {
-                  ref.read(selectedDeviceIdProvider.notifier).state = id;
-                },
+              return Card(
+                elevation: isSelected ? 2 : 0,
+                color: isSelected
+                    ? theme.colorScheme.primaryContainer.withOpacity(0.3)
+                    : theme.colorScheme.surfaceContainerLow,
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppRadius.borderMd,
+                  side: isSelected
+                      ? BorderSide(color: theme.colorScheme.primary, width: 2)
+                      : BorderSide(color: theme.colorScheme.outlineVariant),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.xs,
+                  ),
+                  leading: CircleAvatar(
+                    backgroundColor: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.surfaceVariant,
+                    child: Icon(
+                      Icons.smartphone,
+                      color: isSelected
+                          ? theme.colorScheme.onPrimary
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  title: Text(
+                    id,
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.bold : null,
+                    ),
+                  ),
+                  subtitle: const Text('ADB Device'),
+                  trailing: isSelected
+                      ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
+                      : null,
+                  onTap: () {
+                    ref.read(selectedDeviceIdProvider.notifier).state = id;
+                  },
+                ),
               );
             },
           );
@@ -69,20 +130,36 @@ class DevicesPage extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(t.devices_page.pair_device),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.borderLg),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: ipCtrl,
-              decoration: InputDecoration(labelText: t.devices_page.ip),
+              decoration: InputDecoration(
+                labelText: t.devices_page.ip,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.network_wifi),
+              ),
             ),
+            const SizedBox(height: AppSpacing.md),
             TextField(
               controller: portCtrl,
-              decoration: InputDecoration(labelText: t.devices_page.port),
+              decoration: InputDecoration(
+                labelText: t.devices_page.port,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.numbers),
+              ),
+              keyboardType: TextInputType.number,
             ),
+            const SizedBox(height: AppSpacing.md),
             TextField(
               controller: codeCtrl,
-              decoration: InputDecoration(labelText: t.devices_page.code),
+              decoration: InputDecoration(
+                labelText: t.devices_page.code,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.lock_outline),
+              ),
             ),
           ],
         ),
@@ -91,7 +168,7 @@ class DevicesPage extends ConsumerWidget {
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancel'),
           ),
-          ElevatedButton(
+          FilledButton(
             onPressed: () async {
               final port = int.tryParse(portCtrl.text) ?? 0;
               try {

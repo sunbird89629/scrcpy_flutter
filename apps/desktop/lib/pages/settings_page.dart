@@ -1,6 +1,7 @@
 import 'package:autoglm_core/autoglm_core.dart';
 import 'package:autoglm_desktop/i18n/strings.g.dart';
 import 'package:autoglm_desktop/providers/settings_provider.dart';
+import 'package:autoglm_ui_kit/autoglm_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,6 +19,7 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsAsync = ref.watch(settingsProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -25,17 +27,53 @@ class SettingsPage extends ConsumerWidget {
       ),
       body: settingsAsync.when(
         data: (settings) => ListView(
-          padding: const EdgeInsets.all(16),
+          padding: AppSpacing.edgeInsetsMd,
           children: [
-            _buildThemeSection(context, ref, settings),
-            const Divider(),
-            _buildLocaleSection(context, ref, settings),
-            const Divider(),
-            _buildLlmSection(context, ref, settings),
+            _buildSectionHeader(theme, 'Appearance'),
+            Card(
+              elevation: 0,
+              color: theme.colorScheme.surfaceContainerLow,
+              shape: RoundedRectangleBorder(borderRadius: AppRadius.borderMd),
+              child: Column(
+                children: [
+                  _buildThemeSection(context, ref, settings),
+                  const Divider(indent: AppSpacing.md, endIndent: AppSpacing.md),
+                  _buildLocaleSection(context, ref, settings),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            _buildSectionHeader(theme, 'LLM Configuration'),
+            Card(
+              elevation: 0,
+              color: theme.colorScheme.surfaceContainerLow,
+              shape: RoundedRectangleBorder(borderRadius: AppRadius.borderMd),
+              child: Padding(
+                padding: AppSpacing.edgeInsetsMd,
+                child: _buildLlmSection(context, ref, settings),
+              ),
+            ),
           ],
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(ThemeData theme, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: AppSpacing.sm,
+        bottom: AppSpacing.sm,
+      ),
+      child: Text(
+        title.toUpperCase(),
+        style: theme.textTheme.labelMedium?.copyWith(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.2,
+        ),
       ),
     );
   }
@@ -46,9 +84,11 @@ class SettingsPage extends ConsumerWidget {
     Settings settings,
   ) {
     return ListTile(
+      leading: const Icon(Icons.palette_outlined),
       title: Text(t.settings.theme.label),
       trailing: DropdownButton<String>(
         key: themeDropdownKey,
+        underline: const SizedBox(),
         value: settings.themeMode,
         onChanged: (value) {
           if (value != null) {
@@ -81,9 +121,11 @@ class SettingsPage extends ConsumerWidget {
     Settings settings,
   ) {
     return ListTile(
+      leading: const Icon(Icons.language_outlined),
       title: Text(t.settings.locale.label),
       trailing: DropdownButton<String>(
         key: localeDropdownKey,
+        underline: const SizedBox(),
         value: settings.locale,
         onChanged: (value) {
           if (value != null) {
@@ -115,24 +157,19 @@ class SettingsPage extends ConsumerWidget {
     WidgetRef ref,
     Settings settings,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 8),
-          child: Text('LLM Configuration', style: TextStyle(fontSize: 16)),
-        ),
-        TextField(
-          decoration: const InputDecoration(labelText: 'API Key'),
-          obscureText: true,
-          controller: TextEditingController(text: settings.llmApiKey),
-          onSubmitted: (value) {
-            ref.read(settingsProvider.notifier).updateSettings(
-                  settings.copyWith(llmApiKey: value),
-                );
-          },
-        ),
-      ],
+    return TextField(
+      decoration: const InputDecoration(
+        labelText: 'API Key',
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.key),
+      ),
+      obscureText: true,
+      controller: TextEditingController(text: settings.llmApiKey),
+      onSubmitted: (value) {
+        ref.read(settingsProvider.notifier).updateSettings(
+              settings.copyWith(llmApiKey: value),
+            );
+      },
     );
   }
 }

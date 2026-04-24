@@ -1,5 +1,5 @@
+import 'package:autoglm_ui_kit/src/theme/design_tokens.dart';
 import 'package:flutter/material.dart';
-import 'design_tokens.dart';
 
 /// Dark theme used across all AutoGLM Flutter apps.
 final ThemeData darkTheme = ThemeData(
@@ -8,7 +8,7 @@ final ThemeData darkTheme = ThemeData(
     seedColor: AppColors.seed,
     brightness: Brightness.dark,
   ),
-  cardTheme: CardTheme(
+  cardTheme: const CardThemeData(
     shape: RoundedRectangleBorder(borderRadius: AppRadius.borderMd),
     elevation: 0, // Dark mode often uses less elevation
   ),
