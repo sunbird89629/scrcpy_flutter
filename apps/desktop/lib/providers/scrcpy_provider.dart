@@ -20,11 +20,14 @@ final scrcpyServerProvider = FutureProvider<ScrcpyServer?>((ref) async {
 });
 
 /// Provider for scrcpy metadata.
-final scrcpyMetadataProvider = StreamProvider<ScrcpyMetadata>((ref) {
-  final serverAsync = ref.watch(scrcpyServerProvider);
-  return serverAsync.when(
-    data: (server) => server?.metadata ?? const Stream.empty(),
-    error: (_, __) => const Stream.empty(),
-    loading: () => const Stream.empty(),
-  );
+final scrcpyMetadataProvider = StreamProvider<ScrcpyMetadata>((ref) async* {
+  final server = await ref.watch(scrcpyServerProvider.future);
+  if (server == null) return;
+
+  // The parser emits metadata on a broadcast stream exactly once during
+  // server start-up — often before this provider has subscribed. Replay the
+  // cached value so the UI can render immediately instead of spinning.
+  final cached = server.currentMetadata;
+  if (cached != null) yield cached;
+  yield* server.metadata;
 });

@@ -8,6 +8,7 @@ import 'package:autoglm_desktop/providers/settings_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_skill/flutter_skill.dart';
 import 'package:mcp_toolkit/mcp_toolkit.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:path/path.dart' as p;
@@ -16,6 +17,7 @@ import 'package:path_provider/path_provider.dart';
 void main() async {
   runZonedGuarded(
     () async {
+      if (kDebugMode) FlutterSkillBinding.ensureInitialized();
       WidgetsFlutterBinding.ensureInitialized();
       MediaKit.ensureInitialized();
 
@@ -117,7 +119,8 @@ class _LoggerObserver extends ProviderObserver {
     ProviderContainer container,
   ) {
     if (kDebugMode) {
-      appLogger.d('Provider ${provider.name ?? provider.runtimeType} added: $value');
+      appLogger
+          .d('Provider ${provider.name ?? provider.runtimeType} added: $value');
     }
   }
 }

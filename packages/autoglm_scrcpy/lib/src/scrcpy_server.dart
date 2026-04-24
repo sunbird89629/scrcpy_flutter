@@ -55,6 +55,10 @@ class ScrcpyServer {
   /// Stream of scrcpy metadata.
   Stream<ScrcpyMetadata> get metadata => _parser.metadata;
 
+  /// Last parsed metadata, or `null` if the header has not arrived yet. Lets
+  /// late subscribers recover the one-shot broadcast that fires on start-up.
+  ScrcpyMetadata? get currentMetadata => _parser.currentMetadata;
+
   /// Starts the scrcpy server.
   Future<void> start() async {
     appLogger.i('[ScrcpyServer] Starting for device: $deviceId');

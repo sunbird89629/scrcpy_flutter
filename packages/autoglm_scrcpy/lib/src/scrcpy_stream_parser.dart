@@ -35,12 +35,17 @@ class ScrcpyStreamParser {
 
   bool _headerParsed = false;
   int _videoPacketLogCountdown = 3;
+  ScrcpyMetadata? _currentMetadata;
 
   /// Stream of parsed scrcpy packets.
   Stream<ScrcpyPacket> get packets => _controller.stream;
 
   /// Stream of scrcpy metadata (emitted once at start).
   Stream<ScrcpyMetadata> get metadata => _metadataController.stream;
+
+  /// The most recently parsed metadata, or `null` if not seen yet. Use this to
+  /// seed late subscribers that missed the one-shot broadcast event.
+  ScrcpyMetadata? get currentMetadata => _currentMetadata;
 
   /// Feed raw bytes into the parser.
   void feed(Uint8List data) {
@@ -87,6 +92,7 @@ class ScrcpyStreamParser {
         '[ScrcpyStreamParser] Parsed metadata: $deviceName '
         '${width}x$height (Codec: 0x${codecId.toRadixString(16)})',
       );
+      _currentMetadata = metadataObj;
       _metadataController.add(metadataObj);
 
       _buffer.removeRange(0, headerSize);

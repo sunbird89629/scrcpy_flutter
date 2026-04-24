@@ -33,6 +33,7 @@ dependencies:
   media_kit: ^1.2.6
   media_kit_video: ^2.0.1
   media_kit_libs_macos_video: ^1.1.4
+  flutter_skill: ^0.9.36
 
 dev_dependencies:
   build_runner: ^2.4.13

@@ -14,15 +14,15 @@ class AppLogger {
   /// Creates an [AppLogger] that optionally writes to [logsDir].
   /// If [logsDir] is null, it only writes to console.
   AppLogger(Directory? logsDir) : _logsDir = logsDir {
-    final List<pkg.LogOutput> outputs = [pkg.ConsoleOutput()];
+    final outputs = <pkg.LogOutput>[pkg.ConsoleOutput()];
 
     if (_logsDir != null) {
-      if (!_logsDir!.existsSync()) {
-        _logsDir!.createSync(recursive: true);
+      if (!_logsDir.existsSync()) {
+        _logsDir.createSync(recursive: true);
       }
       final today = DateTime.now();
       final fileName = 'autoglm-${_dateStamp(today)}.log';
-      _file = File(p.join(_logsDir!.path, fileName));
+      _file = File(p.join(_logsDir.path, fileName));
       outputs.add(_FileOutput(_file!));
       _pruneOldFiles();
     }
@@ -53,7 +53,7 @@ class AppLogger {
   /// Logs an info-level message.
   void i(Object message, [Object? error, StackTrace? stack]) =>
       _logger.i(message, error: error, stackTrace: stack);
-  
+
   /// Alias for [i].
   void info(Object message, [Object? error, StackTrace? stack]) =>
       i(message, error, stack);
@@ -61,7 +61,7 @@ class AppLogger {
   /// Logs a warning-level message.
   void w(Object message, [Object? error, StackTrace? stack]) =>
       _logger.w(message, error: error, stackTrace: stack);
-  
+
   /// Alias for [w].
   void warning(Object message, [Object? error, StackTrace? stack]) =>
       w(message, error, stack);
@@ -69,7 +69,7 @@ class AppLogger {
   /// Logs an error-level message with optional [error] and [stack].
   void e(Object message, [Object? error, StackTrace? stack]) =>
       _logger.e(message, error: error, stackTrace: stack);
-      
+
   /// Alias for [e].
   void error(Object message, [Object? error, StackTrace? stack]) =>
       e(message, error, stack);
@@ -92,7 +92,7 @@ class AppLogger {
   void _pruneOldFiles() {
     if (_logsDir == null) return;
     try {
-      final files = _logsDir!
+      final files = _logsDir
           .listSync()
           .whereType<File>()
           .where((f) => p.basename(f.path).startsWith('autoglm-'))
