@@ -78,38 +78,43 @@ class _ScreenViewState extends State<_ScreenView> {
   late final VideoController controller;
   StreamSubscription<dynamic>? _errorSubscription;
   StreamSubscription<dynamic>? _videoParamsSubscription;
+  StreamSubscription<dynamic>? _logSubscription;
 
   @override
   void initState() {
     super.initState();
-    // 1. Initialize Player with low-latency config
-    player = Player(
-      configuration: const PlayerConfiguration(
-        bufferSize: 0,
-      ),
-    );
+    // STEP 1: minimal config to verify basic playback
+    player = Player();
 
     // 2. Setup Native properties for raw H264 stream
     if (player.platform is NativePlayer) {
       final native = player.platform! as NativePlayer;
-      
-      // Force lavf demuxer and h264 format to completely bypass auto-detection
-      native.setProperty('demuxer', 'lavf');
-      native.setProperty('demuxer-lavf-format', 'h264');
-      
+
+      // NOTE: bundled mpv's ffmpeg is trimmed and doesn't expose the `h264`
+      // demuxer by name. Leave demuxer auto-probe on.
+
       // Disable audio to prevent mp3float or other audio probing errors
       native.setProperty('aid', 'no');
-      
-      // Latency & Sync optimizations
-      native.setProperty('profile', 'low-latency');
-      native.setProperty('untimed', 'yes');
-      native.setProperty('cache', 'no');
-      native.setProperty('video-sync', 'desync');
-      native.setProperty('vd-lavc-threads', '1');
+
+      // tcp:// URLs are treated as playlist entries by mpv and blocked
+      // unless explicitly allowed.
       native.setProperty('load-unsafe-playlists', 'yes');
 
-      // Fix colorspace issues (like ycgco) causing renderer/filter errors
-      native.setProperty('vf', 'setparams=colorspace=bt709');
+      // Low-latency live playback: render frames as they arrive rather
+      // than waiting for their PTS, drop all demuxer/stream buffering.
+      native.setProperty('untimed', 'yes');
+      native.setProperty('cache', 'no');
+      native.setProperty('demuxer-readahead-secs', '0');
+      native.setProperty('video-latency-hacks', 'yes');
+      native.setProperty('video-sync', 'desync');
+
+      // Qualcomm's c2.qti.avc.encoder tags the H.264 VUI as ycgco; under
+      // hardware decoding mpv's shader picks a wrong matrix and the image
+      // goes red. Force BT.709 via mpv's native `format` filter.
+      native.setProperty('vf', 'format=colormatrix=bt.709');
+
+      // Verbose mpv logging for diagnosis
+      native.setProperty('msg-level', 'all=v');
     }
 
     _errorSubscription = player.stream.error.listen((error) {
@@ -122,13 +127,12 @@ class _ScreenViewState extends State<_ScreenView> {
       );
     });
 
-    // 3. Create VideoController
-    controller = VideoController(
-      player,
-      configuration: const VideoControllerConfiguration(
-        enableHardwareAcceleration: true,
-      ),
-    );
+    _logSubscription = player.stream.log.listen((e) {
+      appLogger.d('[mpv][${e.prefix}][${e.level}] ${e.text}');
+    });
+
+    // 3. Create VideoController (HW accel is on by default on macOS).
+    controller = VideoController(player);
 
     // 4. Open the stream when proxy is ready
     final url = widget.server.proxyUrl;
@@ -149,6 +153,7 @@ class _ScreenViewState extends State<_ScreenView> {
   void dispose() {
     _errorSubscription?.cancel();
     _videoParamsSubscription?.cancel();
+    _logSubscription?.cancel();
     player.dispose();
     super.dispose();
   }

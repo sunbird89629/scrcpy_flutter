@@ -185,7 +185,13 @@ class ScrcpyServer {
       'list_encoders=false',
       'list_displays=false',
       'send_dummy_byte=true',
-      'video_codec_options=i-frame-interval=1', // I-Frame every 1 second
+      // Low-latency MediaCodec config:
+      //   latency=1          MediaCodec low-latency mode (API 30+)
+      //   priority=0         realtime thread priority
+      //   operating-rate=max  hint the encoder to run full throttle
+      //   i-frame-interval=1  quick recovery for new viewers
+      // ignore: lines_longer_than_80_chars
+      'video_codec_options=i-frame-interval=1,latency=1,priority=0,operating-rate=65535',
       'power_on=true', // Ensure screen is on
     ];
 
