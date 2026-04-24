@@ -34,6 +34,7 @@ dependencies:
   media_kit_video: ^2.0.1
   media_kit_libs_macos_video: ^1.1.4
   flutter_skill: ^0.9.36
+  google_generative_ai: ^0.4.7
 
 dev_dependencies:
   build_runner: ^2.4.13

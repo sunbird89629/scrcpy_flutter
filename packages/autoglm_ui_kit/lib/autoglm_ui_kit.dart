@@ -2,4 +2,5 @@
 library;
 
 export 'src/theme/dark_theme.dart';
+export 'src/theme/design_tokens.dart';
 export 'src/theme/light_theme.dart';
