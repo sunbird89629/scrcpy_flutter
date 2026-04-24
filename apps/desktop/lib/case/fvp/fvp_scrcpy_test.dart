@@ -21,15 +21,27 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 
+/// Flip to false for the conservative path.
+const kAggressive = true;
+
+const kBufferMin = 0;
+/// Buffer window in ms: 0 = aggressive, 50 = compromise, 200 = conservative.
+const kBufferMax = 0;
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  fvp.registerWith(
-    options: {
-      'video.decoders': _preferredDecoders(),
-      'lowLatency': 1,
-    },
-  );
+  final fvpOptions = <String, dynamic>{
+    'video.decoders': _preferredDecoders(),
+    'lowLatency': 1,
+  };
+  if (kAggressive) {
+    // Disable ffmpeg demuxer probing and buffering so the first frame
+    // surfaces earlier.
+    fvpOptions['player.avformat.fflags'] = 'nobuffer';
+    fvpOptions['player.avformat.flags'] = 'low_delay';
+  }
+  fvp.registerWith(options: fvpOptions);
 
   final tempDir = await getTemporaryDirectory();
   initAppLogger(logsDir: p.join(tempDir.path, 'autoglm_logs'));
@@ -65,6 +77,11 @@ class FvpScrcpyTestScreen extends StatefulWidget {
 }
 
 class _FvpScrcpyTestScreenState extends State<FvpScrcpyTestScreen> {
+  String get _title =>
+      'AutoGLM Scrcpy (fvp) — '
+      '${kAggressive ? "aggressive" : "conservative"} '
+      '[$kBufferMin,${kBufferMax}ms]';
+
   final List<String> _logs = [];
   ScrcpyServer? _server;
   _RawH264Proxy? _proxy;
@@ -137,13 +154,12 @@ class _FvpScrcpyTestScreenState extends State<FvpScrcpyTestScreen> {
         '${controller.value.size.height.toInt()}',
       );
 
-      // The key low-latency knob: drop frames older than 200ms. Min buffer
-      // of 0 means render as soon as a frame is decoded.
-      controller.setBufferRange(min: 0, max: 200, drop: true);
+      controller.setBufferRange(min: kBufferMin, max: kBufferMax, drop: true);
 
       await controller.setVolume(0);
       await controller.play();
-      _log('Playback started. Buffer range = [0, 200] ms, drop = true');
+      _log(
+          'Playback started. Buffer=[$kBufferMin,$kBufferMax]ms, drop=true, aggressive=$kAggressive');
 
       controller.addListener(_onControllerTick);
     } on Object catch (e, st) {
@@ -165,9 +181,8 @@ class _FvpScrcpyTestScreenState extends State<FvpScrcpyTestScreen> {
     }
     // Report how deep behind "now" the decoded frontier is.
     final pos = v.position.inMilliseconds;
-    final buffered = v.buffered.isNotEmpty
-        ? v.buffered.last.end.inMilliseconds - pos
-        : 0;
+    final buffered =
+        v.buffered.isNotEmpty ? v.buffered.last.end.inMilliseconds - pos : 0;
     _log('tick: pos=${pos}ms bufferedAhead=${buffered}ms');
   }
 
@@ -204,7 +219,7 @@ class _FvpScrcpyTestScreenState extends State<FvpScrcpyTestScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF1E1E1E),
       appBar: AppBar(
-        title: const Text('AutoGLM Scrcpy Preview (fvp / libmdk)'),
+        title: Text(_title),
         backgroundColor: Colors.indigo[900],
         foregroundColor: Colors.white,
       ),
