@@ -28,6 +28,7 @@ dev_dependencies:
   # very_good_analysis: ^7.0.0
 
 flutter:
+  uses-material-design: true
   assets:
     - assets/scrcpy-server-v3.3.4
     - assets/web_player/

@@ -271,39 +271,39 @@ class ScrcpyServer {
   }
 
   Future<void> _connectAll() async {
-    // Standard scrcpy 3.x bootstrap: [SCID (4 bytes)] + [tunnel_forward (1 byte)]
-    final bootstrap = ByteData(5);
-    bootstrap.setInt32(0, 0, Endian.big); // Use SCID 0 for simplicity
-    bootstrap.setUint8(4, 1); // tunnel_forward=true
-    final bootstrapBytes = bootstrap.buffer.asUint8List();
+    // scrcpy never expects bytes from the client during socket setup. The
+    // server identifies sockets purely by accept() order: video, then
+    // (audio,) then control. On the first (video) socket, the server sends:
+    //   - 1 dummy byte 0x00 (only if send_dummy_byte=true)
+    //   - 64 bytes device name + 12 bytes video codec metadata
+    //   - then video packets
+    // The control socket is bidirectional; the server starts reading control
+    // messages from the very first byte we write, so we MUST NOT prepend
+    // anything before real ScrcpyControlMessage bytes.
 
     // 1. Video socket
     _videoSocket = await _connectSocket('Video');
-    _videoSocket!.add(bootstrapBytes);
-    await _videoSocket!.flush();
 
     var isFirstByteHandled = false;
     _videoSubscription = _videoSocket!.listen(
       (data) {
-        // Even if send_dummy_byte is false, scrcpy v3 might send a 0 byte on forward tunnel.
-        // We skip the first byte IF it is 0.
+        // Defensive: if the server ever sends a leading 0x00 (dummy byte on
+        // the forward tunnel), drop it before handing bytes to the parser.
         if (!isFirstByteHandled) {
           isFirstByteHandled = true;
           if (data.isNotEmpty && data[0] == 0) {
-            if (data.length > 1) _parser.feed(Uint8List.fromList(data.sublist(1)));
+            if (data.length > 1) _parser.feed(Uint8List.sublistView(data, 1));
             return;
           }
         }
-        _parser.feed(Uint8List.fromList(data));
+        _parser.feed(data);
       },
       onDone: () => appLogger.w('[ScrcpyServer] Video socket closed'),
     );
 
-    // 2. Control socket
+    // 2. Control socket — accept() order matters; connect after video.
     await Future<void>.delayed(const Duration(milliseconds: 300));
     _controlSocket = await _connectSocket('Control');
-    _controlSocket!.add(bootstrapBytes);
-    await _controlSocket!.flush();
 
     _controlSocket!.listen(
       (data) => appLogger.d('[ScrcpyServer] Control data: ${data.length} bytes'),
@@ -324,6 +324,7 @@ class ScrcpyServer {
         return await Socket.connect('localhost', connectPort);
       } on Exception catch (e) {
         if (attempt >= maxAttempts) rethrow;
+        appLogger.d('[ScrcpyServer] [$name] attempt $attempt failed: $e');
         await Future<void>.delayed(retryDelay);
       }
     }

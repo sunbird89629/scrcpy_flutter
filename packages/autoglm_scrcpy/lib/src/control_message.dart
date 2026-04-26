@@ -21,6 +21,19 @@ class ScrcpyAction {
   static const int multi = 2; // Only for key
 }
 
+/// Android `KeyEvent` keycodes used with [ScrcpyInjectKeyMessage].
+/// Mirrors `android.view.KeyEvent.KEYCODE_*`.
+class ScrcpyKeycode {
+  /// `KEYCODE_HOME` — return to the launcher.
+  static const int home = 3;
+
+  /// `KEYCODE_BACK` — system back navigation.
+  static const int back = 4;
+
+  /// `KEYCODE_APP_SWITCH` — open the recent-apps overview.
+  static const int appSwitch = 187;
+}
+
 /// Type 0: Inject Keycode
 class ScrcpyInjectKeyMessage extends ScrcpyControlMessage {
   const ScrcpyInjectKeyMessage({

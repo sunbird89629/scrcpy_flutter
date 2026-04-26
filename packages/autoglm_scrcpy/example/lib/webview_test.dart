@@ -4,11 +4,10 @@ import 'package:autoglm_adb/autoglm_adb.dart';
 import 'package:autoglm_core/autoglm_core.dart';
 import 'package:autoglm_scrcpy/autoglm_scrcpy.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_driver/driver_extension.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-
-import 'package:flutter_driver/driver_extension.dart';
 
 void main() async {
   enableFlutterDriverExtension();
@@ -30,15 +29,14 @@ class ScrcpyWebViewTestScreen extends StatefulWidget {
   const ScrcpyWebViewTestScreen({super.key});
 
   @override
-  State<ScrcpyWebViewTestScreen> createState() => _ScrcpyWebViewTestScreenState();
+  State<ScrcpyWebViewTestScreen> createState() =>
+      _ScrcpyWebViewTestScreenState();
 }
 
 class _ScrcpyWebViewTestScreenState extends State<ScrcpyWebViewTestScreen> {
   final List<String> _logs = [];
   ScrcpyServer? _server;
   bool _isRunning = false;
-  
-  InAppWebViewController? _webViewController;
 
   @override
   void initState() {
@@ -58,6 +56,7 @@ class _ScrcpyWebViewTestScreenState extends State<ScrcpyWebViewTestScreen> {
       _logs.add(
         '${DateTime.now().toIso8601String().split('T').last.substring(0, 8)}: $message',
       );
+      if (_logs.length > 500) _logs.removeAt(0);
     });
   }
 
@@ -68,6 +67,9 @@ class _ScrcpyWebViewTestScreenState extends State<ScrcpyWebViewTestScreen> {
     if (event is PointerDownEvent) {
       action = ScrcpyAction.down;
     } else if (event is PointerMoveEvent) {
+      // PointerMove fires per frame during a drag; drop no-op moves so we
+      // don't allocate + send a redundant scrcpy packet for each one.
+      if (event.delta == Offset.zero) return;
       action = ScrcpyAction.move;
     } else if (event is PointerUpEvent) {
       action = ScrcpyAction.up;
@@ -125,23 +127,21 @@ class _ScrcpyWebViewTestScreenState extends State<ScrcpyWebViewTestScreen> {
     final deviceId = devices.first;
     _addLog('Using device: $deviceId');
 
-    _server = ScrcpyServer(
+    final server = ScrcpyServer(
       adbClient: adbClient,
       deviceId: deviceId,
     );
 
     _addLog('Starting scrcpy server...');
-    await _server!.start();
+    await server.start();
 
-    final url = _server!.playerUrl;
-    _addLog('Web Player URL: $url');
-
-    // Trigger load in WebView if already initialized
-    if (_webViewController != null) {
-      await _webViewController!.loadUrl(
-        urlRequest: URLRequest(url: WebUri(url)),
-      );
+    if (!mounted) {
+      await server.stop();
+      return;
     }
+
+    setState(() => _server = server);
+    _addLog('Web Player URL: ${server.playerUrl}');
   }
 
   Future<void> _stopTest() async {
@@ -171,144 +171,207 @@ class _ScrcpyWebViewTestScreenState extends State<ScrcpyWebViewTestScreen> {
       ),
       body: Row(
         children: [
-          // Left Side: Controls and Logs
-          SizedBox(
-            width: 300,
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  color: Colors.indigo[800],
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: _isRunning ? null : _startTest,
-                            icon: const Icon(Icons.play_arrow),
-                            label: const Text('Start'),
-                          ),
-                          const SizedBox(width: 12),
-                          ElevatedButton.icon(
-                            key: const Key('stop_button'),
-                            onPressed: _isRunning ? _stopTest : null,
-                            icon: const Icon(Icons.stop),
-                            label: const Text('Stop'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red[900],
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (_isRunning) ...[
-                        const Divider(color: Colors.white24, height: 24),
-                        const Text(
-                          'Remote Control',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _controlBtn(Icons.arrow_back, () => _injectKey(4)), // AKEYCODE_BACK
-                            _controlBtn(Icons.circle_outlined, () => _injectKey(3)), // AKEYCODE_HOME
-                            _controlBtn(Icons.menu, () => _injectKey(187)), // AKEYCODE_APP_SWITCH
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    color: Colors.black,
-                    padding: const EdgeInsets.all(8),
-                    child: ListView.builder(
-                      itemCount: _logs.length,
-                      itemBuilder: (context, index) => Text(
-                        _logs[index],
-                        style: const TextStyle(
-                          color: Colors.blueAccent,
-                          fontSize: 10,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+          Expanded(
+            child: _ScreenView(
+              playerUrl: _server?.playerUrl,
+              onLog: _addLog,
+              onPointerEvent: _handlePointerEvent,
             ),
           ),
+          SizedBox(
+            width: 300,
+            child: _ControlView(
+              isRunning: _isRunning,
+              logs: _logs,
+              onStart: _startTest,
+              onStop: _stopTest,
+              onInjectKey: _injectKey,
+            ),
+          )
+        ],
+      ),
+    );
+  }
+}
 
-          // Right Side: InAppWebView with GestureDetector
-          Expanded(
-            child: Container(
-              color: Colors.black,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final widgetSize = Size(constraints.maxWidth, constraints.maxHeight);
-                  return Stack(
-                    children: [
-                      InAppWebView(
-                        initialSettings: InAppWebViewSettings(
-                          transparentBackground: true,
-                          useWideViewPort: true,
-                          loadWithOverviewMode: true,
-                          mediaPlaybackRequiresUserGesture: false,
-                          allowsInlineMediaPlayback: true,
-                          verticalScrollBarEnabled: false,
-                          horizontalScrollBarEnabled: false,
-                          supportZoom: false,
-                          disableVerticalScroll: true,
-                          disableHorizontalScroll: true,
-                        ),
-                        onWebViewCreated: (controller) {
-                          _webViewController = controller;
-                          // Register JS Handler for logs
-                          controller.addJavaScriptHandler(
-                            handlerName: 'logHandler',
-                            callback: (args) {
-                              _addLog('[WebView] ${args[0]}');
-                            },
-                          );
-                          
-                          // If server already started, load URL
-                          if (_server != null) {
-                            controller.loadUrl(
-                              urlRequest: URLRequest(url: WebUri(_server!.playerUrl)),
-                            );
-                          }
-                        },
-                        onConsoleMessage: (controller, consoleMessage) {
-                          _addLog('[Console] ${consoleMessage.message}');
-                        },
-                        onLoadStop: (controller, url) {
-                          _addLog('WebView Loaded: $url');
-                        },
-                        onReceivedError: (controller, request, error) {
-                          _addLog('WebView Error: ${error.description}');
-                        },
-                      ),
-                      // Overlay to capture gestures
-                      Positioned.fill(
-                        child: Listener(
-                          behavior: HitTestBehavior.opaque,
-                          onPointerDown: (e) => _handlePointerEvent(e, widgetSize),
-                          onPointerMove: (e) => _handlePointerEvent(e, widgetSize),
-                          onPointerUp: (e) => _handlePointerEvent(e, widgetSize),
-                        ),
-                      ),
-                    ],
+class _ScreenView extends StatefulWidget {
+  const _ScreenView({
+    required this.playerUrl,
+    required this.onLog,
+    required this.onPointerEvent,
+  });
+
+  final String? playerUrl;
+  final ValueChanged<String> onLog;
+  final void Function(PointerEvent event, Size widgetSize) onPointerEvent;
+
+  @override
+  State<_ScreenView> createState() => _ScreenViewState();
+}
+
+class _ScreenViewState extends State<_ScreenView> {
+  InAppWebViewController? _controller;
+
+  @override
+  void didUpdateWidget(covariant _ScreenView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final url = widget.playerUrl;
+    if (url != null && url != oldWidget.playerUrl) {
+      _controller?.loadUrl(urlRequest: URLRequest(url: WebUri(url)));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final widgetSize = Size(constraints.maxWidth, constraints.maxHeight);
+          return Stack(
+            children: [
+              InAppWebView(
+                initialSettings: InAppWebViewSettings(
+                  transparentBackground: true,
+                  useWideViewPort: true,
+                  loadWithOverviewMode: true,
+                  mediaPlaybackRequiresUserGesture: false,
+                  allowsInlineMediaPlayback: true,
+                  verticalScrollBarEnabled: false,
+                  horizontalScrollBarEnabled: false,
+                  supportZoom: false,
+                  disableVerticalScroll: true,
+                  disableHorizontalScroll: true,
+                ),
+                onWebViewCreated: (controller) {
+                  _controller = controller;
+                  controller.addJavaScriptHandler(
+                    handlerName: 'logHandler',
+                    callback: (args) {
+                      widget.onLog('[WebView] ${args[0]}');
+                    },
                   );
+
+                  final url = widget.playerUrl;
+                  if (url != null) {
+                    controller.loadUrl(
+                      urlRequest: URLRequest(url: WebUri(url)),
+                    );
+                  }
                 },
+                onConsoleMessage: (controller, consoleMessage) {
+                  widget.onLog('[Console] ${consoleMessage.message}');
+                },
+                onLoadStop: (controller, url) {
+                  widget.onLog('WebView Loaded: $url');
+                },
+                onReceivedError: (controller, request, error) {
+                  widget.onLog('WebView Error: ${error.description}');
+                },
+              ),
+              // Overlay to capture gestures
+              Positioned.fill(
+                child: Listener(
+                  behavior: HitTestBehavior.opaque,
+                  onPointerDown: (e) => widget.onPointerEvent(e, widgetSize),
+                  onPointerMove: (e) => widget.onPointerEvent(e, widgetSize),
+                  onPointerUp: (e) => widget.onPointerEvent(e, widgetSize),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ControlView extends StatelessWidget {
+  const _ControlView({
+    required this.isRunning,
+    required this.logs,
+    required this.onStart,
+    required this.onStop,
+    required this.onInjectKey,
+  });
+
+  final bool isRunning;
+  final List<String> logs;
+  final VoidCallback onStart;
+  final VoidCallback onStop;
+  final ValueChanged<int> onInjectKey;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          color: Colors.indigo[800],
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: isRunning ? null : onStart,
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Start'),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    key: const Key('stop_button'),
+                    onPressed: isRunning ? onStop : null,
+                    icon: const Icon(Icons.stop),
+                    label: const Text('Stop'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[900],
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              if (isRunning) ...[
+                const Divider(color: Colors.white24, height: 24),
+                const Text(
+                  'Remote Control',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _controlBtn(
+                        Icons.arrow_back, () => onInjectKey(ScrcpyKeycode.back)),
+                    _controlBtn(Icons.circle_outlined,
+                        () => onInjectKey(ScrcpyKeycode.home)),
+                    _controlBtn(
+                        Icons.menu, () => onInjectKey(ScrcpyKeycode.appSwitch)),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+        Expanded(
+          child: Container(
+            width: double.infinity,
+            color: Colors.black,
+            padding: const EdgeInsets.all(8),
+            child: ListView.builder(
+              itemCount: logs.length,
+              itemBuilder: (context, index) => Text(
+                logs[index],
+                style: const TextStyle(
+                  color: Colors.blueAccent,
+                  fontSize: 10,
+                  fontFamily: 'monospace',
+                ),
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
