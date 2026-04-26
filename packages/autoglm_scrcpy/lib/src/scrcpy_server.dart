@@ -188,7 +188,13 @@ class ScrcpyServer {
       'list_encoders=false',
       'list_displays=false',
       'send_dummy_byte=true',
-      'video_codec_options=i-frame-interval=1,latency=1,priority=0,operating-rate=65535',
+      // color-standard/range/transfer make MediaCodec stamp colour VUI into
+      // the SPS. Without them, scrcpy emits an untagged stream and mdk
+      // falls back to a default matrix that mismatches the encoder's
+      // (yellow → pink). 4 = BT601_NTSC, 2 = LIMITED, 3 = SDR_VIDEO.
+      'video_codec_options=i-frame-interval=1,latency=1,priority=0,'
+          'operating-rate=65535,color-standard=4,color-range=2,'
+          'color-transfer=3',
       'power_on=true',
     ];
 

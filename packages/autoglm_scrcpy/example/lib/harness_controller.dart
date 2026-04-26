@@ -105,6 +105,19 @@ class HarnessController extends ChangeNotifier {
         '${controller.value.size.height.toInt()}',
       );
 
+      final mediaInfo = controller.getMediaInfo();
+      final videoTracks = mediaInfo?.video;
+      if (videoTracks != null && videoTracks.isNotEmpty) {
+        final v = videoTracks.first;
+        _log(
+          'video codec=${v.codec.codec} '
+          'fmt=${v.codec.format} '
+          'colorSpace=${v.codec.colorSpace} '
+          '${v.codec.width}x${v.codec.height} '
+          'fps=${v.codec.frameRate}',
+        );
+      }
+
       controller.setBufferRange(min: bufferMin, max: bufferMax, drop: true);
 
       await controller.setVolume(0);
@@ -178,22 +191,6 @@ class HarnessController extends ChangeNotifier {
   }
 }
 
-/// Inherited scope exposing a [HarnessController] to descendants. Any
-/// widget that calls [HarnessScope.of] in its `build` rebuilds when the
-/// controller calls `notifyListeners()`.
-class HarnessScope extends InheritedNotifier<HarnessController> {
-  const HarnessScope({
-    super.key,
-    required HarnessController controller,
-    required super.child,
-  }) : super(notifier: controller);
-
-  static HarnessController of(BuildContext context) {
-    final scope = context.dependOnInheritedWidgetOfExactType<HarnessScope>();
-    assert(scope != null, 'HarnessScope.of() called without an ancestor');
-    return scope!.notifier!;
-  }
-}
 
 /// Serves scrcpy's parsed Annex-B H.264 stream over HTTP, raw, with no
 /// container. libmdk's ffmpeg build carries the `h264` demuxer, so the URL

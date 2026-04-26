@@ -1,12 +1,12 @@
+import 'package:autoglm_scrcpy_example/base_view.dart';
 import 'package:autoglm_scrcpy_example/harness_controller.dart';
 import 'package:flutter/material.dart';
 
-class ControlView extends StatelessWidget {
+class ControlView extends BaseView {
   const ControlView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final h = HarnessScope.of(context);
+  Widget buildView(BuildContext context, HarnessController controller) {
     return SizedBox(
       width: 380,
       child: Column(
@@ -18,7 +18,7 @@ class ControlView extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ElevatedButton.icon(
-                  onPressed: h.isRunning ? null : h.start,
+                  onPressed: controller.isRunning ? null : controller.start,
                   icon: const Icon(Icons.play_arrow),
                   label: const Text('Start'),
                   style: ElevatedButton.styleFrom(
@@ -28,7 +28,7 @@ class ControlView extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton.icon(
-                  onPressed: h.isRunning ? h.stop : null,
+                  onPressed: controller.isRunning ? controller.stop : null,
                   icon: const Icon(Icons.stop),
                   label: const Text('Stop'),
                   style: ElevatedButton.styleFrom(
@@ -45,9 +45,9 @@ class ControlView extends StatelessWidget {
               color: Colors.black,
               padding: const EdgeInsets.all(8),
               child: ListView.builder(
-                itemCount: h.logs.length,
+                itemCount: controller.logs.length,
                 itemBuilder: (context, i) => Text(
-                  h.logs[i],
+                  controller.logs[i],
                   style: const TextStyle(
                     color: Colors.greenAccent,
                     fontSize: 11,

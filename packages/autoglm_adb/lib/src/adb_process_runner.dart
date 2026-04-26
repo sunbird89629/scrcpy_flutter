@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:autoglm_adb/src/exceptions.dart';
+import 'package:autoglm_logger/autoglm_logger.dart';
 
 /// A wrapper around [Process.run] providing timeouts and
 /// standard error handling.
@@ -22,6 +23,9 @@ class AdbProcessRunner {
       if (result.exitCode != 0) {
         final err = result.stderr.toString().trim();
         final out = result.stdout.toString().trim();
+        appLogger.d(
+          'Command failed ($executable ${arguments.join(' ')}):\n$err\n$out',
+        );
         throw AdbException(
           'Command failed ($executable ${arguments.join(' ')}):\n$err\n$out',
         );

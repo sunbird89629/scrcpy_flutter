@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:autoglm_core/autoglm_core.dart';
 import 'package:autoglm_scrcpy_example/control_view.dart';
 import 'package:autoglm_scrcpy_example/harness_controller.dart';
+import 'package:autoglm_scrcpy_example/harness_scope.dart';
 import 'package:autoglm_scrcpy_example/screen_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_driver/driver_extension.dart';
@@ -68,8 +69,8 @@ Future<void> main() async {
 
 List<String> _preferredDecoders() {
   if (Platform.isMacOS || Platform.isIOS) {
-    // Force FFmpeg (Software) first for testing, as VT might be conflicted
-    return ['FFmpeg', 'VT'];
+    // Diagnostic: force FFmpeg to rule out VideoToolbox color-space mismatch.
+    return ['FFmpeg'];
   }
   if (Platform.isWindows) {
     return ['MFT:d3d=11', 'D3D11', 'DXVA', 'CUDA', 'FFmpeg'];
