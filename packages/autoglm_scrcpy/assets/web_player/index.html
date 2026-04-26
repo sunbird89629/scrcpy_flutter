@@ -1,117 +1,145 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AutoGLM Scrcpy Player (Debug)</title>
+    <title>AutoGLM Scrcpy Player (Advanced)</title>
     <style>
-        body { margin: 0; background: #111; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; color: #0f0; font-family: monospace; }
-        canvas { max-width: 100%; max-height: 100%; background: #000; border: 1px solid #333; }
-        #overlay { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 5px; pointer-events: none; border: 1px solid #555; }
-        .log { font-size: 10px; margin-bottom: 2px; }
-        .stat { font-weight: bold; color: #ff0; }
+        body { margin: 0; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; color: #fff; font-family: 'JetBrains Mono', monospace; }
+        canvas { max-width: 100%; max-height: 100%; background: #000; cursor: none; }
+        #overlay { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.8); padding: 12px; border-radius: 8px; pointer-events: none; border: 1px solid #444; min-width: 180px; }
+        .row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+        .val { font-weight: bold; color: #0f0; }
+        .warn { color: #f90; }
+        .crit { color: #f44; }
     </style>
 </head>
 <body>
     <div id="overlay">
-        <div class="log">Status: <span id="status" class="stat">Initializing...</span></div>
-        <div class="log">Packets: <span id="pkts" class="stat">0</span></div>
-        <div class="log">Resolution: <span id="res" class="stat">N/A</span></div>
-        <hr/>
-        <div id="logs"></div>
+        <div class="row">Status: <span id="status" class="val">Connecting...</span></div>
+        <div class="row">Latency: <span id="latency" class="val">--</span></div>
+        <div class="row">FPS: <span id="fps" class="val">0</span></div>
+        <div class="row">Buffered: <span id="buf" class="val">0</span></div>
+        <div class="row">Res: <span id="res" class="val">N/A</span></div>
     </div>
     <canvas id="canvas"></canvas>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const status = document.getElementById('status');
-        const pkts = document.getElementById('pkts');
-        const res = document.getElementById('res');
-        const logs = document.getElementById('logs');
-        
-        let decoder = null;
-        let packetCount = 0;
-        let renderCount = 0;
+        const ui = {
+            status: document.getElementById('status'),
+            latency: document.getElementById('latency'),
+            fps: document.getElementById('fps'),
+            buf: document.getElementById('buf'),
+            res: document.getElementById('res')
+        };
 
-        function addLog(msg) {
-            console.log(msg);
-            if (window.flutter_inappwebview) {
-                window.flutter_inappwebview.callHandler('logHandler', msg);
-            }
-            const div = document.createElement('div');
-            div.className = 'log';
-            div.textContent = `> ${msg}`;
-            logs.appendChild(div);
-            if (logs.childNodes.length > 8) logs.removeChild(logs.firstChild);
+        let decoder = null;
+        let frameCount = 0;
+        let lastFpsUpdate = 0;
+        let timeOffset = 0; // Dart clock vs JS clock offset
+
+        function updateUI(key, val, className = 'val') {
+            ui[key].textContent = val;
+            ui[key].className = className;
         }
 
         async function initDecoder() {
-            status.textContent = 'Configuring Decoder...';
+            if (decoder) decoder.close();
             decoder = new VideoDecoder({
                 output: (frame) => {
                     if (canvas.width !== frame.displayWidth) {
                         canvas.width = frame.displayWidth;
                         canvas.height = frame.displayHeight;
-                        res.textContent = `${canvas.width}x${canvas.height}`;
-                        addLog(`Render Start: ${res.textContent}`);
+                        updateUI('res', `${canvas.width}x${canvas.height}`);
                     }
                     ctx.drawImage(frame, 0, 0);
+                    
+                    // Latency Calculation
+                    const renderTime = performance.now();
+                    const hostTime = (frame.timestamp / 1000) - timeOffset;
+                    const latency = renderTime - hostTime;
+                    
+                    let latClass = 'val';
+                    if (latency > 150) latClass = 'crit';
+                    else if (latency > 80) latClass = 'warn';
+                    updateUI('latency', `${Math.round(latency)}ms`, latClass);
+
                     frame.close();
-                    renderCount++;
-                    status.textContent = `Streaming (${renderCount} rendered)`;
+                    frameCount++;
+                    
+                    if (renderTime - lastFpsUpdate > 1000) {
+                        updateUI('fps', frameCount);
+                        frameCount = 0;
+                        lastFpsUpdate = renderTime;
+                    }
                 },
                 error: (e) => {
-                    addLog('Decoder Error: ' + e.message);
-                    status.textContent = 'Decoder Error';
+                    updateUI('status', 'Error: ' + e.message, 'crit');
+                    setTimeout(location.reload, 2000);
                 }
             });
 
-            const config = {
+            decoder.configure({
                 codec: 'avc1.42E01E', 
-                optimizeForLatency: true
-            };
-            decoder.configure(config);
-            addLog('Decoder Ready (avc1.42E01E)');
+                optimizeForLatency: true,
+                hardwareAcceleration: 'prefer-hardware'
+            });
+            updateUI('status', 'Decoder Ready');
         }
 
         function connect() {
             const url = new URLSearchParams(window.location.search).get('ws');
-            addLog(`Connecting: ${url}`);
             const ws = new WebSocket(url);
             ws.binaryType = 'arraybuffer';
 
             ws.onopen = () => {
-                status.textContent = 'WS Connected';
+                updateUI('status', 'WS Connected');
                 initDecoder();
             };
 
             ws.onmessage = (event) => {
-                packetCount++;
-                pkts.textContent = packetCount;
-
                 if (!decoder || decoder.state !== 'configured') return;
 
-                const data = new Uint8Array(event.data);
+                const dv = new DataView(event.data);
+                const hostUs = Number(dv.getBigUint64(0)); // BigInt needed for 64bit
+                const naluData = new Uint8Array(event.data, 8);
+
+                // Sync clocks on the first few packets
+                const jsNow = performance.now();
+                const currentOffset = (hostUs / 1000) - jsNow;
+                if (timeOffset === 0) timeOffset = currentOffset;
+                else timeOffset = timeOffset * 0.9 + currentOffset * 0.1; // Smooth sync
+
+                // WebCodecs Queue Management (Catch-up)
+                if (decoder.decodeQueueSize > 5) {
+                    // If queue is building up, we are lagging.
+                    // The browser will drop frames internally if we're lucky, 
+                    // but we should avoid feeding more if it's too much.
+                    updateUI('buf', decoder.decodeQueueSize, 'warn');
+                } else {
+                    updateUI('buf', decoder.decodeQueueSize);
+                }
+
                 try {
                     const chunk = new EncodedVideoChunk({
-                        type: isKeyFrame(data) ? 'key' : 'delta',
-                        timestamp: performance.now() * 1000,
-                        data: data
+                        type: isKeyFrame(naluData) ? 'key' : 'delta',
+                        timestamp: (hostUs), // Microseconds
+                        data: naluData
                     });
                     decoder.decode(chunk);
                 } catch (e) {
-                    if (packetCount % 100 === 0) addLog('Decode Exception');
+                    // Silently catch decode feeding errors during init
                 }
             };
 
             ws.onclose = () => {
-                status.textContent = 'Disconnected';
+                updateUI('status', 'Disconnected', 'crit');
                 setTimeout(() => location.reload(), 2000);
             };
         }
 
         function isKeyFrame(data) {
-            // Very lenient check: if it looks like SPS or IDR
-            for (let i = 0; i < 32; i++) {
+            for (let i = 0; i < 20; i++) {
                 if (data[i] === 0 && data[i+1] === 0 && (data[i+2] === 1 || (data[i+2] === 0 && data[i+3] === 1))) {
                     const type = data[i + (data[i+2] === 1 ? 3 : 4)] & 0x1F;
                     if (type === 7 || type === 5) return true;

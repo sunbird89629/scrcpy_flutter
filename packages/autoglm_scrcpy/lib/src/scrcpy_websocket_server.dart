@@ -56,21 +56,26 @@ class ScrcpyWebsocketServer {
     _subscription = packets.listen((packet) {
       if (packet.type == ScrcpyPacketType.configuration) {
         _configPacket = packet;
-        // Don't send config packet alone, wait to prepend it to keyframes
         return;
       }
 
       var data = packet.data;
       if (packet.isKeyFrame && _configPacket != null) {
-        // Prepend SPS/PPS to every keyframe for easy decoding
         final merged = Uint8List(_configPacket!.data.length + data.length);
         merged.setAll(0, _configPacket!.data);
         merged.setAll(_configPacket!.data.length, data);
         data = merged;
       }
 
+      // Protocol Upgrade: [8 bytes Host Timestamp (us)] + [Raw Data]
+      final hostNow = DateTime.now().microsecondsSinceEpoch;
+      final payload = Uint8List(8 + data.length);
+      final bd = ByteData.view(payload.buffer);
+      bd.setUint64(0, hostNow);
+      payload.setAll(8, data);
+
       for (final client in _clients) {
-        client.sink.add(data);
+        client.sink.add(payload);
       }
     });
   }
@@ -78,7 +83,11 @@ class ScrcpyWebsocketServer {
   /// Stops the server.
   Future<void> stop() async {
     await _subscription?.cancel();
-    for (final client in _clients) {
+    _subscription = null;
+
+    // Create a copy to avoid concurrent modification during iteration
+    final clientsCopy = List<WebSocketChannel>.from(_clients);
+    for (final client in clientsCopy) {
       unawaited(client.sink.close());
     }
     _clients.clear();

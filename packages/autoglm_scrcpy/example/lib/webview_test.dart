@@ -8,7 +8,10 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'package:flutter_driver/driver_extension.dart';
+
 void main() async {
+  enableFlutterDriverExtension();
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize the logger
@@ -41,7 +44,11 @@ class _ScrcpyWebViewTestScreenState extends State<ScrcpyWebViewTestScreen> {
   void initState() {
     super.initState();
     // Auto-start after a short delay for debugging
-    Future.delayed(const Duration(seconds: 2), _startTest);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted && !_isRunning) {
+        _startTest();
+      }
+    });
   }
 
   void _addLog(String message) {
@@ -94,8 +101,9 @@ class _ScrcpyWebViewTestScreenState extends State<ScrcpyWebViewTestScreen> {
   }
 
   Future<void> _stopTest() async {
+    _addLog('--- Stop Button Clicked ---');
     await _server?.stop();
-    _addLog('Server stopped.');
+    _addLog('Server cleanup finished.');
     setState(() {
       _isRunning = false;
       _server = null;
@@ -137,6 +145,7 @@ class _ScrcpyWebViewTestScreenState extends State<ScrcpyWebViewTestScreen> {
                       ),
                       const SizedBox(width: 12),
                       ElevatedButton.icon(
+                        key: const Key('stop_button'),
                         onPressed: _isRunning ? _stopTest : null,
                         icon: const Icon(Icons.stop),
                         label: const Text('Stop'),
@@ -181,6 +190,11 @@ class _ScrcpyWebViewTestScreenState extends State<ScrcpyWebViewTestScreen> {
                   loadWithOverviewMode: true,
                   mediaPlaybackRequiresUserGesture: false,
                   allowsInlineMediaPlayback: true,
+                  verticalScrollBarEnabled: false,
+                  horizontalScrollBarEnabled: false,
+                  supportZoom: false,
+                  disableVerticalScroll: true,
+                  disableHorizontalScroll: true,
                 ),
                 onWebViewCreated: (controller) {
                   _webViewController = controller;

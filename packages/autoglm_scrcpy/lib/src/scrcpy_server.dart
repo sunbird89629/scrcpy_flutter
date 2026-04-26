@@ -39,6 +39,7 @@ class ScrcpyServer {
   final ScrcpyProxyServer _proxy;
   final ScrcpyWebsocketServer _wsProxy;
   final ScrcpyStreamParser _parser;
+  bool _isStarting = false;
 
   int? _scid;
   Process? _serverProcess;
@@ -67,32 +68,39 @@ class ScrcpyServer {
 
   /// Starts the scrcpy server.
   Future<void> start() async {
-    appLogger.i('[ScrcpyServer] Starting for device: $deviceId');
+    if (_isStarting) return;
+    _isStarting = true;
 
-    // 1. Prepare the server binary and web player on the host
-    final webPlayerPath = await _prepareWebPlayer();
-    await _pushServer();
+    try {
+      appLogger.i('[ScrcpyServer] Starting for device: $deviceId');
 
-    // 2. Pick a random scid so the abstract socket name is unique per run
-    //    (scrcpy server parses `scid=` as HEX and binds `scrcpy_%08x`).
-    _scid = Random.secure().nextInt(0x7FFFFFFF);
-    final scidHex = _scid!.toRadixString(16).padLeft(8, '0');
-    final socketName = 'scrcpy_$scidHex';
+      // 1. Prepare the server binary and web player on the host
+      final webPlayerPath = await _prepareWebPlayer();
+      await _pushServer();
 
-    // 3. Setup port forwarding with retry logic for port conflicts
-    await _setupForwardWithRetry(socketName);
+      // 2. Pick a random scid so the abstract socket name is unique per run
+      //    (scrcpy server parses `scid=` as HEX and binds `scrcpy_%08x`).
+      _scid = Random.secure().nextInt(0x7FFFFFFF);
+      final scidHex = _scid!.toRadixString(16).padLeft(8, '0');
+      final socketName = 'scrcpy_$scidHex';
 
-    // 4. Run the server process
-    await _runServer(scidHex);
+      // 3. Setup port forwarding with retry logic for port conflicts
+      await _setupForwardWithRetry(socketName);
 
-    // 5. Subscribe the proxy BEFORE any data flows so SPS/PPS isn't missed.
-    await _proxy.start(_parser.packets);
-    await _wsProxy.start(_parser.packets, staticPath: webPlayerPath);
-    appLogger.i('[ScrcpyServer] Proxy Media URL: ${_proxy.proxyUrl}');
-    appLogger.i('[ScrcpyServer] Web Player URL: $playerUrl');
+      // 4. Run the server process
+      await _runServer(scidHex);
 
-    // 6. Connect to the forwarded port (retries while server is warming up).
-    await _connect();
+      // 5. Subscribe the proxy BEFORE any data flows so SPS/PPS isn't missed.
+      await _proxy.start(_parser.packets);
+      await _wsProxy.start(_parser.packets, staticPath: webPlayerPath);
+      appLogger.i('[ScrcpyServer] Proxy Media URL: ${_proxy.proxyUrl}');
+      appLogger.i('[ScrcpyServer] Web Player URL: $playerUrl');
+
+      // 6. Connect to the forwarded port (retries while server is warming up).
+      await _connect();
+    } finally {
+      _isStarting = false;
+    }
   }
 
   Future<String> _prepareWebPlayer() async {
@@ -212,7 +220,7 @@ class ScrcpyServer {
       'cleanup=true',
       'max_size=1024',
       'max_fps=60',
-      'video_bit_rate=4000000',
+      'video_bit_rate=6000000',
       'list_encoders=false',
       'list_displays=false',
       'send_dummy_byte=true',
@@ -357,16 +365,28 @@ class ScrcpyServer {
   /// Stops the scrcpy server.
   Future<void> stop() async {
     appLogger.i('[ScrcpyServer] Stopping for device: $deviceId');
+    
+    // 1. Stop data ingestion first
+    await _socketSubscription?.cancel();
+    _socketSubscription = null;
+    await _socket?.close();
+    _socket = null;
+
+    // 2. Stop proxies
     await _proxy.stop();
     await _wsProxy.stop();
-    await _socketSubscription?.cancel();
-    await _socket?.close();
-    _serverProcess?.kill();
 
+    // 3. Kill process
+    _serverProcess?.kill();
+    _serverProcess = null;
+
+    // 4. Remove port forwarding
     final cleanupPort = _actualPort ?? port;
     try {
       await adbClient.forwardRemove('tcp:$cleanupPort', deviceId: deviceId);
     } catch (_) {}
+    
+    // 5. Close parser
     _parser.close();
   }
 }
