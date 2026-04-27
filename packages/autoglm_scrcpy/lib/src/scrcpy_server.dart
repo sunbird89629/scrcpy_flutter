@@ -14,7 +14,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 /// Manages a scrcpy server instance on a device.
-class ScrcpyServer {
+class ScrcpyServer with ClassLogger {
   /// Creates a new [ScrcpyServer].
   ScrcpyServer({
     required this.adbClient,
@@ -175,10 +175,7 @@ class ScrcpyServer {
         );
 
         // Always try to remove any stale forward on this port first
-        try {
-          await adbClient.forwardRemove('tcp:$currentPort', deviceId: deviceId);
-        } catch (_) {}
-
+        await adbClient.forwardRemove('tcp:$currentPort', deviceId: deviceId);
         await adbClient.forward(
           'tcp:$currentPort',
           'localabstract:$socketName',

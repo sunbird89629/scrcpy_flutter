@@ -9,7 +9,7 @@ import 'package:flutter_driver/driver_extension.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-void main() async {
+void launchWebView() async {
   enableFlutterDriverExtension();
   WidgetsFlutterBinding.ensureInitialized();
 

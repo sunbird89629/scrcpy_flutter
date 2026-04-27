@@ -1,4 +1,4 @@
-import 'package:autoglm_scrcpy_example/harness_controller.dart';
+import 'package:autoglm_scrcpy_example/fpv/harness_controller.dart';
 import 'package:flutter/material.dart';
 
 /// Inherited scope exposing a [HarnessController] to descendants. Any

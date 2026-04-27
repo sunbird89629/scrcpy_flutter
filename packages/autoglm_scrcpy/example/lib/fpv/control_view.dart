@@ -1,5 +1,5 @@
 import 'package:autoglm_scrcpy_example/base_view.dart';
-import 'package:autoglm_scrcpy_example/harness_controller.dart';
+import 'package:autoglm_scrcpy_example/fpv/harness_controller.dart';
 import 'package:flutter/material.dart';
 
 class ControlView extends BaseView {

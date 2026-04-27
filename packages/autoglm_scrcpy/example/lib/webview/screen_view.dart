@@ -1,5 +1,5 @@
 import 'package:autoglm_scrcpy/autoglm_scrcpy.dart';
-import 'package:autoglm_scrcpy_example/webview/touch_handler.dart';
+import 'package:autoglm_scrcpy_example/webview/handlers/touch_handler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';

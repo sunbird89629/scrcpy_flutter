@@ -1,6 +1,6 @@
 import 'package:autoglm_core/autoglm_core.dart';
 import 'package:autoglm_scrcpy/src/control_message.dart';
-import 'package:autoglm_scrcpy_example/webview/touch_handler.dart';
+import 'package:autoglm_scrcpy_example/webview/handlers/touch_handler.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
