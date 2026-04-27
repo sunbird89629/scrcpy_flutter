@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:logger/logger.dart' as pkg;
-import 'package:path/path.dart' as p;
+import 'package:logger/logger.dart';
+import 'package:path/path.dart';
 
 /// Application-wide logger. Initialize once via [initAppLogger]; subsequent
 /// access through the top-level [appLogger] singleton.
@@ -14,7 +14,7 @@ class AppLogger {
   /// Creates an [AppLogger] that optionally writes to [logsDir].
   /// If [logsDir] is null, it only writes to console.
   AppLogger(Directory? logsDir) : _logsDir = logsDir {
-    final outputs = <pkg.LogOutput>[pkg.ConsoleOutput()];
+    final outputs = <LogOutput>[ConsoleOutput()];
 
     if (_logsDir != null) {
       if (!_logsDir.existsSync()) {
@@ -22,24 +22,24 @@ class AppLogger {
       }
       final today = DateTime.now();
       final fileName = 'autoglm-${_dateStamp(today)}.log';
-      _file = File(p.join(_logsDir.path, fileName));
+      _file = File(join(_logsDir.path, fileName));
       outputs.add(_FileOutput(_file!));
       _pruneOldFiles();
     }
 
-    _logger = pkg.Logger(
-      level: kDebugMode ? pkg.Level.all : pkg.Level.info,
-      printer: pkg.SimplePrinter(
+    _logger = Logger(
+      level: kDebugMode ? Level.all : Level.info,
+      printer: SimplePrinter(
         colors: stdout.hasTerminal,
         printTime: true,
       ),
-      output: pkg.MultiOutput(outputs),
+      output: MultiOutput(outputs),
     );
   }
 
   final Directory? _logsDir;
   File? _file;
-  late final pkg.Logger _logger;
+  late final Logger _logger;
 
   static AppLogger? _instance;
 
@@ -95,7 +95,7 @@ class AppLogger {
       final files = _logsDir
           .listSync()
           .whereType<File>()
-          .where((f) => p.basename(f.path).startsWith('autoglm-'))
+          .where((f) => basename(f.path).startsWith('autoglm-'))
           .toList()
         ..sort(
           (a, b) => b.statSync().modified.compareTo(a.statSync().modified),
@@ -138,13 +138,13 @@ AppLogger get appLogger {
   return inst;
 }
 
-class _FileOutput extends pkg.LogOutput {
+class _FileOutput extends LogOutput {
   _FileOutput(this._file);
 
   final File _file;
 
   @override
-  void output(pkg.OutputEvent event) {
+  void output(OutputEvent event) {
     final content = event.lines.map((l) => '$l\n').join();
     try {
       _file.writeAsStringSync(content, mode: FileMode.append);

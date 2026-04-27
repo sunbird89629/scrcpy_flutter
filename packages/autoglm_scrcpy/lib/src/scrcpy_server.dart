@@ -43,7 +43,6 @@ class ScrcpyServer {
   final ScrcpyStreamParser _parser;
   bool _isStarting = false;
 
-  int? _scid;
   Process? _serverProcess;
   final StreamSink<List<int>>? _controlSink;
   Socket? _videoSocket;
@@ -83,7 +82,6 @@ class ScrcpyServer {
       await _pushServer();
 
       // 2. Use scid 0 and socket name scrcpy_00000000 for simplicity
-      _scid = 0;
       const socketName = 'scrcpy_00000000';
 
       // 3. Setup port forwarding with retry logic for port conflicts
@@ -206,13 +204,11 @@ class ScrcpyServer {
     const remotePath = '/data/local/tmp/scrcpy-server-v$version.jar';
 
     // Best-effort kill of any lingering scrcpy-server app_process instances
-    try {
-      await adbClient.shell(
-        ['pkill', '-f', 'scrcpy-server-v'], // Match any scrcpy-server version
-        deviceId: deviceId,
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-    } catch (_) {}
+    await adbClient.shell(
+      ['pkill', '-f', 'scrcpy-server-v'], // Match any scrcpy-server version
+      deviceId: deviceId,
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 300));
 
     final args = [
       if (deviceId.isNotEmpty) ...['-s', deviceId],
