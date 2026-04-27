@@ -60,12 +60,6 @@ class _ScrcpyWebViewTestScreenState extends State<ScrcpyWebViewTestScreen> {
     });
   }
 
-  void _handleTouch(ScrcpyInjectTouchMessage message) {
-    // TODO(debug): temporary logging — remove after touch pipeline verified
-    _addLog('[Touch→Send] action=${message.action} connected=${_server != null}');
-    _server?.sendControlMessage(message);
-  }
-
   void _injectKey(int keycode) {
     if (_server == null) return;
     _addLog('Injecting keycode: $keycode');
@@ -151,7 +145,7 @@ class _ScrcpyWebViewTestScreenState extends State<ScrcpyWebViewTestScreen> {
             child: ScreenView(
               playerUrl: _server?.playerUrl,
               onLog: _addLog,
-              onTouch: _handleTouch,
+              onTouch: (msg) => _server?.sendControlMessage(msg),
             ),
           ),
           SizedBox(

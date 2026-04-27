@@ -1,4 +1,5 @@
 import 'package:autoglm_scrcpy/autoglm_scrcpy.dart';
+import 'package:autoglm_scrcpy_example/webview/touch_handler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -21,6 +22,10 @@ class ScreenView extends StatefulWidget {
 class _ScreenViewState extends State<ScreenView> {
   InAppWebViewController? _controller;
 
+  late final TouchHandler _touchHandler = TouchHandler(
+    onTouch: widget.onTouch,
+  );
+
   @override
   void didUpdateWidget(covariant ScreenView oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -28,23 +33,6 @@ class _ScreenViewState extends State<ScreenView> {
     if (url != null && url != oldWidget.playerUrl) {
       _controller?.loadUrl(urlRequest: URLRequest(url: WebUri(url)));
     }
-  }
-
-  void _handleTouchArgs(List<dynamic> args) {
-    // TODO(debug): temporary logging — remove after touch pipeline verified
-    widget.onLog('[Touch] handler fired args.length=${args.length} raw=$args');
-    if (args.length < 7) return;
-    final msg = ScrcpyInjectTouchMessage(
-      action: (args[0] as num).toInt(),
-      pointerId: (args[1] as num).toInt(),
-      x: (args[2] as num).toInt(),
-      y: (args[3] as num).toInt(),
-      width: (args[4] as num).toInt(),
-      height: (args[5] as num).toInt(),
-      pressure: (args[6] as num).toDouble(),
-    );
-    widget.onLog('[Touch] action=${msg.action} ptr=${msg.pointerId} x=${msg.x} y=${msg.y} w=${msg.width} h=${msg.height} p=${msg.pressure.toStringAsFixed(2)}');
-    widget.onTouch(msg);
   }
 
   @override
@@ -74,8 +62,8 @@ class _ScreenViewState extends State<ScreenView> {
             },
           );
           controller.addJavaScriptHandler(
-            handlerName: 'touchHandler',
-            callback: _handleTouchArgs,
+            handlerName: _touchHandler.handlerName,
+            callback: _touchHandler.callback,
           );
 
           final url = widget.playerUrl;
