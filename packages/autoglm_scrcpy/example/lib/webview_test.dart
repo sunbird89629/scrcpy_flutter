@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:autoglm_adb/autoglm_adb.dart';
 import 'package:autoglm_core/autoglm_core.dart';
 import 'package:autoglm_scrcpy/autoglm_scrcpy.dart';
+import 'package:autoglm_scrcpy_example/webview/screen_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_driver/driver_extension.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -60,34 +60,10 @@ class _ScrcpyWebViewTestScreenState extends State<ScrcpyWebViewTestScreen> {
     });
   }
 
-  void _handlePointerEvent(PointerEvent event, Size widgetSize) {
-    if (_server == null) return;
-
-    int action;
-    if (event is PointerDownEvent) {
-      action = ScrcpyAction.down;
-    } else if (event is PointerMoveEvent) {
-      // PointerMove fires per frame during a drag; drop no-op moves so we
-      // don't allocate + send a redundant scrcpy packet for each one.
-      if (event.delta == Offset.zero) return;
-      action = ScrcpyAction.move;
-    } else if (event is PointerUpEvent) {
-      action = ScrcpyAction.up;
-    } else {
-      return;
-    }
-
-    _server!.sendControlMessage(
-      ScrcpyInjectTouchMessage(
-        action: action,
-        pointerId: event.pointer,
-        x: event.localPosition.dx.toInt(),
-        y: event.localPosition.dy.toInt(),
-        width: widgetSize.width.toInt(),
-        height: widgetSize.height.toInt(),
-        pressure: event.pressure,
-      ),
-    );
+  void _handleTouch(ScrcpyInjectTouchMessage message) {
+    // TODO(debug): temporary logging — remove after touch pipeline verified
+    _addLog('[Touch→Send] action=${message.action} connected=${_server != null}');
+    _server?.sendControlMessage(message);
   }
 
   void _injectKey(int keycode) {
@@ -172,10 +148,10 @@ class _ScrcpyWebViewTestScreenState extends State<ScrcpyWebViewTestScreen> {
       body: Row(
         children: [
           Expanded(
-            child: _ScreenView(
+            child: ScreenView(
               playerUrl: _server?.playerUrl,
               onLog: _addLog,
-              onPointerEvent: _handlePointerEvent,
+              onTouch: _handleTouch,
             ),
           ),
           SizedBox(
@@ -189,98 +165,6 @@ class _ScrcpyWebViewTestScreenState extends State<ScrcpyWebViewTestScreen> {
             ),
           )
         ],
-      ),
-    );
-  }
-}
-
-class _ScreenView extends StatefulWidget {
-  const _ScreenView({
-    required this.playerUrl,
-    required this.onLog,
-    required this.onPointerEvent,
-  });
-
-  final String? playerUrl;
-  final ValueChanged<String> onLog;
-  final void Function(PointerEvent event, Size widgetSize) onPointerEvent;
-
-  @override
-  State<_ScreenView> createState() => _ScreenViewState();
-}
-
-class _ScreenViewState extends State<_ScreenView> {
-  InAppWebViewController? _controller;
-
-  @override
-  void didUpdateWidget(covariant _ScreenView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final url = widget.playerUrl;
-    if (url != null && url != oldWidget.playerUrl) {
-      _controller?.loadUrl(urlRequest: URLRequest(url: WebUri(url)));
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final widgetSize = Size(constraints.maxWidth, constraints.maxHeight);
-          return Stack(
-            children: [
-              InAppWebView(
-                initialSettings: InAppWebViewSettings(
-                  transparentBackground: true,
-                  useWideViewPort: true,
-                  loadWithOverviewMode: true,
-                  mediaPlaybackRequiresUserGesture: false,
-                  allowsInlineMediaPlayback: true,
-                  verticalScrollBarEnabled: false,
-                  horizontalScrollBarEnabled: false,
-                  supportZoom: false,
-                  disableVerticalScroll: true,
-                  disableHorizontalScroll: true,
-                ),
-                onWebViewCreated: (controller) {
-                  _controller = controller;
-                  controller.addJavaScriptHandler(
-                    handlerName: 'logHandler',
-                    callback: (args) {
-                      widget.onLog('[WebView] ${args[0]}');
-                    },
-                  );
-
-                  final url = widget.playerUrl;
-                  if (url != null) {
-                    controller.loadUrl(
-                      urlRequest: URLRequest(url: WebUri(url)),
-                    );
-                  }
-                },
-                onConsoleMessage: (controller, consoleMessage) {
-                  widget.onLog('[Console] ${consoleMessage.message}');
-                },
-                onLoadStop: (controller, url) {
-                  widget.onLog('WebView Loaded: $url');
-                },
-                onReceivedError: (controller, request, error) {
-                  widget.onLog('WebView Error: ${error.description}');
-                },
-              ),
-              // Overlay to capture gestures
-              Positioned.fill(
-                child: Listener(
-                  behavior: HitTestBehavior.opaque,
-                  onPointerDown: (e) => widget.onPointerEvent(e, widgetSize),
-                  onPointerMove: (e) => widget.onPointerEvent(e, widgetSize),
-                  onPointerUp: (e) => widget.onPointerEvent(e, widgetSize),
-                ),
-              ),
-            ],
-          );
-        },
       ),
     );
   }
@@ -341,8 +225,8 @@ class _ControlView extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _controlBtn(
-                        Icons.arrow_back, () => onInjectKey(ScrcpyKeycode.back)),
+                    _controlBtn(Icons.arrow_back,
+                        () => onInjectKey(ScrcpyKeycode.back)),
                     _controlBtn(Icons.circle_outlined,
                         () => onInjectKey(ScrcpyKeycode.home)),
                     _controlBtn(

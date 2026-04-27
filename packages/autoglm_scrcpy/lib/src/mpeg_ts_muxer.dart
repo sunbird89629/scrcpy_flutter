@@ -60,7 +60,7 @@ class MpegTsMuxer {
       } else {
         chunkLen = maxPayload;
         if (needPcr) {
-          af = _afPcr(pts90k, randomAccess: true, extraStuff: 0);
+          af = _afPcr(pts90k, randomAccess: true);
         }
       }
 

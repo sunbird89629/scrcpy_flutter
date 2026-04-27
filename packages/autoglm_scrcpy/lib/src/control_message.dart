@@ -56,9 +56,9 @@ class ScrcpyInjectKeyMessage extends ScrcpyControlMessage {
     final buffer = ByteData(14);
     buffer.setUint8(0, type);
     buffer.setUint8(1, action);
-    buffer.setUint32(2, keycode, Endian.big);
-    buffer.setUint32(6, repeat, Endian.big);
-    buffer.setUint32(10, metastate, Endian.big);
+    buffer.setUint32(2, keycode);
+    buffer.setUint32(6, repeat);
+    buffer.setUint32(10, metastate);
     return buffer.buffer.asUint8List();
   }
 }
@@ -77,7 +77,7 @@ class ScrcpyInjectTextMessage extends ScrcpyControlMessage {
     final utf8Text = utf8.encode(text);
     final buffer = ByteData(5 + utf8Text.length);
     buffer.setUint8(0, type);
-    buffer.setUint32(1, utf8Text.length, Endian.big);
+    buffer.setUint32(1, utf8Text.length);
     final list = buffer.buffer.asUint8List();
     list.setAll(5, utf8Text);
     return list;
@@ -94,6 +94,7 @@ class ScrcpyInjectTouchMessage extends ScrcpyControlMessage {
     required this.width,
     required this.height,
     this.pressure = 1.0,
+    this.actionButton = 0,
     this.buttons = 0,
   });
 
@@ -104,6 +105,7 @@ class ScrcpyInjectTouchMessage extends ScrcpyControlMessage {
   final int width;
   final int height;
   final double pressure;
+  final int actionButton;
   final int buttons;
 
   @override
@@ -111,20 +113,23 @@ class ScrcpyInjectTouchMessage extends ScrcpyControlMessage {
 
   @override
   Uint8List toBinary() {
-    final buffer = ByteData(28);
+    // Layout per scrcpy v3 ControlMessageReader (payload = 31 bytes):
+    //   type(1) action(1) pointerId(8) x(4) y(4) w(2) h(2)
+    //   pressure(2) actionButton(4) buttons(4) = 32 bytes total.
+    final buffer = ByteData(32);
     buffer.setUint8(0, type);
     buffer.setUint8(1, action);
-    buffer.setUint64(2, pointerId, Endian.big);
-    buffer.setUint32(10, x, Endian.big);
-    buffer.setUint32(14, y, Endian.big);
-    buffer.setUint16(18, width, Endian.big);
-    buffer.setUint16(20, height, Endian.big);
-    
-    // Pressure is sent as a 16-bit unsigned integer (0 to 65535)
+    buffer.setUint64(2, pointerId);
+    buffer.setUint32(10, x);
+    buffer.setUint32(14, y);
+    buffer.setUint16(18, width);
+    buffer.setUint16(20, height);
+
     final pressureInt = (pressure * 65535).clamp(0, 65535).toInt();
-    buffer.setUint16(22, pressureInt, Endian.big);
-    
-    buffer.setUint32(24, buttons, Endian.big);
+    buffer.setUint16(22, pressureInt);
+
+    buffer.setUint32(24, actionButton);
+    buffer.setUint32(28, buttons);
     return buffer.buffer.asUint8List();
   }
 }
@@ -156,13 +161,13 @@ class ScrcpyInjectScrollMessage extends ScrcpyControlMessage {
   Uint8List toBinary() {
     final buffer = ByteData(25);
     buffer.setUint8(0, type);
-    buffer.setUint32(1, x, Endian.big);
-    buffer.setUint32(5, y, Endian.big);
-    buffer.setUint16(9, width, Endian.big);
-    buffer.setUint16(11, height, Endian.big);
-    buffer.setInt32(13, hScroll, Endian.big);
-    buffer.setInt32(17, vScroll, Endian.big);
-    buffer.setUint32(21, buttons, Endian.big);
+    buffer.setUint32(1, x);
+    buffer.setUint32(5, y);
+    buffer.setUint16(9, width);
+    buffer.setUint16(11, height);
+    buffer.setInt32(13, hScroll);
+    buffer.setInt32(17, vScroll);
+    buffer.setUint32(21, buttons);
     return buffer.buffer.asUint8List();
   }
 }

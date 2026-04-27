@@ -38,7 +38,7 @@ void main() {
 
       // 3. 等待代理就绪
       print(
-          '[INFO] Waiting for proxy to be ready (buffering SPS/PPS/Keyframe)...');
+          '[INFO] Waiting for proxy to be ready (buffering SPS/PPS/Keyframe)...',);
       await server.proxyReady.timeout(const Duration(seconds: 15));
 
       final url = server.proxyUrl;

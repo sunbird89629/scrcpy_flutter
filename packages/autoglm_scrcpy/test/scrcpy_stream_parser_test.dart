@@ -1,10 +1,13 @@
 import 'dart:typed_data';
 
+import 'package:autoglm_core/autoglm_core.dart';
 import 'package:autoglm_scrcpy/src/scrcpy_packet.dart';
 import 'package:autoglm_scrcpy/src/scrcpy_stream_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  setUpAll(initAppLogger);
+
   group('ScrcpyStreamParser', () {
     test('parses metadata and packets correctly', () async {
       final parser = ScrcpyStreamParser();
