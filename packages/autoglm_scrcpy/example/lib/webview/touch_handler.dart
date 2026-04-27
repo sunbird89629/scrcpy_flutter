@@ -1,9 +1,8 @@
 import 'package:autoglm_scrcpy/autoglm_scrcpy.dart';
-import 'package:autoglm_scrcpy_example/applog/class_logger.dart';
 import 'package:autoglm_scrcpy_example/webview/handlers/java_script_handler.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
-class TouchHandler extends JavaScriptHandler with ClassLogger {
+class TouchHandler extends JavaScriptHandler {
   final void Function(ScrcpyInjectTouchMessage) onTouch;
   TouchHandler({required this.onTouch});
 
@@ -14,7 +13,6 @@ class TouchHandler extends JavaScriptHandler with ClassLogger {
   JavaScriptHandlerCallback get callback => _handleTouchArgs;
 
   void _handleTouchArgs(List<dynamic> args) {
-    logD('[Touch] handler fired args.length=${args.length} raw=$args');
     if (args.length < 7) return;
     final msg = ScrcpyInjectTouchMessage(
       action: (args[0] as num).toInt(),

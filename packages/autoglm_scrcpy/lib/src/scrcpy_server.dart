@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:autoglm_adb/autoglm_adb.dart';
 import 'package:autoglm_core/autoglm_core.dart';
@@ -85,7 +84,7 @@ class ScrcpyServer {
 
       // 2. Use scid 0 and socket name scrcpy_00000000 for simplicity
       _scid = 0;
-      final socketName = 'scrcpy_00000000';
+      const socketName = 'scrcpy_00000000';
 
       // 3. Setup port forwarding with retry logic for port conflicts
       await _setupForwardWithRetry(socketName);
@@ -96,8 +95,6 @@ class ScrcpyServer {
       // 5. Subscribe the proxy BEFORE any data flows so SPS/PPS isn't missed.
       await _proxy.start(_parser.packets);
       await _wsProxy.start(_parser.packets, staticPath: webPlayerPath);
-      appLogger.i('[ScrcpyServer] Proxy Media URL: ${_proxy.proxyUrl}');
-      appLogger.i('[ScrcpyServer] Web Player URL: $playerUrl');
 
       // 6. Connect to the forwarded port (retries while server is warming up).
       await _connectAll();
@@ -308,7 +305,8 @@ class ScrcpyServer {
     _controlSocket = await _connectSocket('Control');
 
     _controlSocket!.listen(
-      (data) => appLogger.d('[ScrcpyServer] Control data: ${data.length} bytes'),
+      (data) =>
+          appLogger.d('[ScrcpyServer] Control data: ${data.length} bytes'),
       onDone: () => appLogger.w('[ScrcpyServer] Control socket closed'),
     );
 
@@ -322,7 +320,9 @@ class ScrcpyServer {
 
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        appLogger.d('[ScrcpyServer] [$name] Connecting to localhost:$connectPort (attempt $attempt)');
+        appLogger.d(
+          '[ScrcpyServer] [$name] Connecting to localhost:$connectPort (attempt $attempt)',
+        );
         return await Socket.connect('localhost', connectPort);
       } on Exception catch (e) {
         if (attempt >= maxAttempts) rethrow;
@@ -336,7 +336,7 @@ class ScrcpyServer {
   /// Stops the scrcpy server.
   Future<void> stop() async {
     appLogger.i('[ScrcpyServer] Stopping for device: $deviceId');
-    
+
     // 1. Stop data ingestion first
     await _videoSubscription?.cancel();
     _videoSubscription = null;
@@ -358,7 +358,7 @@ class ScrcpyServer {
     try {
       await adbClient.forwardRemove('tcp:$cleanupPort', deviceId: deviceId);
     } catch (_) {}
-    
+
     // 5. Close parser
     _parser.close();
   }

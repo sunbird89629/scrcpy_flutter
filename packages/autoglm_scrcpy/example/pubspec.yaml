@@ -14,6 +14,8 @@ dependencies:
     path: ../../autoglm_adb
   autoglm_core:
     path: ../../autoglm_core
+  autoglm_logger:
+    path: ../../autoglm_logger
   flutter:
     sdk: flutter
   fvp: ^0.35.2

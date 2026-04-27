@@ -1,9 +1,8 @@
-import 'package:autoglm_scrcpy_example/applog/class_logger.dart';
 import 'package:autoglm_scrcpy_example/base_view.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
-class ScreenView extends BaseView with ClassLogger {
+class ScreenView extends BaseView {
   const ScreenView({super.key});
 
   @override
