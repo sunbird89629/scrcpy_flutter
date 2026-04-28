@@ -1,5 +1,6 @@
-import 'package:autoglm_core/autoglm_core.dart';
 import 'package:flutter/foundation.dart';
+
+import '../app_logger.dart';
 
 /// Adds a tagged logger to a class. Override [logTag] to provide a stable
 /// name for release builds where `runtimeType` is obfuscated.

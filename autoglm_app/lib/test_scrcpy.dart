@@ -1,16 +1,15 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:autoglm_adb/autoglm_adb.dart';
 import 'package:autoglm_core/autoglm_core.dart';
 import 'package:autoglm_logger/autoglm_logger.dart';
-import 'package:scrcpy_adapters/scrcpy_adapters.dart';
-import 'package:scrcpy_view/scrcpy_view.dart';
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:scrcpy_adapters/scrcpy_adapters.dart';
+import 'package:scrcpy_view/scrcpy_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

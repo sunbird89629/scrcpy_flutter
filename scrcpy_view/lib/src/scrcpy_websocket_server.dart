@@ -41,6 +41,16 @@ class ScrcpyWebsocketServer {
           '[ScrcpyWebsocketServer] New WS client connected (protocol: $protocol)');
       _clients.add(webSocket);
 
+      // Send configuration packet immediately if available
+      if (_configPacket != null) {
+        final hostNow = DateTime.now().microsecondsSinceEpoch;
+        final payload = Uint8List(8 + _configPacket!.data.length);
+        final bd = ByteData.view(payload.buffer);
+        bd.setUint64(0, hostNow);
+        payload.setAll(8, _configPacket!.data);
+        webSocket.sink.add(payload);
+      }
+
       webSocket.stream.listen(
         (_) {},
         onDone: () => _clients.remove(webSocket),
@@ -63,7 +73,8 @@ class ScrcpyWebsocketServer {
     _subscription = packets.listen((packet) {
       if (packet.type == ScrcpyPacketType.configuration) {
         _configPacket = packet;
-        return;
+        // Don't return, we still want to broadcast config packets to all clients
+        // although they are typically handled in the join logic now.
       }
 
       var data = packet.data;
