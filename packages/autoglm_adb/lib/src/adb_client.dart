@@ -174,6 +174,6 @@ class AdbClient {
   }
 
   Future<List<String>> listDevices() async {
-    return [];
+    return devices();
   }
 }

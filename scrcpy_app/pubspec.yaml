@@ -24,6 +24,7 @@ dependencies:
   path: ^1.9.0
   scrcpy_view:
     path: ../scrcpy_view
+  flutter_inappwebview: ^6.1.5
 
 dev_dependencies:
   flutter_test:

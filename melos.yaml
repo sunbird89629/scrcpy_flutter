@@ -37,3 +37,4 @@ scripts:
   gen:i18n:
     description: Regenerate slang i18n strings
     run: cd autoglm_app && dart run slang
+sdkPath: .fvm/flutter_sdk

@@ -14,7 +14,12 @@ class DevicesNotifier extends AsyncNotifier<List<String>> {
   Future<List<String>> build() async {
     final client = AdbClient();
     final devices = await client.listDevices();
-    return devices.toList();
+    final list = devices.toList();
+    if (list.isNotEmpty && ref.read(selectedDeviceProvider) == null) {
+      Future.microtask(() =>
+          ref.read(selectedDeviceProvider.notifier).state = list.first);
+    }
+    return list;
   }
 
   Future<void> refresh() async {
@@ -22,7 +27,11 @@ class DevicesNotifier extends AsyncNotifier<List<String>> {
     state = await AsyncValue.guard(() async {
       final client = AdbClient();
       final devices = await client.listDevices();
-      return devices.toList();
+      final list = devices.toList();
+      if (list.isNotEmpty && ref.read(selectedDeviceProvider) == null) {
+        ref.read(selectedDeviceProvider.notifier).state = list.first;
+      }
+      return list;
     });
   }
 }
@@ -37,7 +46,11 @@ final mirrorStateProvider = AsyncNotifierProvider<MirrorNotifier, ScrcpyAdb?>(
 
 class MirrorNotifier extends AsyncNotifier<ScrcpyAdb?> {
   @override
-  Future<ScrcpyAdb?> build() async => null;
+  Future<ScrcpyAdb?> build() async {
+    final selectedId = ref.watch(selectedDeviceProvider);
+    if (selectedId == null) return null;
+    return AdbClientAdapter(AdbClient());
+  }
 }
 
 /// Shared [ScrcpyLogger] backed by `appLogger`.

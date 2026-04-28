@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:scrcpy_app/adapters/webview_backend.dart';
 import 'package:scrcpy_app/providers/scrcpy_provider.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
@@ -24,70 +25,80 @@ class _MirrorPageState extends ConsumerState<MirrorPage> {
     final selectedId = ref.watch(selectedDeviceProvider);
     final mirrorState = ref.watch(mirrorStateProvider);
 
-    return Column(
-      children: [
-        // Device selector bar
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: devices.when(
-                  data: (list) => DropdownButton<String>(
-                    value: selectedId,
-                    hint: const Text('Select device'),
-                    isExpanded: true,
-                    items: list
-                        .map((d) => DropdownMenuItem(
-                              value: d,
-                              child: Text(d),
-                            ))
-                        .toList(),
-                    onChanged: (id) {
-                      if (id != null) {
-                        ref.read(selectedDeviceProvider.notifier).state = id;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Scrcpy Mirror')),
+      body: Column(
+        children: [
+          // Device selector bar
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: devices.when(
+                    data: (list) {
+                      // Reset selectedId if it's not in the list anymore
+                      if (selectedId != null && !list.contains(selectedId)) {
+                        Future.microtask(() =>
+                            ref.read(selectedDeviceProvider.notifier).state = null);
                       }
+                      return DropdownButton<String>(
+                        value: selectedId,
+                        hint: const Text('Select device'),
+                        isExpanded: true,
+                        items: list
+                            .map((d) => DropdownMenuItem(
+                                  value: d,
+                                  child: Text(d),
+                                ))
+                            .toList(),
+                        onChanged: (id) {
+                          if (id != null) {
+                            ref.read(selectedDeviceProvider.notifier).state = id;
+                          }
+                        },
+                      );
                     },
+                    loading: () => const LinearProgressIndicator(),
+                    error: (e, _) => Text('Error: $e'),
                   ),
-                  loading: () => const CircularProgressIndicator(),
-                  error: (e, _) => Text('Error: $e'),
                 ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: () =>
-                    ref.read(devicesProvider.notifier).refresh(),
-              ),
-            ],
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () => ref.read(devicesProvider.notifier).refresh(),
+                ),
+              ],
+            ),
           ),
-        ),
 
-        // Mirror area
-        Expanded(
-          child: mirrorState.when(
-            data: (adb) {
-              if (adb == null || selectedId == null) {
-                return const Center(
-                  child: Text('Select a device to start mirroring'),
-                );
-              }
-              return ScrcpyView(
-                adb: adb,
-                deviceId: selectedId,
-                logger: ref.read(scrcpyLoggerProvider),
-                onError: (err) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Scrcpy error: $err')),
+          // Mirror area
+          Expanded(
+            child: mirrorState.when(
+              data: (adb) {
+                if (adb == null || selectedId == null) {
+                  return const Center(
+                    child: Text('Select a device to start mirroring'),
                   );
-                },
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+                }
+                return ScrcpyView(
+                  adb: adb,
+                  deviceId: selectedId,
+                  logger: ref.read(scrcpyLoggerProvider),
+                  videoBackend: const WebViewVideoBackend(),
+                  onError: (err) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Scrcpy error: $err')),
+                    );
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Error: $e')),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
