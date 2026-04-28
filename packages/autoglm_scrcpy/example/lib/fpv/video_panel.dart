@@ -1,12 +1,13 @@
-import 'package:autoglm_scrcpy_example/base_view.dart';
+import 'package:autoglm_scrcpy_example/fpv/fpv_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
-class ScreenView extends BaseView {
-  const ScreenView({super.key});
+class VideoPanel extends StatelessWidget {
+  const VideoPanel({super.key});
 
   @override
-  Widget buildView(context, controller) {
+  Widget build(BuildContext context) {
+    final controller = FpvScope.of(context);
     final videoController = controller.videoController;
     return Expanded(
       child: Container(

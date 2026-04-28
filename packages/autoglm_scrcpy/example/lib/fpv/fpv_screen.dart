@@ -3,24 +3,21 @@
 ///
 /// Run:
 ///   flutter run -d macos
-library;
 
 import 'dart:io';
 
 import 'package:autoglm_core/autoglm_core.dart';
-import 'package:autoglm_scrcpy_example/fpv/control_view.dart';
-import 'package:autoglm_scrcpy_example/fpv/harness_controller.dart';
-import 'package:autoglm_scrcpy_example/fpv/harness_scope.dart';
-import 'package:autoglm_scrcpy_example/fpv/screen_view.dart';
+import 'package:autoglm_scrcpy_example/fpv/control_panel.dart';
+import 'package:autoglm_scrcpy_example/fpv/fpv_controller.dart';
+import 'package:autoglm_scrcpy_example/fpv/fpv_scope.dart';
+import 'package:autoglm_scrcpy_example/fpv/video_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_driver/driver_extension.dart';
 import 'package:fvp/fvp.dart' as fvp;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-/// Flip to false for the conservative path.
 const kAggressive = true;
-
 const kBufferMin = 0;
 
 /// Buffer window in ms: 0 = aggressive, 50 = compromise, 200 = conservative.
@@ -28,12 +25,6 @@ const kBufferMax = 0;
 
 Future<void> launchFpv() async {
   enableFlutterDriverExtension();
-  // Root out library conflicts on macOS by ensuring we don't look in Homebrew.
-  if (Platform.isMacOS) {
-    // We can't easily change DYLD_LIBRARY_PATH from within the process (SIP),
-    // but we can hint to plugins or log the state.
-    // A more effective way for mdk is to set the path before fvp.registerWith.
-  }
   WidgetsFlutterBinding.ensureInitialized();
 
   final fvpOptions = <String, dynamic>{
@@ -41,7 +32,6 @@ Future<void> launchFpv() async {
     'lowLatency': 1,
   };
   if (kAggressive) {
-    // Disable ffmpeg demuxer probing and buffering
     fvpOptions['player.avformat.fflags'] = 'nobuffer';
     fvpOptions['player.avformat.flags'] = 'low_delay';
     fvpOptions['player.avformat.use_wallclock_as_timestamps'] = '1';
@@ -49,13 +39,10 @@ Future<void> launchFpv() async {
     fvpOptions['player.avformat.analyzeduration'] = '0';
     fvpOptions['player.avformat.fpsprobesize'] = '0';
     fvpOptions['player.avformat.max_delay'] = '0';
-    fvpOptions['player.avformat.fflags'] =
-        'discardcorrupt+nobuffer'; // Extra aggressive
+    fvpOptions['player.avformat.fflags'] = 'discardcorrupt+nobuffer';
     fvpOptions['video.decoder.threads'] = '1';
-    fvpOptions['video.decoder.async'] =
-        '0'; // Sync decoding can be lower latency for single streams
-    fvpOptions['video.decoder.buffer_range'] =
-        '0-0'; // Force zero buffer at decoder level
+    fvpOptions['video.decoder.async'] = '0';
+    fvpOptions['video.decoder.buffer_range'] = '0-0';
   }
   fvp.registerWith(options: fvpOptions);
 
@@ -65,14 +52,13 @@ Future<void> launchFpv() async {
   runApp(
     const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: FvpScrcpyTestScreen(),
+      home: FpvScreen(),
     ),
   );
 }
 
 List<String> _preferredDecoders() {
   if (Platform.isMacOS || Platform.isIOS) {
-    // Diagnostic: force FFmpeg to rule out VideoToolbox color-space mismatch.
     return ['FFmpeg'];
   }
   if (Platform.isWindows) {
@@ -84,17 +70,15 @@ List<String> _preferredDecoders() {
   return ['FFmpeg'];
 }
 
-/// Root widget for the fvp-based scrcpy preview harness.
-class FvpScrcpyTestScreen extends StatefulWidget {
-  /// Creates the harness.
-  const FvpScrcpyTestScreen({super.key});
+class FpvScreen extends StatefulWidget {
+  const FpvScreen({super.key});
 
   @override
-  State<FvpScrcpyTestScreen> createState() => _FvpScrcpyTestScreenState();
+  State<FpvScreen> createState() => _FpvScreenState();
 }
 
-class _FvpScrcpyTestScreenState extends State<FvpScrcpyTestScreen> {
-  late final HarnessController _controller = HarnessController(
+class _FpvScreenState extends State<FpvScreen> {
+  late final FpvController _controller = FpvController(
     aggressive: kAggressive,
     bufferMin: kBufferMin,
     bufferMax: kBufferMax,
@@ -112,7 +96,7 @@ class _FvpScrcpyTestScreenState extends State<FvpScrcpyTestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return HarnessScope(
+    return FpvScope(
       controller: _controller,
       child: Scaffold(
         backgroundColor: const Color(0xFF1E1E1E),
@@ -123,8 +107,8 @@ class _FvpScrcpyTestScreenState extends State<FvpScrcpyTestScreen> {
         ),
         body: const Row(
           children: [
-            ScreenView(),
-            ControlView(),
+            VideoPanel(),
+            ControlPanel(),
           ],
         ),
       ),

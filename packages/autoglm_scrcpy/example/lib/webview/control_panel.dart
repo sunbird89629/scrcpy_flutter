@@ -1,13 +1,13 @@
 import 'package:autoglm_scrcpy/autoglm_scrcpy.dart';
-import 'package:autoglm_scrcpy_example/webview/harness_scope.dart';
+import 'package:autoglm_scrcpy_example/webview/webview_scope.dart';
 import 'package:flutter/material.dart';
 
-class ControlView extends StatelessWidget {
-  const ControlView();
+class ControlPanel extends StatelessWidget {
+  const ControlPanel({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = WebViewHarnessScope.of(context);
+    final controller = WebViewScope.of(context);
     return SizedBox(
       width: 300,
       child: Column(
@@ -21,14 +21,16 @@ class ControlView extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton.icon(
-                      onPressed: controller.isRunning ? null : controller.start,
+                      onPressed:
+                          controller.isRunning ? null : controller.start,
                       icon: const Icon(Icons.play_arrow),
                       label: const Text('Start'),
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton.icon(
                       key: const Key('stop_button'),
-                      onPressed: controller.isRunning ? controller.stop : null,
+                      onPressed:
+                          controller.isRunning ? controller.stop : null,
                       icon: const Icon(Icons.stop),
                       label: const Text('Stop'),
                       style: ElevatedButton.styleFrom(

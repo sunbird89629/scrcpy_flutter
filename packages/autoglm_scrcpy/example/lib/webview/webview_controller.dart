@@ -5,7 +5,7 @@ import 'package:autoglm_scrcpy/autoglm_scrcpy.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/material.dart';
 
-class WebViewHarnessController extends ChangeNotifier {
+class WebViewController extends ChangeNotifier {
   final List<String> _logs = [];
   late final UnmodifiableListView<String> logs = UnmodifiableListView(_logs);
 
@@ -39,8 +39,6 @@ class WebViewHarnessController extends ChangeNotifier {
     });
   }
 
-  /// Bypasses batching for state changes that need immediate UI updates
-  /// (e.g. isRunning toggle).
   void _notifyNow() {
     _needsNotify = false;
     notifyListeners();

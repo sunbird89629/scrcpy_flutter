@@ -1,5 +1,5 @@
 import 'package:autoglm_scrcpy/autoglm_scrcpy.dart';
-import 'package:autoglm_scrcpy_example/webview/handlers/java_script_handler.dart';
+import 'package:autoglm_scrcpy_example/webview/handlers/js_handler.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 class TouchHandler extends JavaScriptHandler {

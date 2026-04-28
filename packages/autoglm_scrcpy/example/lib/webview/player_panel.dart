@@ -1,27 +1,27 @@
 import 'package:autoglm_scrcpy_example/webview/handlers/touch_handler.dart';
-import 'package:autoglm_scrcpy_example/webview/harness_scope.dart';
+import 'package:autoglm_scrcpy_example/webview/webview_scope.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
-class ScreenView extends StatefulWidget {
-  const ScreenView();
+class PlayerPanel extends StatefulWidget {
+  const PlayerPanel({super.key});
 
   @override
-  State<ScreenView> createState() => _ScreenViewState();
+  State<PlayerPanel> createState() => _PlayerPanelState();
 }
 
-class _ScreenViewState extends State<ScreenView> {
+class _PlayerPanelState extends State<PlayerPanel> {
   InAppWebViewController? _webViewController;
   String? _loadedUrl;
   late final TouchHandler _touchHandler = TouchHandler(
-    onTouch: (msg) => WebViewHarnessScope.of(context).sendTouch(msg),
+    onTouch: (msg) => WebViewScope.of(context).sendTouch(msg),
   );
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final url = WebViewHarnessScope.of(context).playerUrl;
+    final url = WebViewScope.of(context).playerUrl;
     if (url != null && url != _loadedUrl) {
       _loadedUrl = url;
       _webViewController?.loadUrl(
@@ -32,7 +32,7 @@ class _ScreenViewState extends State<ScreenView> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = WebViewHarnessScope.of(context);
+    final controller = WebViewScope.of(context);
     return Container(
       color: Colors.black,
       child: InAppWebView(

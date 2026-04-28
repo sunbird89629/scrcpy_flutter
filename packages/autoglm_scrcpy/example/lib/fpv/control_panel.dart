@@ -1,12 +1,12 @@
-import 'package:autoglm_scrcpy_example/base_view.dart';
-import 'package:autoglm_scrcpy_example/fpv/harness_controller.dart';
+import 'package:autoglm_scrcpy_example/fpv/fpv_scope.dart';
 import 'package:flutter/material.dart';
 
-class ControlView extends BaseView {
-  const ControlView({super.key});
+class ControlPanel extends StatelessWidget {
+  const ControlPanel({super.key});
 
   @override
-  Widget buildView(BuildContext context, HarnessController controller) {
+  Widget build(BuildContext context) {
+    final controller = FpvScope.of(context);
     return SizedBox(
       width: 380,
       child: Column(
