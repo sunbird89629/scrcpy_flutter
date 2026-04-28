@@ -1,0 +1,58 @@
+name: autoglm_app
+description: AutoGLM Flutter Desktop application with AI agent.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+
+resolution: workspace
+
+dependencies:
+  autoglm_adb:
+    path: ../packages/autoglm_adb
+  autoglm_core:
+    path: ../packages/autoglm_core
+  autoglm_logger:
+    path: ../packages/autoglm_logger
+  autoglm_ui_kit:
+    path: ../packages/autoglm_ui_kit
+  scrcpy_adapters:
+    path: ../packages/scrcpy_adapters
+  scrcpy_view:
+    path: ../scrcpy_view
+  dio: ^5.7.0
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.5.1
+  flutter_localizations:
+    sdk: flutter
+  go_router: ^14.2.0
+  logger: ^2.4.0
+  path: ^1.9.0
+  path_provider: ^2.1.4
+  riverpod_annotation: ^2.3.5
+  slang: ^4.4.0
+  slang_flutter: ^4.4.0
+  mcp_toolkit: ^0.4.0
+  media_kit: ^1.2.6
+  media_kit_video: ^2.0.1
+  media_kit_libs_macos_video: ^1.1.4
+  video_player: ^2.11.1
+  fvp: ^0.35.2
+  flutter_skill: ^0.9.36
+  google_generative_ai: ^0.4.7
+
+dev_dependencies:
+  build_runner: ^2.4.13
+  flutter_driver:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  riverpod_generator: ^2.4.0
+  slang_build_runner: ^4.4.0
+  very_good_analysis: ^7.0.0
+
+flutter:
+  uses-material-design: true

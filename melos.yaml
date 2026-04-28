@@ -1,12 +1,15 @@
-name: autoglm_flutter
+name: scrcpy_flutter
 
 packages:
-  - apps/*
+  - autoglm_app
+  - scrcpy_app
+  - scrcpy_mcp
+  - scrcpy_view
   - packages/*
 
 command:
   bootstrap:
-    runPubGetInParallel: false  # workspace mode prefers serial
+    runPubGetInParallel: false
 
 scripts:
   analyze:
@@ -32,5 +35,5 @@ scripts:
       dependsOn: build_runner
 
   gen:i18n:
-    description: Regenerate slang i18n strings (in apps/desktop)
-    run: cd apps/desktop && dart run slang
+    description: Regenerate slang i18n strings
+    run: cd autoglm_app && dart run slang

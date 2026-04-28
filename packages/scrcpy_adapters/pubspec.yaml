@@ -1,0 +1,21 @@
+name: scrcpy_adapters
+description: Adapter implementations for scrcpy_view interfaces (ScrcpyAdb, ScrcpyLogger).
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.5.0
+
+resolution: workspace
+
+dependencies:
+  autoglm_adb:
+    path: ../autoglm_adb
+  autoglm_logger:
+    path: ../autoglm_logger
+  scrcpy_view:
+    path: ../../scrcpy_view
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

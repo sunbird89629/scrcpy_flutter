@@ -1,17 +1,19 @@
-name: autoglm_flutter_workspace
+name: scrcpy_flutter_workspace
 publish_to: none
 
 environment:
   sdk: ^3.5.0
 
-# Dart 3.5+ pub workspaces - all packages share a resolved dep tree.
 workspace:
-  - apps/desktop
+  - autoglm_app
   - packages/autoglm_core
   - packages/autoglm_logger
   - packages/autoglm_ui_kit
   - packages/autoglm_adb
-  - packages/autoglm_scrcpy
+  - packages/scrcpy_adapters
+  - scrcpy_app
+  - scrcpy_mcp
+  - scrcpy_view
 
 dev_dependencies:
   melos: ^7.0.0
@@ -45,5 +47,5 @@ melos:
         dependsOn: build_runner
 
     gen:i18n:
-      description: Regenerate slang i18n strings (in apps/desktop)
-      run: cd apps/desktop && dart run slang
+      description: Regenerate slang i18n strings (in autoglm_app)
+      run: cd autoglm_app && dart run slang
