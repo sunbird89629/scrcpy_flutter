@@ -82,3 +82,14 @@ print('Stream: ${server.proxyUrl}');
 ## 📄 License
 
 This project is part of the AutoGLM ecosystem. See the root LICENSE for details.
+
+
+
+
+
+# Project Struction
+scrcpy_flutter
+|-- scrcpy_view 一个 library project, 可以嵌入到其他项目中, 未来会发布到 pub.dev
+|-- scrcpy_app 复刻 https://github.com/Genymobile/scrcpy 客户端项目
+|-- scrcpy_mcp scrcpy_app 对应的 mcp
+|-- autoglm_app 集成了 autoglm 包含 AI agent 的项目
