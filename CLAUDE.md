@@ -62,6 +62,8 @@ Lower layers must never import from upper layers.
 
 **scrcpy_mcp** — MCP server wrapping scrcpy operations
 
+**scrcpy_adapters** — Shared `AdbClientAdapter` + `AppLoggerAdapter` implementations. Used by any package that needs to bridge `autoglm_adb`/`autoglm_logger` into `scrcpy_view`'s abstract interfaces.
+
 **autoglm_core** — `Settings`/`SettingsRepository`, `HistoryDatabase` (SQLite via sqflite_common_ffi), `TraceManager` (daily-rolling JSONL). Re-exports `autoglm_logger`.
 
 **autoglm_adb** — `AdbClient` (shell, forward, reverse, push, pair, connect), `AdbProcessRunner`.
@@ -72,6 +74,9 @@ Lower layers must never import from upper layers.
 
 - Use `appLogger` from `package:autoglm_core` for all logging (never `print`)
 - Use `ScrcpyAdb` interface from `scrcpy_view` for testing without a real device
+- Asset paths in `rootBundle.load()` use `packages/<name>/assets/...` matching the pubspec `name:` field
+- Never add `test` package as a dev_dependency in workspace packages — it conflicts with `flutter_test` from SDK
+- scrcpy macOS apps need `com.apple.security.network.client`/`server` entitlements and sandbox disabled
 - Integration tests requiring a physical Android device go in relevant `*_real_device_test.dart`
 - Assets (scrcpy JAR, web player) are extracted to temp directories at runtime
 - Low-latency encoding: `video_codec_options=i-frame-interval=1,latency=1,profile=1`
