@@ -11,24 +11,10 @@ class WebViewScreen extends StatelessWidget {
     final controller = AppController();
     return Scaffold(
       backgroundColor: const Color(0xFF1E1E1E),
-      appBar: AppBar(
-        title: const Text('Scrcpy InAppWebView (AutoGLM)'),
-        backgroundColor: Colors.indigo[900],
-        foregroundColor: Colors.white,
-      ),
       body: Row(
         children: [
           Expanded(
-            child: ListenableBuilder(
-              listenable: controller,
-              builder: (context, child) {
-                return ScrcpyView(
-                  adb: controller.adbClient,
-                  deviceId: controller.deviceId,
-                  controller: controller.scrcpyController,
-                );
-              },
-            ),
+            child: ScrcpyView(controller: controller.scrcpyController),
           ),
           const ControlView(),
         ],

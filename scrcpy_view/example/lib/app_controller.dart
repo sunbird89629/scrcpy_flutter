@@ -7,7 +7,10 @@ import 'package:scrcpy_view_example/safe_adb_client.dart';
 import 'package:scrcpy_view_example/stream_stats.dart';
 
 class AppController extends ChangeNotifier {
-  AppController._();
+  AppController._() {
+    scrcpyController.addListener(_scheduleNotify);
+  }
+
   static final _instance = AppController._();
   factory AppController() => _instance;
 
@@ -15,14 +18,16 @@ class AppController extends ChangeNotifier {
   late final UnmodifiableListView<String> logs = UnmodifiableListView(_logs);
 
   final ScrcpyViewController scrcpyController = ScrcpyViewController();
-
-  bool _isRunning = false;
-  bool get isRunning => _isRunning;
   final adbClient = SafeAdbClient();
   final deviceId = "11081FDD4004DY";
 
   StreamStats _stats = StreamStats();
   StreamStats get stats => _stats;
+
+  bool get showViewer => scrcpyController.isActive;
+
+  bool _disposed = false;
+  bool _needsNotify = false;
 
   void updateStats(StreamStats s) {
     s.deviceWidth = _stats.deviceWidth;
@@ -30,11 +35,6 @@ class AppController extends ChangeNotifier {
     _stats = s;
     _scheduleNotify();
   }
-
-  ScrcpyServer? _server;
-
-  bool _disposed = false;
-  bool _needsNotify = false;
 
   void addLog(String message) {
     debugPrint('APP_LOG: $message');
@@ -58,79 +58,35 @@ class AppController extends ChangeNotifier {
     });
   }
 
-  void _notifyNow() {
-    _needsNotify = false;
-    notifyListeners();
+  void start() {
+    if (scrcpyController.isActive) return;
+    addLog('Starting scrcpy viewer...');
+    scrcpyController.start(
+      adbClient,
+      deviceId,
+      onStarted: () => addLog('Scrcpy started'),
+      onStopped: () => addLog('Scrcpy stopped'),
+      onError: (e) => addLog('Error: $e'),
+    );
   }
 
-  Future<void> start() async {
-    scrcpyController.start();
-    // if (_isRunning) return;
-    // _isRunning = true;
-    // _logs.clear();
-    // _notifyNow();
-
-    // addLog('Searching for devices (ID: $deviceId)...');
-
-    // final result = await adbClient.shell(['wm', 'size'], deviceId: deviceId);
-    // final out = result.stdout.toString().trim();
-    // addLog('wm size output: $out');
-    // final match = RegExp(r'(\d+)x(\d+)').firstMatch(out);
-    // if (match != null) {
-    //   _stats.deviceWidth = int.parse(match.group(1)!);
-    //   _stats.deviceHeight = int.parse(match.group(2)!);
-    //   addLog('Device resolution: ${_stats.deviceResolution}');
-    // }
-
-    // try {
-    //   final server = ScrcpyServer(
-    //     adb: adbClient,
-    //     deviceId: deviceId,
-    //   );
-
-    //   addLog('Starting scrcpy server...');
-    //   await server.start();
-
-    //   if (_disposed) {
-    //     await server.stop();
-    //     return;
-    //   }
-
-    //   _server = server;
-    //   addLog('Web Player URL: ${server.playerUrl}');
-    // } catch (e, s) {
-    //   addLog('CRITICAL ERROR starting server: $e');
-    //   debugPrintStack(stackTrace: s);
-    //   _isRunning = false;
-    // }
-    _notifyNow();
-  }
-
-  Future<void> stop() async {
-    if (_disposed) return;
-    addLog('--- Stop Button Clicked ---');
-    await _server?.stop();
-    addLog('Server cleanup finished.');
-    _isRunning = false;
-    _server = null;
-    _notifyNow();
+  void stop() {
+    if (!scrcpyController.isActive) return;
+    addLog('Stopping scrcpy viewer...');
+    scrcpyController.stop();
   }
 
   void injectKey(int keycode) {
-    if (_disposed || _server == null) return;
+    if (_disposed) return;
     addLog('Injecting keycode: $keycode');
-    _server!.sendControlMessage(
-      ScrcpyInjectKeyMessage(action: ScrcpyAction.down, keycode: keycode),
-    );
-    _server!.sendControlMessage(
-      ScrcpyInjectKeyMessage(action: ScrcpyAction.up, keycode: keycode),
-    );
+    scrcpyController.injectKey(keycode);
   }
 
   @override
   void dispose() {
+    scrcpyController.removeListener(_scheduleNotify);
+    scrcpyController.dispose();
     _disposed = true;
-    _server?.stop();
     super.dispose();
   }
 }

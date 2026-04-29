@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:scrcpy_view_example/stream_stats.dart';
-import 'package:scrcpy_view_example/app_controller.dart';
 
 class StatsPanel extends StatelessWidget {
   const StatsPanel({super.key, required this.stats});
@@ -12,17 +11,26 @@ class StatsPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Stream Stats',
-          style: TextStyle(color: Colors.white70, fontSize: 12),
+        _statRow(
+          'Status',
+          stats.status,
+          _statusColor(stats.status),
         ),
-        const SizedBox(height: 4),
-        _statRow('Status', stats.status, _statusColor(stats.status)),
         _statRow(
-            'Latency', '${stats.latencyMs}ms', _latencyColor(stats.latencyMs)),
-        _statRow('FPS', '${stats.fps}', null),
+          'Latency',
+          '${stats.latencyMs}ms',
+          _latencyColor(stats.latencyMs),
+        ),
         _statRow(
-            'Buffered', '${stats.buffered}', _bufferedColor(stats.buffered)),
+          'FPS',
+          '${stats.fps}',
+          null,
+        ),
+        _statRow(
+          'Buffered',
+          '${stats.buffered}',
+          _bufferedColor(stats.buffered),
+        ),
         const Divider(color: Colors.white24, height: 8),
         _statRow('Device', stats.deviceResolution, null),
         _statRow('Video Stream', stats.resolution, null),

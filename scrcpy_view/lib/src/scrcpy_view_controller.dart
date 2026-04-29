@@ -1,127 +1,104 @@
 import 'package:flutter/foundation.dart';
+import 'package:scrcpy_view/src/backends/scrcpy_video_backend.dart';
 import 'package:scrcpy_view/src/control_message.dart';
-import 'package:scrcpy_view/src/scrcpy_packet.dart';
+import 'package:scrcpy_view/src/scrcpy_adb.dart';
+import 'package:scrcpy_view/src/scrcpy_logger.dart';
 import 'package:scrcpy_view/src/scrcpy_server.dart';
-import 'package:scrcpy_view/src/scrcpy_stream_parser.dart';
 
-import 'scrcpy_server.dart';
-
-/// Controller for `ScrcpyView` that exposes lifecycle control and device input
-/// to external code.
+/// Controller for `ScrcpyView` that owns the device mirroring session
+/// and exposes input injection to external code.
 ///
-/// Pass an instance to `ScrcpyView.controller`. The widget attaches itself on
-/// mount and detaches on dispose. Use [addListener] / `ListenableBuilder` to
-/// react to state changes.
+/// Create an instance, call [start] to begin mirroring, and pass the
+/// controller to `ScrcpyView`. Call [stop] to end the session. Dispose
+/// when the controller is no longer needed.
 ///
 /// Example:
 /// ```dart
 /// final controller = ScrcpyViewController();
 ///
-/// ScrcpyView(
-///   adb: myAdb,
-///   deviceId: '11081FDD4004DY',
-///   controller: controller,
-/// )
+/// await controller.start(myAdb, '11081FDD4004DY');
+///
+/// ScrcpyView(controller: controller)
 ///
 /// // Later:
 /// controller.injectKey(ScrcpyKeycode.home);
 /// await controller.stop();
+/// controller.dispose();
 /// ```
 class ScrcpyViewController extends ChangeNotifier {
   ScrcpyServer? _server;
-  Future<void> Function()? _restartCallback;
+  bool _pending = false;
+  VoidCallback? _onStopped;
 
-  bool _isStarted = false;
-  bool _isStarting = false;
-  String? _error;
+  /// Touch event forwarder passed to the video backend.
+  late final ScrcpyTouchController touchController = ScrcpyTouchController(
+    (msg) => _server?.sendControlMessage(msg),
+  );
 
   // ── Readable state ────────────────────────────────────────────────────────
 
-  /// Whether mirroring is currently active.
-  bool get isStarted => _isStarted;
+  /// Whether a mirroring session is currently active.
+  bool get isConnected => _server != null;
 
-  /// Whether mirroring is in the process of starting.
-  bool get isStarting => _isStarting;
+  /// Whether a session is starting or active. Use to disable the Start button.
+  bool get isActive => _pending || _server != null;
 
-  /// Last error message, or null if no error has occurred.
-  String? get error => _error;
+  /// The active `ScrcpyServer`, or `null` if no session is active.
+  ScrcpyServer? get server => _server;
 
-  /// Device metadata (name, width, height) once the stream has started.
-  ScrcpyMetadata? get metadata => _server?.currentMetadata;
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-  /// URL of the web-based video player served by the active session.
-  String? get playerUrl => _server?.playerUrl;
-
-  /// Stream of raw scrcpy packets for advanced consumers.
-  Stream<ScrcpyPacket>? get packets => _server?.packets;
-
-  // ── Internal protocol (called by ScrcpyView) ─────────────────────────────
-  // These methods are annotated @internal and must not be called from outside
-  // the scrcpy_view package.
-
-  /// @nodoc
-  @internal
-  void attachServer(
-    ScrcpyServer server,
-    Future<void> Function() restartCallback,
-  ) {
-    _server = server;
-    _restartCallback = restartCallback;
+  /// Starts a mirroring session for [deviceId].
+  ///
+  /// No-ops if a session is already starting or active.
+  Future<void> start(
+    ScrcpyAdb adb,
+    String deviceId, {
+    ScrcpyLogger logger = const NoOpScrcpyLogger(),
+    VoidCallback? onStarted,
+    VoidCallback? onStopped,
+    ValueChanged<String>? onError,
+  }) async {
+    if (_pending || _server != null) return;
+    _pending = true;
+    _onStopped = onStopped;
     notifyListeners();
+
+    final server = ScrcpyServer(adb: adb, deviceId: deviceId, logger: logger);
+    try {
+      await server.start();
+      _server = server;
+      _pending = false;
+      notifyListeners();
+      onStarted?.call();
+    } catch (e) {
+      logger.error('[ScrcpyViewController] Failed to start: $e', e);
+      _pending = false;
+      _onStopped = null;
+      notifyListeners();
+      onError?.call(e.toString());
+    }
   }
 
-  /// @nodoc
-  @internal
-  void markStarting() {
-    _isStarting = true;
-    _error = null;
-    notifyListeners();
-  }
-
-  /// @nodoc
-  @internal
-  void markStarted() {
-    _isStarted = true;
-    _isStarting = false;
-    notifyListeners();
-  }
-
-  /// @nodoc
-  @internal
-  void markStopped() {
-    _isStarted = false;
-    _isStarting = false;
-    notifyListeners();
-  }
-
-  /// @nodoc
-  @internal
-  void markError(String message) {
-    _error = message;
-    _isStarting = false;
-    notifyListeners();
-  }
-
-  /// @nodoc
-  @internal
-  void detachServer() {
+  /// Stops the active mirroring session.
+  Future<void> stop() async {
+    final server = _server;
+    final onStopped = _onStopped;
     _server = null;
-    _restartCallback = null;
-    _isStarted = false;
-    _isStarting = false;
-    _error = null;
+    _pending = false;
+    _onStopped = null;
     notifyListeners();
+    await server?.stop();
+    onStopped?.call();
+  }
+
+  @override
+  void dispose() {
+    stop();
+    super.dispose();
   }
 
   // ── Public control API ────────────────────────────────────────────────────
-
-  /// Starts (or restarts) the mirroring session.
-  ///
-  /// No-op if the controller is not attached to a mounted `ScrcpyView`.
-  Future<void> start() => _restartCallback?.call() ?? Future.value();
-
-  /// Stops the active mirroring session.
-  Future<void> stop() async => _server?.stop();
 
   /// Sends a raw control message to the device.
   void sendControlMessage(ScrcpyControlMessage message) {
