@@ -225,14 +225,12 @@ class _ScrcpyTestScreenState extends State<ScrcpyTestScreen> {
             child: Container(
               decoration: const BoxDecoration(
                 color: Colors.black,
-                border:
-                    Border(left: BorderSide(color: Colors.white10, width: 2)),
+                border: Border(
+                  left: BorderSide(color: Colors.white10, width: 2),
+                ),
               ),
               child: Center(
-                child: Video(
-                  controller: _controller,
-                  fill: Colors.transparent,
-                ),
+                child: Video(controller: _controller, fill: Colors.transparent),
               ),
             ),
           ),

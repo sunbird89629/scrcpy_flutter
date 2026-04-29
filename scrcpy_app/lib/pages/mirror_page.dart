@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:scrcpy_app/adapters/webview_backend.dart';
 import 'package:scrcpy_app/providers/scrcpy_provider.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
@@ -39,22 +38,25 @@ class _MirrorPageState extends ConsumerState<MirrorPage> {
                     data: (list) {
                       // Reset selectedId if it's not in the list anymore
                       if (selectedId != null && !list.contains(selectedId)) {
-                        Future.microtask(() =>
-                            ref.read(selectedDeviceProvider.notifier).state = null);
+                        Future.microtask(
+                          () => ref
+                              .read(selectedDeviceProvider.notifier)
+                              .state = null,
+                        );
                       }
                       return DropdownButton<String>(
                         value: selectedId,
                         hint: const Text('Select device'),
                         isExpanded: true,
                         items: list
-                            .map((d) => DropdownMenuItem(
-                                  value: d,
-                                  child: Text(d),
-                                ))
+                            .map(
+                              (d) => DropdownMenuItem(value: d, child: Text(d)),
+                            )
                             .toList(),
                         onChanged: (id) {
                           if (id != null) {
-                            ref.read(selectedDeviceProvider.notifier).state = id;
+                            ref.read(selectedDeviceProvider.notifier).state =
+                                id;
                           }
                         },
                       );
@@ -85,7 +87,6 @@ class _MirrorPageState extends ConsumerState<MirrorPage> {
                   adb: adb,
                   deviceId: selectedId,
                   logger: ref.read(scrcpyLoggerProvider),
-                  videoBackend: const WebViewVideoBackend(),
                   onError: (err) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Scrcpy error: $err')),

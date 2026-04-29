@@ -46,17 +46,17 @@ class SpanRecord {
 
   /// Converts the record to a JSON map.
   Map<String, dynamic> toJson() => {
-        'trace_id': traceId,
-        'span_id': spanId,
-        if (parentSpanId != null) 'parent_span_id': parentSpanId,
-        'name': name,
-        'status': status,
-        'start_time': startTime.toIso8601String(),
-        'end_time': endTime.toIso8601String(),
-        'duration_ms': durationMs,
-        'attrs': attrs,
-        if (error != null) 'error': error,
-      };
+    'trace_id': traceId,
+    'span_id': spanId,
+    if (parentSpanId != null) 'parent_span_id': parentSpanId,
+    'name': name,
+    'status': status,
+    'start_time': startTime.toIso8601String(),
+    'end_time': endTime.toIso8601String(),
+    'duration_ms': durationMs,
+    'attrs': attrs,
+    if (error != null) 'error': error,
+  };
 }
 
 /// Represents a timing summary for a single trace.
@@ -115,17 +115,17 @@ class TraceTimingSummary {
 
   /// Converts the summary to a JSON map.
   Map<String, dynamic> toJson() => {
-        'trace_id': traceId,
-        'steps': steps,
-        'total_duration_ms': totalDurationMs,
-        'screenshot_duration_ms': screenshotDurationMs,
-        'current_app_duration_ms': currentAppDurationMs,
-        'llm_duration_ms': llmDurationMs,
-        'parse_action_duration_ms': parseActionDurationMs,
-        'execute_action_duration_ms': executeActionDurationMs,
-        'update_context_duration_ms': updateContextDurationMs,
-        'adb_duration_ms': adbDurationMs,
-        'sleep_duration_ms': sleepDurationMs,
-        'other_duration_ms': otherDurationMs,
-      };
+    'trace_id': traceId,
+    'steps': steps,
+    'total_duration_ms': totalDurationMs,
+    'screenshot_duration_ms': screenshotDurationMs,
+    'current_app_duration_ms': currentAppDurationMs,
+    'llm_duration_ms': llmDurationMs,
+    'parse_action_duration_ms': parseActionDurationMs,
+    'execute_action_duration_ms': executeActionDurationMs,
+    'update_context_duration_ms': updateContextDurationMs,
+    'adb_duration_ms': adbDurationMs,
+    'sleep_duration_ms': sleepDurationMs,
+    'other_duration_ms': otherDurationMs,
+  };
 }

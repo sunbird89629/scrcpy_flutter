@@ -55,17 +55,13 @@ void main() async {
 
       runApp(
         ProviderScope(
-          observers: [
-            _LoggerObserver(),
-          ],
+          observers: [_LoggerObserver()],
           overrides: [
             settingsRepositoryProvider.overrideWithValue(
               JsonFileSettingsRepository(filePath: settingsPath),
             ),
           ],
-          child: TranslationProvider(
-            child: const AutoGLMApp(),
-          ),
+          child: TranslationProvider(child: const AutoGLMApp()),
         ),
       );
     },
@@ -119,8 +115,9 @@ class _LoggerObserver extends ProviderObserver {
     ProviderContainer container,
   ) {
     if (kDebugMode) {
-      appLogger
-          .d('Provider ${provider.name ?? provider.runtimeType} added: $value');
+      appLogger.d(
+        'Provider ${provider.name ?? provider.runtimeType} added: $value',
+      );
     }
   }
 }

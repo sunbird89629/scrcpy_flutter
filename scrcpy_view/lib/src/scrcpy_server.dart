@@ -21,11 +21,11 @@ class ScrcpyServer {
     this.port = 27183,
     ScrcpyLogger logger = const NoOpScrcpyLogger(),
     StreamSink<List<int>>? controlSink,
-  })  : _log = logger,
-        _controlSink = controlSink,
-        _proxy = ScrcpyProxyServer(logger: logger),
-        _wsProxy = ScrcpyWebsocketServer(logger: logger),
-        _parser = ScrcpyStreamParser(logger: logger);
+  }) : _log = logger,
+       _controlSink = controlSink,
+       _proxy = ScrcpyProxyServer(logger: logger),
+       _wsProxy = ScrcpyWebsocketServer(logger: logger),
+       _parser = ScrcpyStreamParser(logger: logger);
 
   /// The ADB client to use.
   final ScrcpyAdb adb;
@@ -145,8 +145,9 @@ class ScrcpyServer {
       } catch (_) {
         tempDir = Directory.systemTemp;
       }
-      final localTempFile =
-          File(p.join(tempDir.path, 'scrcpy-server-v$version.jar'));
+      final localTempFile = File(
+        p.join(tempDir.path, 'scrcpy-server-v$version.jar'),
+      );
       await localTempFile.writeAsBytes(bytes, flush: true);
 
       _log.debug('[ScrcpyServer] Pushing server to device: $remotePath');
@@ -198,10 +199,7 @@ class ScrcpyServer {
     const version = '3.3.4';
     const remotePath = '/data/local/tmp/scrcpy-server-v$version.jar';
 
-    await adb.shell(
-      ['pkill', '-f', 'scrcpy-server-v'],
-      deviceId: deviceId,
-    );
+    await adb.shell(['pkill', '-f', 'scrcpy-server-v'], deviceId: deviceId);
     await Future<void>.delayed(const Duration(milliseconds: 300));
 
     final args = [
@@ -231,26 +229,26 @@ class ScrcpyServer {
     _log.debug('[ScrcpyServer] Executing: adb ${args.join(' ')}');
     _serverProcess = await Process.start(adb.adbPath, args);
 
-    _stdoutSubscription = _serverProcess!.stdout
-        .transform(utf8.decoder)
-        .listen((line) {
-      final trimmed = line.trim();
-      if (trimmed.isNotEmpty) {
-        _log.debug('[ScrcpyServer:stdout] $trimmed');
-      }
-    });
+    _stdoutSubscription = _serverProcess!.stdout.transform(utf8.decoder).listen(
+      (line) {
+        final trimmed = line.trim();
+        if (trimmed.isNotEmpty) {
+          _log.debug('[ScrcpyServer:stdout] $trimmed');
+        }
+      },
+    );
 
-    _stderrSubscription = _serverProcess!.stderr
-        .transform(utf8.decoder)
-        .listen((line) {
-      final trimmed = line.trim();
-      if (trimmed.isEmpty) return;
-      if (trimmed.contains('ERROR') || trimmed.contains('Exception')) {
-        _log.error('[ScrcpyServer:stderr] $trimmed');
-      } else {
-        _log.warn('[ScrcpyServer:stderr] $trimmed');
-      }
-    });
+    _stderrSubscription = _serverProcess!.stderr.transform(utf8.decoder).listen(
+      (line) {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty) return;
+        if (trimmed.contains('ERROR') || trimmed.contains('Exception')) {
+          _log.error('[ScrcpyServer:stderr] $trimmed');
+        } else {
+          _log.warn('[ScrcpyServer:stderr] $trimmed');
+        }
+      },
+    );
 
     unawaited(
       _serverProcess!.exitCode.then((code) async {
@@ -267,19 +265,16 @@ class ScrcpyServer {
     _videoSocket = await _connectSocket('Video');
 
     var isFirstByteHandled = false;
-    _videoSubscription = _videoSocket!.listen(
-      (data) {
-        if (!isFirstByteHandled) {
-          isFirstByteHandled = true;
-          if (data.isNotEmpty && data[0] == 0) {
-            if (data.length > 1) _parser.feed(Uint8List.sublistView(data, 1));
-            return;
-          }
+    _videoSubscription = _videoSocket!.listen((data) {
+      if (!isFirstByteHandled) {
+        isFirstByteHandled = true;
+        if (data.isNotEmpty && data[0] == 0) {
+          if (data.length > 1) _parser.feed(Uint8List.sublistView(data, 1));
+          return;
         }
-        _parser.feed(data);
-      },
-      onDone: () => _log.warn('[ScrcpyServer] Video socket closed'),
-    );
+      }
+      _parser.feed(data);
+    }, onDone: () => _log.warn('[ScrcpyServer] Video socket closed'));
 
     await Future<void>.delayed(const Duration(milliseconds: 300));
     _controlSocket = await _connectSocket('Control');

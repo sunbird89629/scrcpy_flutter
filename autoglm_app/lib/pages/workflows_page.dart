@@ -15,10 +15,7 @@ class WorkflowsPage extends ConsumerWidget {
       appBar: AppBar(
         title: Text(t.nav.workflows),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {},
-          ),
+          IconButton(icon: const Icon(Icons.add), onPressed: () {}),
           const SizedBox(width: AppSpacing.sm),
         ],
       ),
@@ -34,10 +31,7 @@ class WorkflowsPage extends ConsumerWidget {
                 color: theme.colorScheme.primary.withOpacity(0.5),
               ),
               const SizedBox(height: AppSpacing.lg),
-              Text(
-                'No Workflows Yet',
-                style: theme.textTheme.headlineSmall,
-              ),
+              Text('No Workflows Yet', style: theme.textTheme.headlineSmall),
               const SizedBox(height: AppSpacing.sm),
               const Text(
                 'Create your first automation workflow to get started.',

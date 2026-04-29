@@ -22,9 +22,7 @@ class SettingsPage extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(t.nav.settings),
-      ),
+      appBar: AppBar(title: Text(t.nav.settings)),
       body: settingsAsync.when(
         data: (settings) => ListView(
           padding: AppSpacing.edgeInsetsMd,
@@ -37,7 +35,10 @@ class SettingsPage extends ConsumerWidget {
               child: Column(
                 children: [
                   _buildThemeSection(context, ref, settings),
-                  const Divider(indent: AppSpacing.md, endIndent: AppSpacing.md),
+                  const Divider(
+                    indent: AppSpacing.md,
+                    endIndent: AppSpacing.md,
+                  ),
                   _buildLocaleSection(context, ref, settings),
                 ],
               ),
@@ -92,9 +93,9 @@ class SettingsPage extends ConsumerWidget {
         value: settings.themeMode,
         onChanged: (value) {
           if (value != null) {
-            ref.read(settingsProvider.notifier).updateSettings(
-                  settings.copyWith(themeMode: value),
-                );
+            ref
+                .read(settingsProvider.notifier)
+                .updateSettings(settings.copyWith(themeMode: value));
           }
         },
         items: [
@@ -102,14 +103,8 @@ class SettingsPage extends ConsumerWidget {
             value: 'system',
             child: Text(t.settings.theme.system),
           ),
-          DropdownMenuItem(
-            value: 'light',
-            child: Text(t.settings.theme.light),
-          ),
-          DropdownMenuItem(
-            value: 'dark',
-            child: Text(t.settings.theme.dark),
-          ),
+          DropdownMenuItem(value: 'light', child: Text(t.settings.theme.light)),
+          DropdownMenuItem(value: 'dark', child: Text(t.settings.theme.dark)),
         ],
       ),
     );
@@ -129,9 +124,9 @@ class SettingsPage extends ConsumerWidget {
         value: settings.locale,
         onChanged: (value) {
           if (value != null) {
-            ref.read(settingsProvider.notifier).updateSettings(
-                  settings.copyWith(locale: value),
-                );
+            ref
+                .read(settingsProvider.notifier)
+                .updateSettings(settings.copyWith(locale: value));
           }
         },
         items: [
@@ -139,14 +134,8 @@ class SettingsPage extends ConsumerWidget {
             value: 'system',
             child: Text(t.settings.locale.system),
           ),
-          const DropdownMenuItem(
-            value: 'zh-CN',
-            child: Text('简体中文'),
-          ),
-          const DropdownMenuItem(
-            value: 'en-US',
-            child: Text('English'),
-          ),
+          const DropdownMenuItem(value: 'zh-CN', child: Text('简体中文')),
+          const DropdownMenuItem(value: 'en-US', child: Text('English')),
         ],
       ),
     );
@@ -166,9 +155,9 @@ class SettingsPage extends ConsumerWidget {
       obscureText: true,
       controller: TextEditingController(text: settings.llmApiKey),
       onSubmitted: (value) {
-        ref.read(settingsProvider.notifier).updateSettings(
-              settings.copyWith(llmApiKey: value),
-            );
+        ref
+            .read(settingsProvider.notifier)
+            .updateSettings(settings.copyWith(llmApiKey: value));
       },
     );
   }

@@ -29,10 +29,7 @@ class AppLogger {
 
     _logger = Logger(
       level: kDebugMode ? Level.all : Level.info,
-      printer: SimplePrinter(
-        colors: stdout.hasTerminal,
-        printTime: true,
-      ),
+      printer: SimplePrinter(colors: stdout.hasTerminal, printTime: true),
       output: MultiOutput(outputs),
     );
   }
@@ -92,14 +89,15 @@ class AppLogger {
   void _pruneOldFiles() {
     if (_logsDir == null) return;
     try {
-      final files = _logsDir
-          .listSync()
-          .whereType<File>()
-          .where((f) => basename(f.path).startsWith('autoglm-'))
-          .toList()
-        ..sort(
-          (a, b) => b.statSync().modified.compareTo(a.statSync().modified),
-        );
+      final files =
+          _logsDir
+              .listSync()
+              .whereType<File>()
+              .where((f) => basename(f.path).startsWith('autoglm-'))
+              .toList()
+            ..sort(
+              (a, b) => b.statSync().modified.compareTo(a.statSync().modified),
+            );
       for (final f in files.skip(5)) {
         try {
           f.deleteSync();
@@ -131,9 +129,7 @@ void initAppLogger({String? logsDir}) {
 AppLogger get appLogger {
   final inst = AppLogger._instance;
   if (inst == null) {
-    throw StateError(
-      'appLogger accessed before initAppLogger() was called',
-    );
+    throw StateError('appLogger accessed before initAppLogger() was called');
   }
   return inst;
 }

@@ -9,10 +9,7 @@ import 'package:path/path.dart' as p;
 /// Manages the ADB binary lifecycle, including auto-downloading.
 class AdbBinaryManager {
   /// Creates a new [AdbBinaryManager].
-  AdbBinaryManager({
-    required this.binDir,
-    Dio? dio,
-  }) : _dio = dio ?? Dio();
+  AdbBinaryManager({required this.binDir, Dio? dio}) : _dio = dio ?? Dio();
 
   /// The directory where the adb binary is (or will be) stored.
   final String binDir;
@@ -50,10 +47,9 @@ class AdbBinaryManager {
 
   String? _which(String command) {
     try {
-      final res = Process.runSync(
-        Platform.isWindows ? 'where' : 'which',
-        [command],
-      );
+      final res = Process.runSync(Platform.isWindows ? 'where' : 'which', [
+        command,
+      ]);
       if (res.exitCode == 0) {
         return res.stdout.toString().trim().split('\n').first;
       }

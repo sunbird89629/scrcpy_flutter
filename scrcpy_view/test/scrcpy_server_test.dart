@@ -46,11 +46,7 @@ class MockScrcpyAdb implements ScrcpyAdb {
   }
 
   @override
-  Future<void> push(
-    String local,
-    String remote, {
-    String? deviceId,
-  }) async {
+  Future<void> push(String local, String remote, {String? deviceId}) async {
     if (shouldPushFail) throw Exception('Push failed');
     pushCalls.add((local, remote));
   }
@@ -66,15 +62,16 @@ void main() {
 
   const pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-      .setMockMethodCallHandler(pathProviderChannel,
-          (MethodCall methodCall) async {
-    if (methodCall.method == 'getApplicationSupportDirectory') {
-      return Directory.systemTemp.path;
-    } else if (methodCall.method == 'getTemporaryDirectory') {
-      return Directory.systemTemp.path;
-    }
-    return null;
-  });
+      .setMockMethodCallHandler(pathProviderChannel, (
+        MethodCall methodCall,
+      ) async {
+        if (methodCall.method == 'getApplicationSupportDirectory') {
+          return Directory.systemTemp.path;
+        } else if (methodCall.method == 'getTemporaryDirectory') {
+          return Directory.systemTemp.path;
+        }
+        return null;
+      });
 
   group('ScrcpyServer Configuration', () {
     late MockScrcpyAdb mockAdb;
@@ -96,20 +93,14 @@ void main() {
     });
 
     test('uses default port when not specified', () {
-      final server = ScrcpyServer(
-        adb: mockAdb,
-        deviceId: 'device123',
-      );
+      final server = ScrcpyServer(adb: mockAdb, deviceId: 'device123');
 
       expect(server.port, 27183);
       server.stop();
     });
 
     test('supports multiple instances with different ports', () async {
-      final server1 = ScrcpyServer(
-        adb: mockAdb,
-        deviceId: 'device1',
-      );
+      final server1 = ScrcpyServer(adb: mockAdb, deviceId: 'device1');
 
       final server2 = ScrcpyServer(
         adb: mockAdb,
@@ -125,10 +116,7 @@ void main() {
     });
 
     test('adb client reference is stored correctly', () {
-      final server = ScrcpyServer(
-        adb: mockAdb,
-        deviceId: 'device123',
-      );
+      final server = ScrcpyServer(adb: mockAdb, deviceId: 'device123');
 
       expect(server.adb, mockAdb);
       server.stop();
@@ -143,10 +131,11 @@ void main() {
     });
 
     test('verifies shell command with correct parameters', () async {
-      await mockAdb.shell(
-        ['chmod', '755', '/data/local/tmp/scrcpy-server'],
-        deviceId: 'emulator-5554',
-      );
+      await mockAdb.shell([
+        'chmod',
+        '755',
+        '/data/local/tmp/scrcpy-server',
+      ], deviceId: 'emulator-5554');
 
       expect(mockAdb.shellCalls, isNotEmpty);
       expect(mockAdb.shellCalls[0], containsAll(['chmod', '755']));
@@ -171,15 +160,9 @@ void main() {
     });
 
     test('works with multiple device IDs', () {
-      final server1 = ScrcpyServer(
-        adb: mockAdb,
-        deviceId: 'device1',
-      );
+      final server1 = ScrcpyServer(adb: mockAdb, deviceId: 'device1');
 
-      final server2 = ScrcpyServer(
-        adb: mockAdb,
-        deviceId: 'device2',
-      );
+      final server2 = ScrcpyServer(adb: mockAdb, deviceId: 'device2');
 
       expect(server1.deviceId, 'device1');
       expect(server2.deviceId, 'device2');

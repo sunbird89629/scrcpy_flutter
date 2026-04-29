@@ -24,10 +24,7 @@ void main() {
 
     test('save then load returns the same settings', () async {
       final repo = JsonFileSettingsRepository(filePath: filePath);
-      const settings = Settings(
-        themeMode: 'dark',
-        llmApiKey: 'test-key',
-      );
+      const settings = Settings(themeMode: 'dark', llmApiKey: 'test-key');
 
       await repo.save(settings);
       final loaded = await repo.load();

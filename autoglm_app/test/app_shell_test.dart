@@ -49,8 +49,9 @@ void main() {
     expect(find.text(t.nav.settings), findsWidgets);
   });
 
-  testWidgets('tapping NavigationRail destination changes route',
-      (tester) async {
+  testWidgets('tapping NavigationRail destination changes route', (
+    tester,
+  ) async {
     final router = createRouter();
     await tester.pumpWidget(
       ProviderScope(

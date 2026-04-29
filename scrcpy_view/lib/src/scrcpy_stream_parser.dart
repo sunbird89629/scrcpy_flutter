@@ -59,8 +59,9 @@ class ScrcpyStreamParser {
       }
 
       final nameBytes = Uint8List.fromList(_buffer.sublist(0, 64));
-      final deviceName = const Utf8Decoder(allowMalformed: true)
-          .convert(nameBytes.takeWhile((c) => c != 0).toList());
+      final deviceName = const Utf8Decoder(
+        allowMalformed: true,
+      ).convert(nameBytes.takeWhile((c) => c != 0).toList());
 
       final bd = ByteData.sublistView(
         Uint8List.fromList(_buffer.sublist(64, headerSize)),
@@ -107,10 +108,7 @@ class ScrcpyStreamParser {
           ' (ptsRaw: 0x${ptsRaw.toRadixString(16)})',
         );
         _controller.add(
-          ScrcpyPacket(
-            type: ScrcpyPacketType.configuration,
-            data: payload,
-          ),
+          ScrcpyPacket(type: ScrcpyPacketType.configuration, data: payload),
         );
       } else {
         final isKey = (ptsRaw & ptsKeyframe) != 0;

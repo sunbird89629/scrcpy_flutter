@@ -30,9 +30,5 @@ abstract class ScrcpyAdb {
   Future<void> forwardRemove(String local, {String? deviceId});
 
   /// Push a file to the device.
-  Future<void> push(
-    String localPath,
-    String remotePath, {
-    String? deviceId,
-  });
+  Future<void> push(String localPath, String remotePath, {String? deviceId});
 }

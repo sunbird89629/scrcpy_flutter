@@ -36,9 +36,9 @@ class JsonFileSettingsRepository implements SettingsRepository {
     if (!dir.existsSync()) {
       await dir.create(recursive: true);
     }
-    final encoded = const JsonEncoder.withIndent('  ').convert(
-      settings.toJson(),
-    );
+    final encoded = const JsonEncoder.withIndent(
+      '  ',
+    ).convert(settings.toJson());
     await _file.writeAsString(encoded);
   }
 }

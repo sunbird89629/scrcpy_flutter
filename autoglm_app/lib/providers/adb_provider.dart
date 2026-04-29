@@ -4,8 +4,9 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 /// Provider for the [AdbBinaryManager].
-final adbBinaryManagerProvider =
-    Provider<Future<AdbBinaryManager>>((ref) async {
+final adbBinaryManagerProvider = Provider<Future<AdbBinaryManager>>((
+  ref,
+) async {
   final appSupportDir = await getApplicationSupportDirectory();
   final binDir = p.join(appSupportDir.path, 'bin');
   return AdbBinaryManager(binDir: binDir);
@@ -19,8 +20,9 @@ final adbClientProvider = FutureProvider<AdbClient>((ref) async {
 });
 
 /// Provider for the list of connected ADB devices.
-final adbDevicesProvider =
-    FutureProvider.autoDispose<List<String>>((ref) async {
+final adbDevicesProvider = FutureProvider.autoDispose<List<String>>((
+  ref,
+) async {
   final client = await ref.watch(adbClientProvider.future);
   return client.devices();
 });

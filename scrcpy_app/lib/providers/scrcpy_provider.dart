@@ -16,8 +16,9 @@ class DevicesNotifier extends AsyncNotifier<List<String>> {
     final devices = await client.listDevices();
     final list = devices.toList();
     if (list.isNotEmpty && ref.read(selectedDeviceProvider) == null) {
-      Future.microtask(() =>
-          ref.read(selectedDeviceProvider.notifier).state = list.first);
+      Future.microtask(
+        () => ref.read(selectedDeviceProvider.notifier).state = list.first,
+      );
     }
     return list;
   }

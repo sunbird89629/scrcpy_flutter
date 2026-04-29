@@ -108,8 +108,10 @@ void main() {
         (ScrcpyKeycode.back, 4),
         (ScrcpyKeycode.appSwitch, 187),
       ]) {
-        final msg =
-            ScrcpyInjectKeyMessage(action: ScrcpyAction.down, keycode: keycode);
+        final msg = ScrcpyInjectKeyMessage(
+          action: ScrcpyAction.down,
+          keycode: keycode,
+        );
         final bd = ByteData.sublistView(msg.toBinary());
         expect(bd.getUint32(2), expected, reason: 'keycode $keycode mismatch');
       }
@@ -174,8 +176,9 @@ void main() {
 
   group('ScrcpyBackOrScreenOnMessage', () {
     test('binary layout is 2 bytes', () {
-      final bytes =
-          const ScrcpyBackOrScreenOnMessage(ScrcpyAction.down).toBinary();
+      final bytes = const ScrcpyBackOrScreenOnMessage(
+        ScrcpyAction.down,
+      ).toBinary();
 
       expect(bytes.length, 2);
       expect(bytes[0], 4);

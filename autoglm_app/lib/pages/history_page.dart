@@ -32,8 +32,11 @@ class HistoryPage extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.history_outlined,
-                      size: 64, color: theme.colorScheme.outline),
+                  Icon(
+                    Icons.history_outlined,
+                    size: 64,
+                    color: theme.colorScheme.outline,
+                  ),
                   const SizedBox(height: AppSpacing.md),
                   const Text('No history found.'),
                 ],
@@ -57,7 +60,10 @@ class HistoryPage extends ConsumerWidget {
                 child: ListTile(
                   leading: CircleAvatar(
                     backgroundColor: theme.colorScheme.primaryContainer,
-                    child: Icon(Icons.history, color: theme.colorScheme.primary),
+                    child: Icon(
+                      Icons.history,
+                      color: theme.colorScheme.primary,
+                    ),
                   ),
                   title: Text(
                     record.taskDescription ?? 'No description',
@@ -93,10 +99,7 @@ class HistoryPage extends ConsumerWidget {
     }
 
     return Chip(
-      label: Text(
-        status,
-        style: TextStyle(color: color, fontSize: 12),
-      ),
+      label: Text(status, style: TextStyle(color: color, fontSize: 12)),
       backgroundColor: color.withOpacity(0.1),
       side: BorderSide(color: color.withOpacity(0.2)),
       visualDensity: VisualDensity.compact,

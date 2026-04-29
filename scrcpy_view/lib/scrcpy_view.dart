@@ -9,3 +9,4 @@ export 'src/scrcpy_packet.dart';
 export 'src/scrcpy_server.dart';
 export 'src/scrcpy_stream_parser.dart';
 export 'src/scrcpy_view.dart';
+export 'src/scrcpy_view_controller.dart';

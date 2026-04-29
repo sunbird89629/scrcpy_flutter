@@ -29,18 +29,24 @@ void main() {
     test('writes a line to a dated log file under logsDir', () async {
       initAppLogger(logsDir: tempDir.path);
       appLogger.info('hello');
-      
+
       // Need to find the log file
-      final logFiles = tempDir.listSync().whereType<File>().where(
-        (f) => p.basename(f.path).startsWith('autoglm-') && p.basename(f.path).endsWith('.log')
-      ).toList();
-      
+      final logFiles = tempDir
+          .listSync()
+          .whereType<File>()
+          .where(
+            (f) =>
+                p.basename(f.path).startsWith('autoglm-') &&
+                p.basename(f.path).endsWith('.log'),
+          )
+          .toList();
+
       expect(logFiles.length, 1);
       final logFile = logFiles.first;
-      
+
       // We need to flush the logger if it has buffering, but current implementation uses Sync write.
       // Wait, let's check _FileOutput.
-      
+
       expect(logFile.readAsStringSync(), contains('hello'));
     });
   });

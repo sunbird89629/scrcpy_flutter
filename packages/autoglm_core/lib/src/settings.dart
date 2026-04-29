@@ -46,39 +46,38 @@ class Settings {
     String? llmApiKey,
     bool? mcpServerEnabled,
     int? mcpServerPort,
-  }) =>
-      Settings(
-        themeMode: themeMode ?? this.themeMode,
-        locale: locale ?? this.locale,
-        llmProvider: llmProvider ?? this.llmProvider,
-        llmBaseUrl: llmBaseUrl ?? this.llmBaseUrl,
-        llmModel: llmModel ?? this.llmModel,
-        llmApiKey: llmApiKey ?? this.llmApiKey,
-        mcpServerEnabled: mcpServerEnabled ?? this.mcpServerEnabled,
-        mcpServerPort: mcpServerPort ?? this.mcpServerPort,
-      );
+  }) => Settings(
+    themeMode: themeMode ?? this.themeMode,
+    locale: locale ?? this.locale,
+    llmProvider: llmProvider ?? this.llmProvider,
+    llmBaseUrl: llmBaseUrl ?? this.llmBaseUrl,
+    llmModel: llmModel ?? this.llmModel,
+    llmApiKey: llmApiKey ?? this.llmApiKey,
+    mcpServerEnabled: mcpServerEnabled ?? this.mcpServerEnabled,
+    mcpServerPort: mcpServerPort ?? this.mcpServerPort,
+  );
 
   /// Creates settings from a JSON map.
   factory Settings.fromJson(Map<String, dynamic> json) => Settings(
-        themeMode: json['themeMode'] as String? ?? 'system',
-        locale: json['locale'] as String? ?? 'system',
-        llmProvider: json['llmProvider'] as String? ?? 'gemini',
-        llmBaseUrl: json['llmBaseUrl'] as String? ?? '',
-        llmModel: json['llmModel'] as String? ?? 'gemini-1.5-pro',
-        llmApiKey: json['llmApiKey'] as String? ?? '',
-        mcpServerEnabled: json['mcpServerEnabled'] as bool? ?? false,
-        mcpServerPort: json['mcpServerPort'] as int? ?? 3000,
-      );
+    themeMode: json['themeMode'] as String? ?? 'system',
+    locale: json['locale'] as String? ?? 'system',
+    llmProvider: json['llmProvider'] as String? ?? 'gemini',
+    llmBaseUrl: json['llmBaseUrl'] as String? ?? '',
+    llmModel: json['llmModel'] as String? ?? 'gemini-1.5-pro',
+    llmApiKey: json['llmApiKey'] as String? ?? '',
+    mcpServerEnabled: json['mcpServerEnabled'] as bool? ?? false,
+    mcpServerPort: json['mcpServerPort'] as int? ?? 3000,
+  );
 
   /// Converts settings to a JSON map.
   Map<String, dynamic> toJson() => {
-        'themeMode': themeMode,
-        'locale': locale,
-        'llmProvider': llmProvider,
-        'llmBaseUrl': llmBaseUrl,
-        'llmModel': llmModel,
-        'llmApiKey': llmApiKey,
-        'mcpServerEnabled': mcpServerEnabled,
-        'mcpServerPort': mcpServerPort,
-      };
+    'themeMode': themeMode,
+    'locale': locale,
+    'llmProvider': llmProvider,
+    'llmBaseUrl': llmBaseUrl,
+    'llmModel': llmModel,
+    'llmApiKey': llmApiKey,
+    'mcpServerEnabled': mcpServerEnabled,
+    'mcpServerPort': mcpServerPort,
+  };
 }

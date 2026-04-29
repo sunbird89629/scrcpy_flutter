@@ -6,7 +6,7 @@ enum ScrcpyPacketType {
   configuration,
 
   /// Video data packet.
-  video
+  video,
 }
 
 /// Represents a single packet from the scrcpy stream.

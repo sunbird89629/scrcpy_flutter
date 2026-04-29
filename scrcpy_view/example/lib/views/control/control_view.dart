@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 import 'package:scrcpy_view_example/views/control/widgets/control_button.dart';
 import 'package:scrcpy_view_example/views/control/widgets/stats_panel.dart';
-import 'package:scrcpy_view_example/webview_controller.dart';
+import 'package:scrcpy_view_example/app_controller.dart';
 
 class ControlView extends StatelessWidget {
   const ControlView({super.key});
@@ -15,7 +15,7 @@ class ControlView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = WebViewController();
+    final controller = AppController();
     return ListenableBuilder(
       listenable: controller,
       builder: (context, child) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:scrcpy_view_example/webview_controller.dart';
+import 'package:scrcpy_view_example/stream_stats.dart';
+import 'package:scrcpy_view_example/app_controller.dart';
 
 class StatsPanel extends StatelessWidget {
   const StatsPanel({super.key, required this.stats});

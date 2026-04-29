@@ -51,8 +51,11 @@ class ChatPage extends ConsumerWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.smartphone,
-                              size: 64, color: Colors.white.withOpacity(0.3)),
+                          Icon(
+                            Icons.smartphone,
+                            size: 64,
+                            color: Colors.white.withOpacity(0.3),
+                          ),
                           const SizedBox(height: AppSpacing.md),
                           const Text(
                             'No device selected',

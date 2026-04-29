@@ -41,7 +41,11 @@ class DevicesPage extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: theme.colorScheme.error,
+              ),
               const SizedBox(height: AppSpacing.md),
               Text('Error: $e'),
             ],
@@ -53,8 +57,11 @@ class DevicesPage extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.devices_other,
-                      size: 64, color: theme.colorScheme.outline),
+                  Icon(
+                    Icons.devices_other,
+                    size: 64,
+                    color: theme.colorScheme.outline,
+                  ),
                   const SizedBox(height: AppSpacing.md),
                   Text(
                     t.devices_page.no_devices,
@@ -107,7 +114,10 @@ class DevicesPage extends ConsumerWidget {
                   ),
                   subtitle: const Text('ADB Device'),
                   trailing: isSelected
-                      ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
+                      ? Icon(
+                          Icons.check_circle,
+                          color: theme.colorScheme.primary,
+                        )
                       : null,
                   onTap: () {
                     ref.read(selectedDeviceIdProvider.notifier).state = id;
@@ -176,16 +186,16 @@ class DevicesPage extends ConsumerWidget {
                 final res = await client.pair(ipCtrl.text, port, codeCtrl.text);
                 if (ctx.mounted) {
                   Navigator.pop(ctx);
-                  ScaffoldMessenger.of(ctx).showSnackBar(
-                    SnackBar(content: Text(res)),
-                  );
+                  ScaffoldMessenger.of(
+                    ctx,
+                  ).showSnackBar(SnackBar(content: Text(res)));
                   ref.invalidate(adbDevicesProvider);
                 }
               } on Exception catch (e) {
                 if (ctx.mounted) {
-                  ScaffoldMessenger.of(ctx).showSnackBar(
-                    SnackBar(content: Text(e.toString())),
-                  );
+                  ScaffoldMessenger.of(
+                    ctx,
+                  ).showSnackBar(SnackBar(content: Text(e.toString())));
                 }
               }
             },

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
-/// A [ScrcpyVideoBackend] that uses [InAppWebView] to render the scrcpy stream.
-class WebViewVideoBackend implements ScrcpyVideoBackend {
-  const WebViewVideoBackend();
+/// A video player backend that uses InAppWebView to display and handle touch events for Scrcpy.
+class WebViewVideoPlayer implements ScrcpyVideoBackend {
+  const WebViewVideoPlayer();
 
   @override
   Widget build({
@@ -57,11 +57,16 @@ class WebViewVideoBackend implements ScrcpyVideoBackend {
 
   int _mapAction(int jsAction) {
     switch (jsAction) {
-      case 0: return ScrcpyAction.down;
-      case 1: return ScrcpyAction.up;
-      case 2: return ScrcpyAction.move;
-      case 3: return ScrcpyAction.cancel;
-      default: return ScrcpyAction.move;
+      case 0:
+        return ScrcpyAction.down;
+      case 1:
+        return ScrcpyAction.up;
+      case 2:
+        return ScrcpyAction.move;
+      case 3:
+        return ScrcpyAction.cancel;
+      default:
+        return ScrcpyAction.move;
     }
   }
 }

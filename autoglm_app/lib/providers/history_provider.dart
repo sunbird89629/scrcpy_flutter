@@ -19,6 +19,6 @@ final historyManagerProvider = Provider<Future<HistoryManager>>((ref) async {
 /// Provider for the list of conversation records.
 final historyConversationsProvider =
     FutureProvider.autoDispose<List<ConversationRecord>>((ref) async {
-  final manager = await ref.watch(historyManagerProvider);
-  return manager.listConversations();
-});
+      final manager = await ref.watch(historyManagerProvider);
+      return manager.listConversations();
+    });

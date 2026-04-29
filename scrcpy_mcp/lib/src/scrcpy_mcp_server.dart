@@ -4,7 +4,8 @@ import 'package:scrcpy_view/scrcpy_view.dart';
 
 /// Scrcpy operations exposed for MCP tool integration.
 class ScrcpyMcpServer {
-  ScrcpyMcpServer({String? adbPath}) : _adb = AdbClient(adbPath: adbPath ?? 'adb');
+  ScrcpyMcpServer({String? adbPath})
+    : _adb = AdbClient(adbPath: adbPath ?? 'adb');
 
   final AdbClient _adb;
   ScrcpyServer? _server;

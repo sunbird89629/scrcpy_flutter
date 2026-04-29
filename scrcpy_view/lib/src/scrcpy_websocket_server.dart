@@ -24,7 +24,7 @@ class ScrcpyWebsocketServer {
   final ScrcpyLogger _log;
 
   ScrcpyWebsocketServer({ScrcpyLogger logger = const NoOpScrcpyLogger()})
-      : _log = logger;
+    : _log = logger;
 
   /// The WebSocket URL.
   String get wsUrl => 'ws://127.0.0.1:$_port/ws';
@@ -33,12 +33,17 @@ class ScrcpyWebsocketServer {
   String get playerUrl => 'http://127.0.0.1:$_port/index.html?ws=$wsUrl';
 
   /// Starts the WebSocket and Static HTTP server.
-  Future<void> start(Stream<ScrcpyPacket> packets,
-      {required String staticPath}) async {
-    final wsHandler =
-        webSocketHandler((WebSocketChannel webSocket, String? protocol) {
+  Future<void> start(
+    Stream<ScrcpyPacket> packets, {
+    required String staticPath,
+  }) async {
+    final wsHandler = webSocketHandler((
+      WebSocketChannel webSocket,
+      String? protocol,
+    ) {
       _log.info(
-          '[ScrcpyWebsocketServer] New WS client connected (protocol: $protocol)');
+        '[ScrcpyWebsocketServer] New WS client connected (protocol: $protocol)',
+      );
       _clients.add(webSocket);
 
       // Send configuration packet immediately if available
@@ -58,17 +63,23 @@ class ScrcpyWebsocketServer {
       );
     });
 
-    final staticHandler =
-        createStaticHandler(staticPath, defaultDocument: 'index.html');
+    final staticHandler = createStaticHandler(
+      staticPath,
+      defaultDocument: 'index.html',
+    );
 
-    final cascade = Cascade().add((Request request) {
-      if (request.url.path == 'ws') return wsHandler(request);
-      return Response.notFound('Not WS');
-    }).add(staticHandler);
+    final cascade = Cascade()
+        .add((Request request) {
+          if (request.url.path == 'ws') return wsHandler(request);
+          return Response.notFound('Not WS');
+        })
+        .add(staticHandler);
 
     _server = await io.serve(cascade.handler, InternetAddress.loopbackIPv4, 0);
     _port = _server!.port;
-    _log.info('[ScrcpyWebsocketServer] Server ready on http://127.0.0.1:$_port');
+    _log.info(
+      '[ScrcpyWebsocketServer] Server ready on http://127.0.0.1:$_port',
+    );
 
     _subscription = packets.listen((packet) {
       if (packet.type == ScrcpyPacketType.configuration) {

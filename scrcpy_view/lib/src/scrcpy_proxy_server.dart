@@ -11,6 +11,8 @@ import 'package:scrcpy_view/src/scrcpy_packet.dart';
 /// media_kit's libmpv ships a trimmed ffmpeg that lacks the raw `h264`
 /// demuxer, so the stream is remuxed to MPEG-TS before being sent to the player.
 class ScrcpyProxyServer {
+  ScrcpyProxyServer({ScrcpyLogger logger = const NoOpScrcpyLogger()})
+    : _log = logger;
   HttpServer? _server;
   StreamSubscription<ScrcpyPacket>? _subscription;
 
@@ -24,9 +26,6 @@ class ScrcpyProxyServer {
   final Completer<void> _readyCompleter = Completer<void>();
 
   final ScrcpyLogger _log;
-
-  ScrcpyProxyServer({ScrcpyLogger logger = const NoOpScrcpyLogger()})
-      : _log = logger;
 
   /// The URL for the media player to connect to.
   String get proxyUrl => 'http://127.0.0.1:$_port/live';
@@ -62,13 +61,15 @@ class ScrcpyProxyServer {
       _pendingClients.add(response);
 
       unawaited(
-        response.done.then((_) {
-          _log.info('[ScrcpyProxyServer] HTTP client disconnected');
-          _removeClient(response);
-        }).catchError((Object e) {
-          _log.warn('[ScrcpyProxyServer] Client error: $e');
-          _removeClient(response);
-        }),
+        response.done
+            .then((_) {
+              _log.info('[ScrcpyProxyServer] HTTP client disconnected');
+              _removeClient(response);
+            })
+            .catchError((Object e) {
+              _log.warn('[ScrcpyProxyServer] Client error: $e');
+              _removeClient(response);
+            }),
       );
     });
 

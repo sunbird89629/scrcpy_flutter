@@ -10,7 +10,7 @@ class AdbClientAdapter implements ScrcpyAdb {
 
   /// Creates an adapter with a default [AdbClient] using [adbPath].
   AdbClientAdapter.withPath({String adbPath = 'adb'})
-      : _client = AdbClient(adbPath: adbPath);
+    : _client = AdbClient(adbPath: adbPath);
 
   final AdbClient _client;
 
@@ -26,8 +26,7 @@ class AdbClientAdapter implements ScrcpyAdb {
     String? deviceId,
     Duration timeout = const Duration(seconds: 30),
   }) async {
-    return _client.shell(arguments,
-        deviceId: deviceId, timeout: timeout);
+    return _client.shell(arguments, deviceId: deviceId, timeout: timeout);
   }
 
   @override
@@ -37,8 +36,12 @@ class AdbClientAdapter implements ScrcpyAdb {
     String? deviceId,
     bool noRebind = false,
   }) async {
-    return _client.forward(local, remote,
-        deviceId: deviceId, noRebind: noRebind);
+    return _client.forward(
+      local,
+      remote,
+      deviceId: deviceId,
+      noRebind: noRebind,
+    );
   }
 
   @override
