@@ -3,15 +3,20 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
 /// A video player backend that uses InAppWebView to display and handle touch events for Scrcpy.
-class WebViewVideoPlayer implements ScrcpyVideoBackend {
-  const WebViewVideoPlayer();
+class WebViewVideoPlayer extends StatelessWidget {
+  const WebViewVideoPlayer({
+    required this.playerUrl,
+    required this.touchController,
+    required this.onControlMessage,
+    super.key,
+  });
+
+  final String playerUrl;
+  final ScrcpyTouchController touchController;
+  final void Function(ScrcpyControlMessage) onControlMessage;
 
   @override
-  Widget build({
-    required String playerUrl,
-    required ScrcpyTouchController touchController,
-    required void Function(ScrcpyControlMessage) onControlMessage,
-  }) {
+  Widget build(BuildContext contex) {
     return InAppWebView(
       initialUrlRequest: URLRequest(url: WebUri(playerUrl)),
       initialSettings: InAppWebViewSettings(
@@ -19,6 +24,12 @@ class WebViewVideoPlayer implements ScrcpyVideoBackend {
         isInspectable: true,
       ),
       onWebViewCreated: (controller) {
+        controller.addJavaScriptHandler(
+          handlerName: 'statsHandler',
+          callback: (args) {
+            // Optional: Forward stats to a listener if needed
+          },
+        );
         controller.addJavaScriptHandler(
           handlerName: 'touchHandler',
           callback: (args) {

@@ -21,11 +21,11 @@ class ScrcpyServer {
     this.port = 27183,
     ScrcpyLogger logger = const NoOpScrcpyLogger(),
     StreamSink<List<int>>? controlSink,
-  }) : _log = logger,
-       _controlSink = controlSink,
-       _proxy = ScrcpyProxyServer(logger: logger),
-       _wsProxy = ScrcpyWebsocketServer(logger: logger),
-       _parser = ScrcpyStreamParser(logger: logger);
+  })  : _log = logger,
+        _controlSink = controlSink,
+        _proxy = ScrcpyProxyServer(logger: logger),
+        _wsProxy = ScrcpyWebsocketServer(logger: logger),
+        _parser = ScrcpyStreamParser(logger: logger);
 
   /// The ADB client to use.
   final ScrcpyAdb adb;
@@ -82,11 +82,12 @@ class ScrcpyServer {
       final webPlayerPath = await _prepareWebPlayer();
       await _pushServer();
 
-      const socketName = 'scrcpy_00000000';
+      const scid = '12345678';
+      const socketName = 'scrcpy_12345678';
 
       await _setupForwardWithRetry(socketName);
 
-      await _runServer('00000000');
+      await _runServer(scid);
 
       await Future.wait([
         _proxy.start(_parser.packets),
@@ -210,7 +211,7 @@ class ScrcpyServer {
       '/',
       'com.genymobile.scrcpy.Server',
       version,
-      'scid=0',
+      'scid=$scidHex',
       'tunnel_forward=true',
       'video_codec=h264',
       'audio=false',
@@ -221,8 +222,8 @@ class ScrcpyServer {
       'video_bit_rate=6000000',
       'list_encoders=false',
       'list_displays=false',
-      'send_dummy_byte=false',
-      'video_codec_options=i-frame-interval=1,latency=1,profile=1',
+      'send_dummy_byte=true',
+      'video_codec_options=i-frame-interval=1,latency=1',
       'power_on=true',
     ];
 
@@ -265,16 +266,19 @@ class ScrcpyServer {
     _videoSocket = await _connectSocket('Video');
 
     var isFirstByteHandled = false;
-    _videoSubscription = _videoSocket!.listen((data) {
-      if (!isFirstByteHandled) {
-        isFirstByteHandled = true;
-        if (data.isNotEmpty && data[0] == 0) {
-          if (data.length > 1) _parser.feed(Uint8List.sublistView(data, 1));
-          return;
+    _videoSubscription = _videoSocket!.listen(
+      (data) {
+        if (!isFirstByteHandled) {
+          isFirstByteHandled = true;
+          if (data.isNotEmpty && data[0] == 0) {
+            if (data.length > 1) _parser.feed(Uint8List.sublistView(data, 1));
+            return;
+          }
         }
-      }
-      _parser.feed(data);
-    }, onDone: () => _log.warn('[ScrcpyServer] Video socket closed'));
+        _parser.feed(data);
+      },
+      onDone: () => _log.warn('[ScrcpyServer] Video socket closed'),
+    );
 
     await Future<void>.delayed(const Duration(milliseconds: 300));
     _controlSocket = await _connectSocket('Control');

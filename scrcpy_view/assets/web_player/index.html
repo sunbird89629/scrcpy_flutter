@@ -38,6 +38,23 @@
 
         async function initDecoder() {
             if (decoder) decoder.close();
+            
+            const codecs = ['avc1.42E01E', 'avc1.4d001f', 'avc1.640028'];
+            let selectedCodec = null;
+
+            for (const c of codecs) {
+                const supported = await VideoDecoder.isConfigSupported({ codec: c });
+                if (supported.supported) {
+                    selectedCodec = c;
+                    break;
+                }
+            }
+
+            if (!selectedCodec) {
+                updateStat('status', 'No supported H.264 codec found');
+                return;
+            }
+
             decoder = new VideoDecoder({
                 output: (frame) => {
                     if (canvas.width !== frame.displayWidth) {
@@ -62,17 +79,17 @@
                     }
                 },
                 error: (e) => {
-                    updateStat('status', 'Error: ' + e.message);
-                    setTimeout(location.reload, 2000);
+                    updateStat('status', 'Decoder Error (' + selectedCodec + '): ' + e.message);
+                    console.error('Decoder Error:', e);
+                    setTimeout(() => location.reload(), 2000);
                 }
             });
 
             decoder.configure({
-                codec: 'avc1.42E01E',
-                optimizeForLatency: true,
-                hardwareAcceleration: 'prefer-hardware'
+                codec: selectedCodec,
+                optimizeForLatency: true
             });
-            updateStat('status', 'Decoder Ready');
+            updateStat('status', 'Decoder Ready (' + selectedCodec + ')');
         }
 
         function sendPointerEvent(action, e, rect) {

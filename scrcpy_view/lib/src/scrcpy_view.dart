@@ -2,12 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:scrcpy_view/src/scrcpy_view_controller.dart';
 import 'package:scrcpy_view/webview_video_player.dart';
 
-/// A self-contained Flutter widget that mirrors an Android device screen
-/// via the scrcpy protocol and accepts touch input.
-///
-/// Rendering is driven by [controller]: pass the same instance to
-/// [ScrcpyViewController.start] and this widget. The widget rebuilds
-/// automatically when the session state changes.
 class ScrcpyView extends StatelessWidget {
   const ScrcpyView({required this.controller, super.key});
 
@@ -20,15 +14,16 @@ class ScrcpyView extends StatelessWidget {
       listenable: controller,
       builder: (context, _) {
         final server = controller.server;
+        debugPrint('ScrcpyView.playerUrl:${server?.playerUrl}');
         if (server == null) {
           return const Center(child: Text('点击 Start 启动服务'));
+        } else {
+          return WebViewVideoPlayer(
+            playerUrl: server.playerUrl,
+            touchController: controller.touchController,
+            onControlMessage: controller.sendControlMessage,
+          );
         }
-        const backend = WebViewVideoPlayer();
-        return backend.build(
-          playerUrl: server.playerUrl,
-          touchController: controller.touchController,
-          onControlMessage: controller.sendControlMessage,
-        );
       },
     );
   }
