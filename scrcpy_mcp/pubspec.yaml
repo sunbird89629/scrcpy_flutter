@@ -9,11 +9,15 @@ environment:
 resolution: workspace
 
 dependencies:
-  dart_mcp: ^0.4.1
   autoglm_adb:
     path: ../packages/autoglm_adb
   autoglm_logger:
     path: ../packages/autoglm_logger
+  dart_mcp: ^0.4.1
   scrcpy_view:
     path: ../scrcpy_view
   stream_channel: ^2.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

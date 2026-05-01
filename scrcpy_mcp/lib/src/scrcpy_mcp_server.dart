@@ -1,70 +1,50 @@
-import 'package:autoglm_adb/autoglm_adb.dart';
-import 'package:scrcpy_mcp/src/scrcpy_mcp_adapters.dart';
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:dart_mcp/server.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
-/// Scrcpy operations exposed for MCP tool integration.
-class ScrcpyMcpServer {
-  /// Creates a scrcpy MCP facade using [adbPath], or `adb` by default.
-  ScrcpyMcpServer({String? adbPath})
-      : _adb = AdbClient(adbPath: adbPath ?? 'adb');
+/// MCP server exposing scrcpy operations.
+final class ScrcpyMcpServer extends MCPServer with ToolsSupport {
+  /// Creates a scrcpy MCP server.
+  ScrcpyMcpServer(
+    super.channel, {
+    required ScrcpyAdb adb,
+    super.protocolLogSink,
+  })  : _adb = adb,
+        super.fromStreamChannel(
+          implementation: Implementation(
+            name: 'scrcpy-mcp',
+            version: '0.2.0',
+          ),
+          instructions:
+              'Use this server to control Android devices via scrcpy. '
+              'List devices, start/stop screen mirroring, and inject input events.',
+        );
 
-  final AdbClient _adb;
-  ScrcpyServer? _server;
+  final ScrcpyAdb _adb;
 
-  /// List connected Android devices.
-  Future<List<String>> listDevices() async => _adb.getDevices();
-
-  /// Start screen mirroring for a [deviceId].
-  Future<ScrcpyServer> startMirroring(String deviceId) async {
-    await _server?.stop();
-    _server = ScrcpyServer(
-      adb: ScrcpyMcpAdb(_adb),
-      deviceId: deviceId,
-      logger: const ScrcpyMcpLogger(),
-    );
-    await _server!.start();
-    return _server!;
+  @override
+  FutureOr<InitializeResult> initialize(InitializeRequest request) {
+    _registerTools();
+    return super.initialize(request);
   }
 
-  /// Stop the active mirroring session.
-  Future<void> stopMirroring() async {
-    await _server?.stop();
-    _server = null;
-  }
-
-  /// The current [ScrcpyServer], or `null`.
-  ScrcpyServer? get server => _server;
-
-  /// Send a key event.
-  void injectKey(int keycode, {int action = ScrcpyAction.down}) {
-    _server?.sendControlMessage(
-      ScrcpyInjectKeyMessage(action: action, keycode: keycode),
-    );
-  }
-
-  /// Send a touch event.
-  void injectTouch({
-    required int x,
-    required int y,
-    required int width,
-    required int height,
-    int action = ScrcpyAction.down,
-    int pointerId = 0,
-  }) {
-    _server?.sendControlMessage(
-      ScrcpyInjectTouchMessage(
-        action: action,
-        pointerId: pointerId,
-        x: x,
-        y: y,
-        width: width,
-        height: height,
+  void _registerTools() {
+    registerTool(
+      Tool(
+        name: 'list_devices',
+        description: 'List connected Android devices.',
+        inputSchema: ObjectSchema(),
       ),
+      _listDevices,
     );
   }
 
-  /// Clean up resources.
-  Future<void> dispose() async {
-    await _server?.stop();
+  Future<CallToolResult> _listDevices(CallToolRequest request) async {
+    final devices = await _adb.getDevices();
+    return CallToolResult(
+      content: [Content.text(text: jsonEncode(devices))],
+    );
   }
 }
