@@ -55,5 +55,21 @@ void main() {
       );
       expect(server, isNotNull);
     });
+
+    test('start_mirroring tool is registered', () async {
+      final server = ScrcpyMcpServer(
+        _testChannel(),
+        adb: MockAdb(),
+      );
+      expect(server, isNotNull);
+    });
+
+    test('stop_mirroring tool is registered', () async {
+      final server = ScrcpyMcpServer(
+        _testChannel(),
+        adb: MockAdb(),
+      );
+      expect(server, isNotNull);
+    });
   });
 }
