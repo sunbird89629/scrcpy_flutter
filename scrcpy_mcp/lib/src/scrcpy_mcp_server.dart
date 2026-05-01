@@ -223,7 +223,8 @@ final class ScrcpyMcpServer extends MCPServer
                 '- list_devices: See connected devices\n'
                 '- start_mirroring: Start screen mirroring\n'
                 '- stop_mirroring: Stop mirroring\n'
-                '- inject_key: Send key events (Home=3, Back=4, AppSwitch=187)\n'
+                '- inject_key: Send key events '
+                    '(Home=3, Back=4, AppSwitch=187)\n'
                 '- inject_touch: Send touch events\n'
                 '- inject_text: Type text\n'
                 '- inject_scroll: Scroll the screen\n\n'
@@ -247,14 +248,20 @@ final class ScrcpyMcpServer extends MCPServer
         PromptMessage(
           role: Role.user,
           content: Content.text(
-            text: 'You are an Android device troubleshooting assistant.\n\n'
-                'Connected devices: ${devices.isEmpty ? "none" : devices.join(", ")}\n'
+            text: 'You are an Android device '
+                'troubleshooting assistant.\n\n'
+                'Connected devices: '
+                '${devices.isEmpty ? "none" : devices.join(", ")}\n'
                 '${issue != null ? "Reported issue: $issue\n" : ""}\n'
                 'Common issues and solutions:\n'
-                '1. No devices found: Check USB connection, enable USB debugging\n'
-                '2. Connection refused: Restart adb server (adb kill-server)\n'
-                '3. Mirroring fails: Check scrcpy server version compatibility\n'
-                '4. Black screen: Device may be locked, try pressing power key\n\n'
+                '1. No devices found: Check USB connection, '
+                'enable USB debugging\n'
+                '2. Connection refused: Restart adb server '
+                '(adb kill-server)\n'
+                '3. Mirroring fails: Check scrcpy server '
+                'version compatibility\n'
+                '4. Black screen: Device may be locked, '
+                'try pressing power key\n\n'
                 'Help the user diagnose and resolve their device issue.',
           ),
         ),
@@ -270,7 +277,8 @@ final class ScrcpyMcpServer extends MCPServer
   }
 
   Future<CallToolResult> _startMirroring(CallToolRequest request) async {
-    final deviceId = request.arguments!['device_id'] as String;
+    final deviceId =
+        (request.arguments!['device_id'] as String?)!;
 
     // Stop existing session if any
     await _activeServer?.stop();
@@ -278,7 +286,6 @@ final class ScrcpyMcpServer extends MCPServer
     _activeServer = ScrcpyServer(
       adb: _adb,
       deviceId: deviceId,
-      logger: const NoOpScrcpyLogger(),
     );
 
     try {
@@ -292,7 +299,7 @@ final class ScrcpyMcpServer extends MCPServer
       return CallToolResult(
         content: [Content.text(text: jsonEncode(status))],
       );
-    } catch (e) {
+    } on Exception catch (e) {
       return CallToolResult(
         isError: true,
         content: [Content.text(text: 'Failed to start mirroring: $e')],
@@ -323,7 +330,8 @@ final class ScrcpyMcpServer extends MCPServer
       );
     }
 
-    final keycode = request.arguments!['keycode'] as int;
+    final keycode =
+        (request.arguments!['keycode'] as int?)!;
     final action =
         request.arguments!['action'] as int? ?? ScrcpyAction.down;
 
@@ -348,10 +356,10 @@ final class ScrcpyMcpServer extends MCPServer
       );
     }
 
-    final x = request.arguments!['x'] as int;
-    final y = request.arguments!['y'] as int;
-    final width = request.arguments!['width'] as int;
-    final height = request.arguments!['height'] as int;
+    final x = (request.arguments!['x'] as int?)!;
+    final y = (request.arguments!['y'] as int?)!;
+    final width = (request.arguments!['width'] as int?)!;
+    final height = (request.arguments!['height'] as int?)!;
     final action =
         request.arguments!['action'] as int? ?? ScrcpyAction.down;
 
@@ -383,7 +391,7 @@ final class ScrcpyMcpServer extends MCPServer
       );
     }
 
-    final text = request.arguments!['text'] as String;
+    final text = (request.arguments!['text'] as String?)!;
 
     _activeServer!.sendControlMessage(ScrcpyInjectTextMessage(text));
 
@@ -400,12 +408,12 @@ final class ScrcpyMcpServer extends MCPServer
       );
     }
 
-    final x = request.arguments!['x'] as int;
-    final y = request.arguments!['y'] as int;
-    final width = request.arguments!['width'] as int;
-    final height = request.arguments!['height'] as int;
-    final hScroll = request.arguments!['hScroll'] as int;
-    final vScroll = request.arguments!['vScroll'] as int;
+    final x = (request.arguments!['x'] as int?)!;
+    final y = (request.arguments!['y'] as int?)!;
+    final width = (request.arguments!['width'] as int?)!;
+    final height = (request.arguments!['height'] as int?)!;
+    final hScroll = (request.arguments!['hScroll'] as int?)!;
+    final vScroll = (request.arguments!['vScroll'] as int?)!;
 
     _activeServer!.sendControlMessage(
       ScrcpyInjectScrollMessage(
