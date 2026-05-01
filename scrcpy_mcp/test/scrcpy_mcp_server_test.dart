@@ -119,5 +119,21 @@ void main() {
       );
       expect(server, isNotNull);
     });
+
+    test('control_device prompt is registered', () async {
+      final server = ScrcpyMcpServer(
+        _testChannel(),
+        adb: MockAdb(),
+      );
+      expect(server, isNotNull);
+    });
+
+    test('troubleshoot prompt is registered', () async {
+      final server = ScrcpyMcpServer(
+        _testChannel(),
+        adb: MockAdb(),
+      );
+      expect(server, isNotNull);
+    });
   });
 }

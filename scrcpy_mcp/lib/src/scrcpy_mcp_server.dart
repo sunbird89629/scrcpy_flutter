@@ -6,7 +6,7 @@ import 'package:scrcpy_view/scrcpy_view.dart';
 
 /// MCP server exposing scrcpy operations.
 final class ScrcpyMcpServer extends MCPServer
-    with ToolsSupport, ResourcesSupport {
+    with ToolsSupport, ResourcesSupport, PromptsSupport {
   /// Creates a scrcpy MCP server.
   ScrcpyMcpServer(
     super.channel, {
@@ -30,6 +30,7 @@ final class ScrcpyMcpServer extends MCPServer
   FutureOr<InitializeResult> initialize(InitializeRequest request) {
     _registerTools();
     _registerResources();
+    _registerPrompts();
     return super.initialize(request);
   }
 
@@ -146,6 +147,38 @@ final class ScrcpyMcpServer extends MCPServer
     );
   }
 
+  void _registerPrompts() {
+    addPrompt(
+      Prompt(
+        name: 'control_device',
+        description:
+            'Assist with Android device control via scrcpy. '
+            'Helps with navigation, input, and screen mirroring.',
+        arguments: [
+          PromptArgument(
+            name: 'device_id',
+            description: 'The device to control (optional if only one device)',
+          ),
+        ],
+      ),
+      _getControlDevicePrompt,
+    );
+
+    addPrompt(
+      Prompt(
+        name: 'troubleshoot',
+        description: 'Help diagnose and fix device connection issues.',
+        arguments: [
+          PromptArgument(
+            name: 'issue',
+            description: 'Description of the issue encountered',
+          ),
+        ],
+      ),
+      _getTroubleshootPrompt,
+    );
+  }
+
   void _registerResources() {
     addResource(
       Resource(
@@ -165,6 +198,67 @@ final class ScrcpyMcpServer extends MCPServer
         mimeType: 'application/json',
       ),
       _readMirroringStatus,
+    );
+  }
+
+  Future<GetPromptResult> _getControlDevicePrompt(
+    GetPromptRequest request,
+  ) async {
+    final deviceId = request.arguments?['device_id'] as String?;
+
+    final devices = await _adb.getDevices();
+    final deviceInfo = deviceId != null
+        ? 'Target device: $deviceId'
+        : 'Available devices: ${devices.join(", ")}';
+
+    return GetPromptResult(
+      description: 'Device control assistant',
+      messages: [
+        PromptMessage(
+          role: Role.user,
+          content: Content.text(
+            text: 'You are an Android device control assistant.\n\n'
+                '$deviceInfo\n\n'
+                'You can use the following tools:\n'
+                '- list_devices: See connected devices\n'
+                '- start_mirroring: Start screen mirroring\n'
+                '- stop_mirroring: Stop mirroring\n'
+                '- inject_key: Send key events (Home=3, Back=4, AppSwitch=187)\n'
+                '- inject_touch: Send touch events\n'
+                '- inject_text: Type text\n'
+                '- inject_scroll: Scroll the screen\n\n'
+                'Help the user control their Android device.',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<GetPromptResult> _getTroubleshootPrompt(
+    GetPromptRequest request,
+  ) async {
+    final issue = request.arguments?['issue'] as String?;
+
+    final devices = await _adb.getDevices();
+
+    return GetPromptResult(
+      description: 'Device troubleshooting assistant',
+      messages: [
+        PromptMessage(
+          role: Role.user,
+          content: Content.text(
+            text: 'You are an Android device troubleshooting assistant.\n\n'
+                'Connected devices: ${devices.isEmpty ? "none" : devices.join(", ")}\n'
+                '${issue != null ? "Reported issue: $issue\n" : ""}\n'
+                'Common issues and solutions:\n'
+                '1. No devices found: Check USB connection, enable USB debugging\n'
+                '2. Connection refused: Restart adb server (adb kill-server)\n'
+                '3. Mirroring fails: Check scrcpy server version compatibility\n'
+                '4. Black screen: Device may be locked, try pressing power key\n\n'
+                'Help the user diagnose and resolve their device issue.',
+          ),
+        ),
+      ],
     );
   }
 
