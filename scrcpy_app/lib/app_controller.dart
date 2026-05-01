@@ -1,4 +1,6 @@
+import 'package:autoglm_adb/autoglm_adb.dart';
 import 'package:flutter/material.dart';
+import 'package:scrcpy_app/scrcpy_app_adb.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
 class AppController extends ChangeNotifier {
@@ -6,7 +8,9 @@ class AppController extends ChangeNotifier {
   static final _instance = AppController._();
   factory AppController() => _instance;
 
-  final scrcpyViewController = ScrcpyViewController();
+  final scrcpyViewController = ScrcpyViewController(
+    adb: const ScrcpyAppAdb(AdbClient()),
+  );
 
   bool _running = false;
   bool get running => _running;

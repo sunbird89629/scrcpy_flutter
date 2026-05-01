@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:autoglm_adb/autoglm_adb.dart';
 import 'package:autoglm_core/autoglm_core.dart';
 import 'package:autoglm_logger/autoglm_logger.dart';
+import 'package:autoglm_app/scrcpy/autoglm_scrcpy_bridge.dart';
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:scrcpy_adapters/scrcpy_adapters.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
 void main() async {
@@ -117,8 +117,9 @@ class _ScrcpyTestScreenState extends State<ScrcpyTestScreen> {
     _addLog('Using device: $deviceId');
 
     _server = ScrcpyServer(
-      adb: AdbClientAdapter(adbClient),
+      adb: AutoGlmScrcpyAdb(adbClient),
       deviceId: deviceId,
+      logger: const AutoGlmScrcpyLogger(),
     );
 
     _server!.metadata.listen((meta) {

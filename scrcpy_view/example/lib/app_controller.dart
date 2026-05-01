@@ -17,8 +17,10 @@ class AppController extends ChangeNotifier {
   final List<String> _logs = [];
   late final UnmodifiableListView<String> logs = UnmodifiableListView(_logs);
 
-  final ScrcpyViewController scrcpyController = ScrcpyViewController();
   final adbClient = SafeAdbClient();
+  late final ScrcpyViewController scrcpyController = ScrcpyViewController(
+    adb: adbClient,
+  );
   final deviceId = "11081FDD4004DY";
 
   StreamStats _stats = StreamStats();

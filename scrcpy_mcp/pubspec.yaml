@@ -9,7 +9,9 @@ environment:
 resolution: workspace
 
 dependencies:
-  scrcpy_adapters:
-    path: ../packages/scrcpy_adapters
+  autoglm_adb:
+    path: ../packages/autoglm_adb
+  autoglm_logger:
+    path: ../packages/autoglm_logger
   scrcpy_view:
     path: ../scrcpy_view

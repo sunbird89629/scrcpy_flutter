@@ -14,15 +14,12 @@ Connect an Android device via ADB, select it from the dropdown, and the screen w
 ## Usage
 
 ```dart
-import 'package:scrcpy_adapters/scrcpy_adapters.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
+import 'package:scrcpy_view_example/safe_adb_client.dart';
 
 ScrcpyView(
-  adb: AdbClientAdapter(AdbClient()),
-  deviceId: 'your-device-serial',
-  videoBackend: const WebViewVideoBackend(),
-  onError: (err) => print('Error: $err'),
+  controller: ScrcpyViewController(adb: SafeAdbClient()),
 )
 ```
 
-`scrcpy_view` defines two abstract interfaces — `ScrcpyAdb` and `ScrcpyLogger` — so you can provide your own implementations. This example uses the shared `scrcpy_adapters` package which bridges `autoglm_adb` and `autoglm_logger`.
+`scrcpy_view` defines two abstract interfaces — `ScrcpyAdb` and `ScrcpyLogger` — so you can provide your own implementations. This example keeps a small local `SafeAdbClient` adapter that bridges `autoglm_adb` to `ScrcpyAdb`.

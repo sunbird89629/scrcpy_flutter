@@ -34,11 +34,10 @@ Add deps inside the target package (not at root), then `melos bootstrap` from ro
 
 ```
 packages/autoglm_logger ──> packages/autoglm_core
-packages/autoglm_adb ──> scrcpy_view (publishable widget library)
-                                      │
-packages/autoglm_ui_kit ──────────────┼──> autoglm_app (AI agent)
-                                      │
-                                      └──> scrcpy_app (scrcpy client)
+packages/autoglm_adb ────────────────┐
+packages/autoglm_logger ─────────────┤
+packages/autoglm_ui_kit ─────────────┼──> autoglm_app (AI agent)
+scrcpy_view (widget/protocol package) ├──> scrcpy_app (scrcpy client)
                                       └──> scrcpy_mcp (MCP server)
 ```
 
@@ -62,8 +61,6 @@ Lower layers must never import from upper layers.
 
 **scrcpy_mcp** — MCP server wrapping scrcpy operations
 
-**scrcpy_adapters** — Shared `AdbClientAdapter` + `AppLoggerAdapter` implementations. Used by any package that needs to bridge `autoglm_adb`/`autoglm_logger` into `scrcpy_view`'s abstract interfaces.
-
 **autoglm_core** — `Settings`/`SettingsRepository`, `HistoryDatabase` (SQLite via sqflite_common_ffi), `TraceManager` (daily-rolling JSONL). Re-exports `autoglm_logger`.
 
 **autoglm_adb** — `AdbClient` (shell, forward, reverse, push, pair, connect), `AdbProcessRunner`.
@@ -74,6 +71,7 @@ Lower layers must never import from upper layers.
 
 - Use `appLogger` from `package:autoglm_core` for all logging (never `print`)
 - Use `ScrcpyAdb` interface from `scrcpy_view` for testing without a real device
+- Keep `scrcpy_view` independent from AutoGLM-specific packages; app/MCP entry points own their local adapters from `AdbClient`/`appLogger` to `ScrcpyAdb`/`ScrcpyLogger`
 - Asset paths in `rootBundle.load()` use `packages/<name>/assets/...` matching the pubspec `name:` field
 - Never add `test` package as a dev_dependency in workspace packages — it conflicts with `flutter_test` from SDK
 - scrcpy macOS apps need `com.apple.security.network.client`/`server` entitlements and sandbox disabled

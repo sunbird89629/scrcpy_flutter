@@ -11,12 +11,12 @@ resolution: workspace
 
 dependencies:
   path: ^1.9.0
+  autoglm_adb:
+    path: ../packages/autoglm_adb
   autoglm_logger:
     path: ../packages/autoglm_logger
   scrcpy_view:
     path: ../scrcpy_view
-  scrcpy_adapters:
-    path: ../packages/scrcpy_adapters
   flutter_inappwebview: ^6.1.5
 dev_dependencies:
   flutter_test:

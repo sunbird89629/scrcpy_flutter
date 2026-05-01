@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:scrcpy_adapters/scrcpy_adapters.dart';
 import 'package:scrcpy_view/src/backends/scrcpy_video_backend.dart';
 import 'package:scrcpy_view/src/control_message.dart';
+import 'package:scrcpy_view/src/scrcpy_adb.dart';
 import 'package:scrcpy_view/src/scrcpy_logger.dart';
 import 'package:scrcpy_view/src/scrcpy_server.dart';
 
@@ -14,9 +14,9 @@ import 'package:scrcpy_view/src/scrcpy_server.dart';
 ///
 /// Example:
 /// ```dart
-/// final controller = ScrcpyViewController();
+/// final controller = ScrcpyViewController(adb: myAdb);
 ///
-/// await controller.start(myAdb, '11081FDD4004DY');
+/// await controller.start('11081FDD4004DY');
 ///
 /// ScrcpyView(controller: controller)
 ///
@@ -26,14 +26,25 @@ import 'package:scrcpy_view/src/scrcpy_server.dart';
 /// controller.dispose();
 /// ```
 class ScrcpyViewController extends ChangeNotifier {
+  /// Creates a controller backed by an injected ADB bridge.
+  ScrcpyViewController({
+    required ScrcpyAdb adb,
+    ScrcpyLogger logger = const NoOpScrcpyLogger(),
+  })  : _adb = adb,
+        _logger = logger;
+
+  final ScrcpyAdb _adb;
+  final ScrcpyLogger _logger;
+
   ScrcpyServer? _server;
   bool _running = false;
   bool _pending = false;
   VoidCallback? _onStopped;
 
-  final scrcpyAdb = AdbClientAdapter.withPath();
-
+  /// Whether the UI should consider the current session running.
   bool get running => _running;
+
+  /// Updates the running flag and notifies listeners.
   set running(bool value) {
     _running = value;
     notifyListeners();
@@ -44,7 +55,8 @@ class ScrcpyViewController extends ChangeNotifier {
     (msg) => _server?.sendControlMessage(msg),
   );
 
-  Future<List<String>> getDevices() => scrcpyAdb.getDevices();
+  /// Returns the current ADB device serials from the injected ADB bridge.
+  Future<List<String>> getDevices() => _adb.getDevices();
 
   // ── Readable state ────────────────────────────────────────────────────────
 
@@ -62,7 +74,7 @@ class ScrcpyViewController extends ChangeNotifier {
   /// No-ops if a session is already starting or active.
   Future<void> start(
     String deviceId, {
-    ScrcpyLogger logger = const NoOpScrcpyLogger(),
+    ScrcpyLogger? logger,
     VoidCallback? onStarted,
     VoidCallback? onStopped,
     ValueChanged<String>? onError,
@@ -73,9 +85,9 @@ class ScrcpyViewController extends ChangeNotifier {
     notifyListeners();
 
     final server = ScrcpyServer(
-      adb: scrcpyAdb,
+      adb: _adb,
       deviceId: deviceId,
-      logger: logger,
+      logger: logger ?? _logger,
     );
     try {
       await server.start();
@@ -83,6 +95,9 @@ class ScrcpyViewController extends ChangeNotifier {
       _pending = false;
       notifyListeners();
       onStarted?.call();
+    } catch (e) {
+      onError?.call(e.toString());
+      rethrow;
     } finally {
       _pending = false;
       _onStopped = null;

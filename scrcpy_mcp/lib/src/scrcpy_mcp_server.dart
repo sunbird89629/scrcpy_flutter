@@ -1,9 +1,10 @@
 import 'package:autoglm_adb/autoglm_adb.dart';
-import 'package:scrcpy_adapters/scrcpy_adapters.dart';
+import 'package:scrcpy_mcp/src/scrcpy_mcp_adapters.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
 /// Scrcpy operations exposed for MCP tool integration.
 class ScrcpyMcpServer {
+  /// Creates a scrcpy MCP facade using [adbPath], or `adb` by default.
   ScrcpyMcpServer({String? adbPath})
       : _adb = AdbClient(adbPath: adbPath ?? 'adb');
 
@@ -17,9 +18,9 @@ class ScrcpyMcpServer {
   Future<ScrcpyServer> startMirroring(String deviceId) async {
     await _server?.stop();
     _server = ScrcpyServer(
-      adb: AdbClientAdapter(_adb),
+      adb: ScrcpyMcpAdb(_adb),
       deviceId: deviceId,
-      logger: const AppLoggerAdapter(),
+      logger: const ScrcpyMcpLogger(),
     );
     await _server!.start();
     return _server!;

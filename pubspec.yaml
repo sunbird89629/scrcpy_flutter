@@ -10,7 +10,6 @@ workspace:
   - packages/autoglm_logger
   - packages/autoglm_ui_kit
   - packages/autoglm_adb
-  - packages/scrcpy_adapters
   - scrcpy_app
   - scrcpy_mcp
   - scrcpy_view

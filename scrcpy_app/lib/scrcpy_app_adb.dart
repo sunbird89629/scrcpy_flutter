@@ -3,14 +3,8 @@ import 'dart:io';
 import 'package:autoglm_adb/autoglm_adb.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
-/// Adapts [AdbClient] to the [ScrcpyAdb] interface.
-class AdbClientAdapter implements ScrcpyAdb {
-  /// Creates an adapter wrapping [client].
-  AdbClientAdapter(this._client);
-
-  /// Creates an adapter with a default [AdbClient] using [adbPath].
-  AdbClientAdapter.withPath({String adbPath = 'adb'})
-      : _client = AdbClient(adbPath: adbPath);
+class ScrcpyAppAdb implements ScrcpyAdb {
+  const ScrcpyAppAdb(this._client);
 
   final AdbClient _client;
 
@@ -18,14 +12,14 @@ class AdbClientAdapter implements ScrcpyAdb {
   String get adbPath => _client.adbPath;
 
   @override
-  Future<List<String>> getDevices() async => _client.getDevices();
+  Future<List<String>> getDevices() => _client.getDevices();
 
   @override
   Future<ProcessResult> shell(
     List<String> arguments, {
     String? deviceId,
     Duration timeout = const Duration(seconds: 30),
-  }) async {
+  }) {
     return _client.shell(arguments, deviceId: deviceId, timeout: timeout);
   }
 
@@ -35,7 +29,7 @@ class AdbClientAdapter implements ScrcpyAdb {
     String remote, {
     String? deviceId,
     bool noRebind = false,
-  }) async {
+  }) {
     return _client.forward(
       local,
       remote,
@@ -45,16 +39,12 @@ class AdbClientAdapter implements ScrcpyAdb {
   }
 
   @override
-  Future<void> forwardRemove(String local, {String? deviceId}) async {
+  Future<void> forwardRemove(String local, {String? deviceId}) {
     return _client.forwardRemove(local, deviceId: deviceId);
   }
 
   @override
-  Future<void> push(
-    String localPath,
-    String remotePath, {
-    String? deviceId,
-  }) async {
+  Future<void> push(String localPath, String remotePath, {String? deviceId}) {
     return _client.push(localPath, remotePath, deviceId: deviceId);
   }
 }

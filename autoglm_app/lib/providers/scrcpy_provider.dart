@@ -1,7 +1,7 @@
 import 'package:autoglm_app/providers/adb_provider.dart';
 import 'package:autoglm_app/providers/device_provider.dart';
+import 'package:autoglm_app/scrcpy/autoglm_scrcpy_bridge.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:scrcpy_adapters/scrcpy_adapters.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
 /// Provider for a [ScrcpyServer] instance for the selected device.
@@ -11,8 +11,9 @@ final scrcpyServerProvider = FutureProvider<ScrcpyServer?>((ref) async {
 
   final adbClient = await ref.watch(adbClientProvider.future);
   final server = ScrcpyServer(
-    adb: AdbClientAdapter(adbClient),
+    adb: AutoGlmScrcpyAdb(adbClient),
     deviceId: deviceId,
+    logger: const AutoGlmScrcpyLogger(),
   );
 
   ref.onDispose(() async {

@@ -1,11 +1,13 @@
 import 'dart:io';
 
 import 'package:autoglm_adb/autoglm_adb.dart';
-import 'package:flutter/material.dart';
+import 'package:autoglm_core/autoglm_core.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
-class SafeAdbClient implements ScrcpyAdb {
-  SafeAdbClient({AdbClient? client}) : _client = client ?? const AdbClient();
+/// Bridges AutoGLM's ADB client to the scrcpy package boundary.
+class AutoGlmScrcpyAdb implements ScrcpyAdb {
+  /// Creates an ADB bridge around [AdbClient].
+  const AutoGlmScrcpyAdb(this._client);
 
   final AdbClient _client;
 
@@ -17,20 +19,11 @@ class SafeAdbClient implements ScrcpyAdb {
 
   @override
   Future<ProcessResult> shell(
-    List<String> args, {
+    List<String> arguments, {
     String? deviceId,
     Duration timeout = const Duration(seconds: 30),
-  }) async {
-    try {
-      return await _client.shell(args, deviceId: deviceId, timeout: timeout);
-    } catch (e) {
-      final cmd = args.join(' ');
-      if (cmd.contains('pkill')) {
-        debugPrint('SafeAdbClient: Ignoring pkill failure: $e');
-        return ProcessResult(0, 0, '', '');
-      }
-      rethrow;
-    }
+  }) {
+    return _client.shell(arguments, deviceId: deviceId, timeout: timeout);
   }
 
   @override
@@ -56,5 +49,27 @@ class SafeAdbClient implements ScrcpyAdb {
   @override
   Future<void> push(String localPath, String remotePath, {String? deviceId}) {
     return _client.push(localPath, remotePath, deviceId: deviceId);
+  }
+}
+
+/// Bridges AutoGLM's application logger to scrcpy logging.
+class AutoGlmScrcpyLogger implements ScrcpyLogger {
+  /// Creates a logger bridge around AutoGLM's global logger.
+  const AutoGlmScrcpyLogger();
+
+  @override
+  void debug(String message) => appLogger.d(message);
+
+  @override
+  void info(String message) => appLogger.i(message);
+
+  @override
+  void warn(String message, [Object? error, StackTrace? stack]) {
+    appLogger.w(message, error, stack);
+  }
+
+  @override
+  void error(String message, [Object? error, StackTrace? stack]) {
+    appLogger.e(message, error, stack);
   }
 }

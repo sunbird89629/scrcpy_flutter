@@ -13,8 +13,8 @@ dependencies:
   flutter_driver:
     sdk: flutter
   flutter_inappwebview: ^6.1.5
-  scrcpy_adapters:
-    path: ../../packages/scrcpy_adapters
+  autoglm_adb:
+    path: ../../packages/autoglm_adb
   scrcpy_view:
     path: ../
   autoglm_logger:
