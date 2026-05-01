@@ -463,4 +463,11 @@ final class ScrcpyMcpServer extends MCPServer
       ],
     );
   }
+
+  @override
+  Future<void> shutdown() async {
+    await _activeServer?.stop();
+    _activeServer = null;
+    await super.shutdown();
+  }
 }
