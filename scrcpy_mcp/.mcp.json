@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "scrcpy": {
+      "command": "flutter",
+      "args": ["run", "bin/scrcpy_mcp.dart"]
+    }
+  }
+}
