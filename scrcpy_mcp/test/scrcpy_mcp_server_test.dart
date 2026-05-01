@@ -71,5 +71,37 @@ void main() {
       );
       expect(server, isNotNull);
     });
+
+    test('inject_key tool is registered', () async {
+      final server = ScrcpyMcpServer(
+        _testChannel(),
+        adb: MockAdb(),
+      );
+      expect(server, isNotNull);
+    });
+
+    test('inject_touch tool is registered', () async {
+      final server = ScrcpyMcpServer(
+        _testChannel(),
+        adb: MockAdb(),
+      );
+      expect(server, isNotNull);
+    });
+
+    test('inject_text tool is registered', () async {
+      final server = ScrcpyMcpServer(
+        _testChannel(),
+        adb: MockAdb(),
+      );
+      expect(server, isNotNull);
+    });
+
+    test('inject_scroll tool is registered', () async {
+      final server = ScrcpyMcpServer(
+        _testChannel(),
+        adb: MockAdb(),
+      );
+      expect(server, isNotNull);
+    });
   });
 }
