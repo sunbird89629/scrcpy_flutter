@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:autoglm_adb/src/adb_process_runner.dart';
 import 'package:autoglm_adb/src/exceptions.dart';
-import 'device_info.dart';
+import 'package:autoglm_adb/src/device_info.dart';
 
 /// Provides high-level ADB commands.
 class AdbClient {
