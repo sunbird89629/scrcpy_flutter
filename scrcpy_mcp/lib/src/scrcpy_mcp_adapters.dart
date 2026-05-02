@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:autoglm_adb/autoglm_adb.dart';
 import 'package:autoglm_logger/autoglm_logger.dart';
@@ -49,6 +50,19 @@ class ScrcpyMcpAdb implements ScrcpyAdb {
   @override
   Future<void> push(String localPath, String remotePath, {String? deviceId}) {
     return _client.push(localPath, remotePath, deviceId: deviceId);
+  }
+
+  @override
+  Future<Uint8List> takeScreenshot(String deviceId) async {
+    final result = await Process.run(
+      adbPath,
+      ['-s', deviceId, 'exec-out', 'screencap', '-p'],
+      stdoutEncoding: null,
+    );
+    if (result.exitCode != 0) {
+      throw Exception('screencap failed (exit ${result.exitCode}): ${result.stderr}');
+    }
+    return Uint8List.fromList(result.stdout as List<int>);
   }
 }
 
