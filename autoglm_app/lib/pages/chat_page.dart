@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:autoglm_core/autoglm_core.dart';
 import 'package:autoglm_app/providers/scrcpy_provider.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
-import 'package:autoglm_ui_kit/autoglm_ui_kit.dart';
+import 'package:autoglm_app/theme/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';

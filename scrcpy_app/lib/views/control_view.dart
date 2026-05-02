@@ -12,16 +12,18 @@ class ControlView extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppController appController = AppController();
     return SizedBox(
-      width: 400,
+      width: 300,
       child: ListenableBuilder(
         listenable: appController.mcpServerController,
         builder: (_, __) {
           return Column(
             children: [
-              ControlButtonWidget(),
-              McpServerPanel(
-                controller: appController.mcpServerController,
+              Expanded(
+                child: McpServerPanel(
+                  controller: appController.mcpServerController,
+                ),
               ),
+              ControlButtonWidget(),
             ],
           );
         },

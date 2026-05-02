@@ -19,6 +19,17 @@ strings.g.dart
 .vscode/
 *.iml
 
+# MCP configs (developer-specific)
+.mcp.json
+**/.mcp.json
+
+# Gemini CLI config
+.gemini/
+**/.gemini/
+
+# Debug artifacts
+screenshot_*.json
+
 # macOS
 .DS_Store
 

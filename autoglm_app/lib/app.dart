@@ -1,7 +1,9 @@
 import 'package:autoglm_app/i18n/strings.g.dart';
 import 'package:autoglm_app/providers/theme_mode_provider.dart';
 import 'package:autoglm_app/router.dart';
-import 'package:autoglm_ui_kit/autoglm_ui_kit.dart';
+import 'package:autoglm_app/theme/dark_theme.dart';
+import 'package:autoglm_app/theme/design_tokens.dart';
+import 'package:autoglm_app/theme/light_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

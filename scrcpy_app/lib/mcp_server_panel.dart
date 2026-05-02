@@ -18,8 +18,7 @@ class _McpServerPanelState extends State<McpServerPanel> {
   @override
   void initState() {
     super.initState();
-    _portCtrl =
-        TextEditingController(text: widget.controller.port.toString());
+    _portCtrl = TextEditingController(text: widget.controller.port.toString());
   }
 
   @override
@@ -35,11 +34,6 @@ class _McpServerPanelState extends State<McpServerPanel> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: theme.dividerColor),
-        ),
-      ),
       child:
           ctrl.isRunning ? _buildRunning(ctrl, theme) : _buildIdle(ctrl, theme),
     );

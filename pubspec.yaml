@@ -8,7 +8,6 @@ workspace:
   - autoglm_app
   - packages/autoglm_core
   - packages/autoglm_logger
-  - packages/autoglm_ui_kit
   - packages/autoglm_adb
   - scrcpy_app
   - scrcpy_mcp
@@ -18,8 +17,6 @@ dev_dependencies:
   melos: ^7.0.0
 
 melos:
-  sdkPath: .fvm/flutter_sdk
-
   command:
     bootstrap:
       runPubGetInParallel: false

@@ -145,4 +145,4 @@ dart run scrcpy_mcp/bin/scrcpy_mcp.dart
 
 ## License
 
-BSD-3-Clause
+Apache-2.0

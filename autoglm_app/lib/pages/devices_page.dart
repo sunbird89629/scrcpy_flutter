@@ -1,7 +1,7 @@
 import 'package:autoglm_app/i18n/strings.g.dart';
 import 'package:autoglm_app/providers/adb_provider.dart';
 import 'package:autoglm_app/providers/device_provider.dart';
-import 'package:autoglm_ui_kit/autoglm_ui_kit.dart';
+import 'package:autoglm_app/theme/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

@@ -16,8 +16,6 @@ dependencies:
     path: ../packages/autoglm_core
   autoglm_logger:
     path: ../packages/autoglm_logger
-  autoglm_ui_kit:
-    path: ../packages/autoglm_ui_kit
   dio: ^5.7.0
   flutter:
     sdk: flutter
