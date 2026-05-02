@@ -10,16 +10,18 @@ environment:
 resolution: workspace
 
 dependencies:
-  path: ^1.9.0
   autoglm_adb:
     path: ../packages/autoglm_adb
   autoglm_logger:
     path: ../packages/autoglm_logger
+  flutter:
+    sdk: flutter
+  flutter_inappwebview: ^6.1.5
+  path: ^1.9.0
   scrcpy_mcp:
     path: ../scrcpy_mcp
   scrcpy_view:
     path: ../scrcpy_view
-  flutter_inappwebview: ^6.1.5
 dev_dependencies:
   flutter_test:
     sdk: flutter

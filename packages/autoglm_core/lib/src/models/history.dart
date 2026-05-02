@@ -10,6 +10,17 @@ class ConversationRecord {
     this.status = 'active',
   });
 
+  /// Creates a record from a JSON map.
+  factory ConversationRecord.fromJson(Map<String, dynamic> json) =>
+      ConversationRecord(
+        id: json['id'] as String,
+        deviceId: json['device_id'] as String,
+        startTime: DateTime.parse(json['start_time'] as String),
+        lastUpdated: DateTime.parse(json['last_updated'] as String),
+        taskDescription: json['task_description'] as String?,
+        status: json['status'] as String? ?? 'active',
+      );
+
   /// The unique session ID.
   final String id;
 
@@ -30,24 +41,13 @@ class ConversationRecord {
 
   /// Converts the record to a JSON map.
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'device_id': deviceId,
-    'start_time': startTime.toIso8601String(),
-    'last_updated': lastUpdated.toIso8601String(),
-    'task_description': taskDescription,
-    'status': status,
-  };
-
-  /// Creates a record from a JSON map.
-  factory ConversationRecord.fromJson(Map<String, dynamic> json) =>
-      ConversationRecord(
-        id: json['id'] as String,
-        deviceId: json['device_id'] as String,
-        startTime: DateTime.parse(json['start_time'] as String),
-        lastUpdated: DateTime.parse(json['last_updated'] as String),
-        taskDescription: json['task_description'] as String?,
-        status: json['status'] as String? ?? 'active',
-      );
+        'id': id,
+        'device_id': deviceId,
+        'start_time': startTime.toIso8601String(),
+        'last_updated': lastUpdated.toIso8601String(),
+        'task_description': taskDescription,
+        'status': status,
+      };
 }
 
 /// Represents a single step within a conversation.
@@ -62,6 +62,17 @@ class StepRecord {
     this.observation,
     this.screenshotPath,
   });
+
+  /// Creates a record from a JSON map.
+  factory StepRecord.fromJson(Map<String, dynamic> json) => StepRecord(
+        id: json['id'] as String,
+        conversationId: json['conversation_id'] as String,
+        stepNumber: json['step_number'] as int,
+        timestamp: DateTime.parse(json['timestamp'] as String),
+        action: json['action'] as String,
+        observation: json['observation'] as String?,
+        screenshotPath: json['screenshot_path'] as String?,
+      );
 
   /// The unique step ID.
   final String id;
@@ -86,23 +97,12 @@ class StepRecord {
 
   /// Converts the record to a JSON map.
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'conversation_id': conversationId,
-    'step_number': stepNumber,
-    'timestamp': timestamp.toIso8601String(),
-    'action': action,
-    'observation': observation,
-    'screenshot_path': screenshotPath,
-  };
-
-  /// Creates a record from a JSON map.
-  factory StepRecord.fromJson(Map<String, dynamic> json) => StepRecord(
-    id: json['id'] as String,
-    conversationId: json['conversation_id'] as String,
-    stepNumber: json['step_number'] as int,
-    timestamp: DateTime.parse(json['timestamp'] as String),
-    action: json['action'] as String,
-    observation: json['observation'] as String?,
-    screenshotPath: json['screenshot_path'] as String?,
-  );
+        'id': id,
+        'conversation_id': conversationId,
+        'step_number': stepNumber,
+        'timestamp': timestamp.toIso8601String(),
+        'action': action,
+        'observation': observation,
+        'screenshot_path': screenshotPath,
+      };
 }

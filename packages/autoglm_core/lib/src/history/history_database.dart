@@ -3,12 +3,16 @@ import 'package:autoglm_core/src/models/history.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+/// SQLite-backed store for conversation history.
 class HistoryDatabase {
+  /// Creates a history database using [dbPath] as the database file.
   HistoryDatabase({required this.dbPath});
 
+  /// Path to the SQLite database file.
   final String dbPath;
   Database? _db;
 
+  /// Lazily opens and returns the SQLite database.
   Future<Database> get db async {
     if (_db != null) return _db!;
     _db = await _initDb();
@@ -56,6 +60,7 @@ class HistoryDatabase {
     );
   }
 
+  /// Inserts or replaces a conversation record.
   Future<void> insertConversation(ConversationRecord record) async {
     final d = await db;
     await d.insert(
@@ -65,6 +70,7 @@ class HistoryDatabase {
     );
   }
 
+  /// Lists conversation records ordered by most recent update.
   Future<List<ConversationRecord>> listConversations({
     int limit = 50,
     int offset = 0,
@@ -76,9 +82,10 @@ class HistoryDatabase {
       limit: limit,
       offset: offset,
     );
-    return maps.map((m) => ConversationRecord.fromJson(m)).toList();
+    return maps.map(ConversationRecord.fromJson).toList();
   }
 
+  /// Closes the database connection if it is open.
   Future<void> close() async {
     await _db?.close();
     _db = null;

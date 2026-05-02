@@ -22,8 +22,8 @@ class AppLogger {
       }
       final today = DateTime.now();
       final fileName = 'autoglm-${_dateStamp(today)}.log';
-      _file = File(join(_logsDir.path, fileName));
-      outputs.add(_FileOutput(_file!));
+      final file = File(join(_logsDir.path, fileName));
+      outputs.add(_FileOutput(file));
       _pruneOldFiles();
     }
 
@@ -34,8 +34,7 @@ class AppLogger {
     );
   }
 
-  final Directory? _logsDir;
-  File? _file;
+  late final Directory? _logsDir;
   late final Logger _logger;
 
   static AppLogger? _instance;
@@ -89,15 +88,14 @@ class AppLogger {
   void _pruneOldFiles() {
     if (_logsDir == null) return;
     try {
-      final files =
-          _logsDir
-              .listSync()
-              .whereType<File>()
-              .where((f) => basename(f.path).startsWith('autoglm-'))
-              .toList()
-            ..sort(
-              (a, b) => b.statSync().modified.compareTo(a.statSync().modified),
-            );
+      final files = _logsDir
+          .listSync()
+          .whereType<File>()
+          .where((f) => basename(f.path).startsWith('autoglm-'))
+          .toList()
+        ..sort(
+          (a, b) => b.statSync().modified.compareTo(a.statSync().modified),
+        );
       for (final f in files.skip(5)) {
         try {
           f.deleteSync();

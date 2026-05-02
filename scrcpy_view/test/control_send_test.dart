@@ -43,6 +43,9 @@ class _NoOpAdb implements ScrcpyAdb {
     String remotePath, {
     String? deviceId,
   }) async {}
+
+  @override
+  Future<Uint8List> takeScreenshot(String deviceId) async => Uint8List(0);
 }
 
 void main() {

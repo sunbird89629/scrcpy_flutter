@@ -36,7 +36,6 @@ Add deps inside the target package (not at root), then `melos bootstrap` from ro
 packages/autoglm_logger ──> packages/autoglm_core
 packages/autoglm_adb ────────────────┐
 packages/autoglm_logger ─────────────┤
-packages/autoglm_ui_kit ─────────────┼──> autoglm_app (AI agent)
 scrcpy_view (widget/protocol package) ├──> scrcpy_app (scrcpy client)
                                       └──> scrcpy_mcp (MCP server)
 ```
@@ -64,8 +63,6 @@ Lower layers must never import from upper layers.
 **autoglm_core** — `Settings`/`SettingsRepository`, `HistoryDatabase` (SQLite via sqflite_common_ffi), `TraceManager` (daily-rolling JSONL). Re-exports `autoglm_logger`.
 
 **autoglm_adb** — `AdbClient` (shell, forward, reverse, push, pair, connect), `AdbProcessRunner`.
-
-**autoglm_ui_kit** — Material 3 light/dark themes seeded from `Colors.indigo`. Design tokens in `DESIGN.md`.
 
 ## Conventions
 

@@ -157,6 +157,7 @@ class AdbClient {
     throw AdbException('Connect failed: $output');
   }
 
+  /// Returns serial numbers for devices currently reported by `adb devices`.
   Future<List<String>> getDevices() async {
     final result = await runner.runRaw(adbPath, ['devices']);
     final lines = result.stdout.toString().split('\n');

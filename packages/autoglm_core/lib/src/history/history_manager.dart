@@ -6,6 +6,7 @@ class HistoryManager {
   /// Creates a new [HistoryManager].
   HistoryManager({required this.database});
 
+  /// Database used for history persistence.
   final HistoryDatabase database;
 
   /// Adds a new conversation record.

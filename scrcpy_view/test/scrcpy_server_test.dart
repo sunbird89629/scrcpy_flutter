@@ -55,6 +55,9 @@ class MockScrcpyAdb implements ScrcpyAdb {
   Future<void> forwardRemove(String local, {String? deviceId}) async {
     forwardRemoveCalls.add(local);
   }
+
+  @override
+  Future<Uint8List> takeScreenshot(String deviceId) async => Uint8List(0);
 }
 
 void main() {
@@ -63,15 +66,15 @@ void main() {
   const pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(pathProviderChannel, (
-        MethodCall methodCall,
-      ) async {
-        if (methodCall.method == 'getApplicationSupportDirectory') {
-          return Directory.systemTemp.path;
-        } else if (methodCall.method == 'getTemporaryDirectory') {
-          return Directory.systemTemp.path;
-        }
-        return null;
-      });
+    MethodCall methodCall,
+  ) async {
+    if (methodCall.method == 'getApplicationSupportDirectory') {
+      return Directory.systemTemp.path;
+    } else if (methodCall.method == 'getTemporaryDirectory') {
+      return Directory.systemTemp.path;
+    }
+    return null;
+  });
 
   group('ScrcpyServer Configuration', () {
     late MockScrcpyAdb mockAdb;

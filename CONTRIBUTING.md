@@ -4,7 +4,7 @@ Thank you for your interest in contributing! This guide will help you get starte
 
 ## Prerequisites
 
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) 3.41+ (check `.fvmrc` for the pinned version)
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) 3.24+ (check `.fvmrc` for the pinned version)
 - [Melos](https://melos.invertase.dev/) (`dart pub global activate melos`)
 - A physical Android device connected via USB (for scrcpy features)
 
@@ -58,7 +58,6 @@ This is a Melos-managed monorepo. Lower layers must never import from upper laye
 packages/autoglm_logger ──> packages/autoglm_core
 packages/autoglm_adb ────────────────┐
 packages/autoglm_logger ─────────────┤
-packages/autoglm_ui_kit ─────────────┼──> autoglm_app (AI agent)
 scrcpy_view (widget/protocol)  ──────┼──> scrcpy_app (scrcpy client)
                                       └──> scrcpy_mcp (MCP server)
 ```
@@ -72,7 +71,6 @@ scrcpy_view (widget/protocol)  ──────┼──> scrcpy_app (scrcpy c
 | `packages/autoglm_core` | Shared settings, history, logging |
 | `packages/autoglm_adb` | ADB binary wrapper |
 | `packages/autoglm_logger` | Logging facade |
-| `packages/autoglm_ui_kit` | Material 3 themes and design tokens |
 
 ## Code Style
 
@@ -97,7 +95,7 @@ cd packages/autoglm_core && flutter test
 ## Submitting Changes
 
 1. Fork the repository
-2. Create a feature branch from `test/webview-solution`
+2. Create a feature branch from `main`
 3. Make your changes
 4. Ensure `melos run analyze` and `melos run test` pass
 5. Commit with clear, descriptive messages

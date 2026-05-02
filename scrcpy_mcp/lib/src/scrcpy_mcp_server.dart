@@ -177,7 +177,6 @@ class ScrcpyMcpServer {
         description: 'Assist with Android device control via scrcpy.',
         argsSchema: {
           'device_id': const PromptArgumentDefinition(
-            type: String,
             description: 'The device to control (optional if only one device)',
           ),
         },
@@ -188,7 +187,6 @@ class ScrcpyMcpServer {
         description: 'Help diagnose and fix device connection issues.',
         argsSchema: {
           'issue': const PromptArgumentDefinition(
-            type: String,
             description: 'Description of the issue encountered',
           ),
         },

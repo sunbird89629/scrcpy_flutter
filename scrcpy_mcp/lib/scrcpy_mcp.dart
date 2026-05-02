@@ -1,5 +1,3 @@
-library;
-
 export 'src/mcp_http_server.dart';
 export 'src/scrcpy_mcp_adapters.dart';
 export 'src/scrcpy_mcp_server.dart';

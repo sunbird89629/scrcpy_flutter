@@ -12,7 +12,7 @@ import 'package:scrcpy_view/src/scrcpy_packet.dart';
 /// demuxer, so the stream is remuxed to MPEG-TS before being sent to the player.
 class ScrcpyProxyServer {
   ScrcpyProxyServer({ScrcpyLogger logger = const NoOpScrcpyLogger()})
-    : _log = logger;
+      : _log = logger;
   HttpServer? _server;
   StreamSubscription<ScrcpyPacket>? _subscription;
 
@@ -61,15 +61,13 @@ class ScrcpyProxyServer {
       _pendingClients.add(response);
 
       unawaited(
-        response.done
-            .then((_) {
-              _log.info('[ScrcpyProxyServer] HTTP client disconnected');
-              _removeClient(response);
-            })
-            .catchError((Object e) {
-              _log.warn('[ScrcpyProxyServer] Client error: $e');
-              _removeClient(response);
-            }),
+        response.done.then((_) {
+          _log.info('[ScrcpyProxyServer] HTTP client disconnected');
+          _removeClient(response);
+        }).catchError((Object e) {
+          _log.warn('[ScrcpyProxyServer] Client error: $e');
+          _removeClient(response);
+        }),
       );
     });
 

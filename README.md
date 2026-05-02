@@ -1,10 +1,28 @@
 # AutoGLM Flutter
 
-Flutter Desktop rewrite of [AutoGLM-GUI](https://github.com/suyiiyii/AutoGLM-GUI). Single-machine macOS desktop app (Windows/Linux planned for later sub-projects).
+AutoGLM Flutter is a macOS-first Flutter desktop workspace for Android device
+automation. It combines ADB device management, scrcpy-based screen mirroring,
+input control, and MCP server surfaces so local tools and agents can inspect
+and operate an Android device.
 
 ## Status
 
-The monorepo skeleton, shared packages, ADB wrapper, scrcpy stream layer, settings persistence, basic history storage, app shell, and placeholder UI pages are in place. The next work is to harden device/scrcpy reliability, replace placeholders with real workflows, connect the agent loop, and polish the desktop product experience.
+The project is under active development. The reusable ADB wrapper, scrcpy
+protocol layer, standalone scrcpy desktop app, MCP server package, and the
+main AutoGLM desktop shell are available. macOS is the only verified target at
+the moment; Windows and Linux support are planned after the macOS path is
+stable.
+
+## Features
+
+- Android device discovery and command execution through ADB
+- Scrcpy server lifecycle management and H.264 stream handling
+- WebView-based Android screen preview with touch, key, text, scroll, and
+  navigation controls
+- Standalone `scrcpy_app` desktop client for local mirroring experiments
+- `scrcpy_mcp` server exposing device and mirroring operations over MCP
+- `autoglm_app` desktop shell with settings, history, localization, and
+  provider wiring for future agent workflows
 
 ## Prerequisites
 
@@ -106,16 +124,6 @@ packages/
   autoglm_logger/      # App logger facade and class logger helpers
     lib/
 
-  autoglm_ui_kit/      # Shared Material themes and design tokens
-    lib/
-      autoglm_ui_kit.dart
-      src/theme/
-    test/
-
-docs/
-  plans/               # Implementation plans by date/sub-project
-  specs/               # Design/spec documents
-
 pubspec.yaml           # Dart workspace root, package list, and Melos scripts
 analysis_options.yaml  # Root analyzer configuration
 ```
@@ -211,7 +219,6 @@ Current test coverage:
 | `autoglm_app` | Router, shell layout, settings UI, locale/theme providers |
 | `packages/autoglm_adb` | ADB command parsing, process runner, binary manager |
 | `packages/autoglm_core` | Settings, history storage, trace records, logger behavior |
-| `packages/autoglm_ui_kit` | Light/dark theme smoke tests |
 | `scrcpy_view` | Control message encoding, server wiring, stream parser |
 
 Packages without a `test/` directory are skipped by the default command.

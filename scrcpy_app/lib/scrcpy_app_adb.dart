@@ -57,7 +57,8 @@ class ScrcpyAppAdb implements ScrcpyAdb {
       stdoutEncoding: null,
     );
     if (result.exitCode != 0) {
-      throw Exception('screencap failed (exit ${result.exitCode}): ${result.stderr}');
+      throw Exception(
+          'screencap failed (exit ${result.exitCode}): ${result.stderr}');
     }
     return Uint8List.fromList(result.stdout as List<int>);
   }

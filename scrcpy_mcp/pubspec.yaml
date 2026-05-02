@@ -13,6 +13,8 @@ dependencies:
     path: ../packages/autoglm_adb
   autoglm_logger:
     path: ../packages/autoglm_logger
+  flutter:
+    sdk: flutter
   mcp_dart: ^2.1.1
   scrcpy_view:
     path: ../scrcpy_view

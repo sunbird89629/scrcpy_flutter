@@ -25,9 +25,13 @@ void main() {
     test('handles timeout', () async {
       const runner = AdbProcessRunner();
       try {
-        await runner.runRaw('sleep', [
-          '2',
-        ], timeout: const Duration(milliseconds: 100));
+        await runner.runRaw(
+          'sleep',
+          [
+            '2',
+          ],
+          timeout: const Duration(milliseconds: 100),
+        );
         fail('Should have timed out');
       } on AdbException catch (e) {
         expect(e.message, contains('timeout'));

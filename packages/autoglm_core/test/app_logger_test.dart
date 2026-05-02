@@ -44,9 +44,6 @@ void main() {
       expect(logFiles.length, 1);
       final logFile = logFiles.first;
 
-      // We need to flush the logger if it has buffering, but current implementation uses Sync write.
-      // Wait, let's check _FileOutput.
-
       expect(logFile.readAsStringSync(), contains('hello'));
     });
   });

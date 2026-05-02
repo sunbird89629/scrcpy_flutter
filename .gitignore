@@ -36,6 +36,8 @@ screenshot_*.json
 # Flutter macOS build leftovers
 apps/desktop/macos/Pods/
 apps/desktop/macos/Flutter/ephemeral/
+**/macos/Flutter/ephemeral/
+**/macos/Pods/
 
 # Logs
 *.log

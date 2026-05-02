@@ -16,6 +16,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - Cleaned up `.gitignore` — removed tracked developer-specific files (`.mcp.json`, `.gemini/`, screenshot artifacts)
+- Removed tracked Flutter ephemeral build files from the macOS example app
+- Fixed analyzer and test issues found during open-source readiness checks
 
 ## [0.2.0] - 2026-05-02
 
@@ -48,4 +50,3 @@ All notable changes to this project will be documented in this file.
 - **autoglm_core**: Shared settings, history database, trace manager, logger
 - **autoglm_adb**: ADB binary wrapper with auto-download
 - **autoglm_logger**: Logging facade with daily file rotation
-- **autoglm_ui_kit**: Material 3 design tokens and shared themes

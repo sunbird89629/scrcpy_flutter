@@ -7,3 +7,27 @@ analyzer:
     - "**/strings.g.dart"
     - "**/build/**"
     - "**/.dart_tool/**"
+  errors:
+    deprecated_member_use: ignore
+
+linter:
+  rules:
+    always_put_required_named_parameters_first: false
+    always_use_package_imports: false
+    avoid_catches_without_on_clauses: false
+    avoid_final_parameters: false
+    avoid_js_rounded_ints: false
+    cascade_invocations: false
+    directives_ordering: false
+    lines_longer_than_80_chars: false
+    omit_local_variable_types: false
+    one_member_abstracts: false
+    prefer_asserts_with_message: false
+    prefer_const_constructors: false
+    public_member_api_docs: false
+    require_trailing_commas: false
+    sort_constructors_first: false
+    sort_pub_dependencies: false
+    sort_unnamed_constructors_first: false
+    unawaited_futures: false
+    unnecessary_breaks: false

@@ -25,7 +25,7 @@ cd autoglm_app && flutter run -d macos
 - **State management**: [Riverpod](https://riverpod.dev/) with code generation
 - **Navigation**: [go_router](https://pub.dev/packages/go_router) with ShellRoute for sidebar layout
 - **i18n**: [slang](https://pub.dev/packages/slang) (zh-CN base locale, en-US)
-- **Themes**: Material 3 light/dark via shared `autoglm_ui_kit`
+- **Themes**: Material 3 light/dark themes defined in `lib/theme/`
 
 ## Project structure
 
@@ -57,5 +57,4 @@ Settings are stored as JSON at `<appSupportDir>/settings.json`:
 
 - [autoglm_core](../packages/autoglm_core/) — Shared settings, history, logging
 - [autoglm_adb](../packages/autoglm_adb/) — ADB binary wrapper
-- [autoglm_ui_kit](../packages/autoglm_ui_kit/) — Material 3 themes
 - [scrcpy_view](../scrcpy_view/) — Android screen mirroring widget
