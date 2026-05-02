@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:autoglm_adb/src/adb_process_runner.dart';
 import 'package:autoglm_adb/src/exceptions.dart';
+import 'device_info.dart';
 
 /// Provides high-level ADB commands.
 class AdbClient {
@@ -171,5 +172,64 @@ class AdbClient {
       }
     }
     return devices;
+  }
+
+  /// Returns [DeviceInfo] for every device reported by `adb devices`.
+  ///
+  /// For online devices, `adb shell getprop` is called in parallel to populate
+  /// model/manufacturer/version fields. If getprop fails the device is still
+  /// returned with only the serial and status fields populated.
+  Future<List<DeviceInfo>> getDevicesWithInfo() async {
+    final result = await runner.runRaw(adbPath, ['devices']);
+    final lines = result.stdout.toString().split('\n');
+
+    final entries = <({String serial, DeviceStatus status})>[];
+    for (var i = 1; i < lines.length; i++) {
+      final line = lines[i].trim();
+      if (line.isEmpty || !line.contains('\t')) continue;
+      final parts = line.split('\t');
+      final serial = parts[0].trim();
+      final rawStatus = parts[1].trim();
+      final status = switch (rawStatus) {
+        'device' => DeviceStatus.online,
+        'offline' => DeviceStatus.offline,
+        _ => DeviceStatus.unauthorized,
+      };
+      entries.add((serial: serial, status: status));
+    }
+
+    return Future.wait(
+      entries.map((e) async {
+        if (e.status != DeviceStatus.online) {
+          return DeviceInfo(serial: e.serial, status: e.status);
+        }
+        try {
+          final propResult = await runner.runRaw(
+            adbPath,
+            ['-s', e.serial, 'shell', 'getprop'],
+          );
+          final props = _parseGetprop(propResult.stdout.toString());
+          return DeviceInfo(
+            serial: e.serial,
+            status: e.status,
+            model: props['ro.product.model'],
+            manufacturer: props['ro.product.manufacturer'],
+            androidVersion: props['ro.build.version.release'],
+            sdkVersion: int.tryParse(props['ro.build.version.sdk'] ?? ''),
+          );
+        } catch (_) {
+          return DeviceInfo(serial: e.serial, status: e.status);
+        }
+      }),
+    );
+  }
+
+  static Map<String, String> _parseGetprop(String output) {
+    final regex = RegExp(r'\[([^\]]+)\]:\s*\[([^\]]*)\]');
+    final result = <String, String>{};
+    for (final match in regex.allMatches(output)) {
+      result[match.group(1)!] = match.group(2)!;
+    }
+    return result;
   }
 }
