@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mcp_dart/mcp_dart.dart';
 import 'package:scrcpy_mcp/src/mcp_http_server.dart';
+import 'package:scrcpy_mcp/src/recording_adb.dart';
 import 'package:scrcpy_mcp/src/scrcpy_mcp_server.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
@@ -182,6 +183,95 @@ class _TestEnv {
   }
 
   final MockAdb adb;
+  final MockScrcpyViewController viewController;
+  late final ScrcpyMcpServer server;
+  late McpClient client;
+
+  Future<void> connect() async {
+    final serverToClient = StreamController<List<int>>();
+    final clientToServer = StreamController<List<int>>();
+
+    final serverTransport = IOStreamTransport(
+      stream: clientToServer.stream,
+      sink: serverToClient.sink,
+    );
+    final clientTransport = IOStreamTransport(
+      stream: serverToClient.stream,
+      sink: clientToServer.sink,
+    );
+
+    await server.mcpServer.connect(serverTransport);
+
+    client = McpClient(
+      const Implementation(name: 'test-client', version: '0.0.1'),
+      options: const McpClientOptions(capabilities: ClientCapabilities()),
+    );
+    await client.connect(clientTransport);
+
+    addTearDown(() async {
+      await serverToClient.close();
+      await clientToServer.close();
+      viewController.dispose();
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Recording mocks + env
+// ---------------------------------------------------------------------------
+
+class _MockRecordingAdb implements RecordingAdb {
+  @override
+  Future<RecordingProcess> startScreenrecord(
+    String deviceId,
+    String remotePath, {
+    int bitrate = 4000000,
+    int maxTime = 180,
+  }) async {
+    return _FakeRecordingProcess();
+  }
+
+  @override
+  Future<void> pullFile(
+    String deviceId,
+    String remotePath,
+    String localPath,
+  ) async {
+    // Write a minimal file so File(localPath).length() succeeds in _stopRecording.
+    await File(localPath).writeAsBytes([0]);
+  }
+
+  @override
+  Future<void> removeFile(String deviceId, String remotePath) async {}
+}
+
+class _FakeRecordingProcess implements RecordingProcess {
+  final _completer = Completer<int>();
+
+  @override
+  Future<int> get exitCode => _completer.future;
+
+  @override
+  bool kill([ProcessSignal signal = ProcessSignal.sigterm]) {
+    if (!_completer.isCompleted) _completer.complete(0);
+    return true;
+  }
+}
+
+class _RecordingTestEnv {
+  _RecordingTestEnv({List<String>? devices})
+      : adb = MockAdb(devices: devices ?? ['device1']),
+        recordingAdb = _MockRecordingAdb(),
+        viewController = MockScrcpyViewController() {
+    server = ScrcpyMcpServer(
+      session: viewController,
+      adb: adb,
+      recordingAdb: recordingAdb,
+    );
+  }
+
+  final MockAdb adb;
+  final _MockRecordingAdb recordingAdb;
   final MockScrcpyViewController viewController;
   late final ScrcpyMcpServer server;
   late McpClient client;
@@ -509,6 +599,114 @@ void main() {
 
       await httpServer.stop();
       expect(httpServer.serverUrl, isNull);
+    });
+  });
+
+  group('ScrcpyMcpServer — recording', () {
+    test('advertises start_recording and stop_recording when enabled',
+        () async {
+      final env = _RecordingTestEnv();
+      await env.connect();
+
+      final tools = await env.client.listTools();
+      final names = tools.tools.map((t) => t.name).toSet();
+
+      expect(names, contains('start_recording'));
+      expect(names, contains('stop_recording'));
+    });
+
+    test('advertises recording://status resource when enabled', () async {
+      final env = _RecordingTestEnv();
+      await env.connect();
+
+      final resources = await env.client.listResources();
+      final uris = resources.resources.map((r) => r.uri).toSet();
+
+      expect(uris, contains('recording://status'));
+    });
+
+    test('start_recording without active mirroring returns error', () async {
+      final env = _RecordingTestEnv();
+      await env.connect();
+
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'start_recording'),
+      );
+
+      expect(result.isError, isTrue);
+      expect(_text(result), contains('No active mirroring session'));
+    });
+
+    test('start_recording while already recording returns error', () async {
+      final env = _RecordingTestEnv();
+      await env.connect();
+
+      await env.client.callTool(
+        const CallToolRequest(
+          name: 'start_mirroring',
+          arguments: {'device_id': 'device1'},
+        ),
+      );
+      await env.client.callTool(
+        const CallToolRequest(name: 'start_recording'),
+      );
+
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'start_recording'),
+      );
+
+      expect(result.isError, isTrue);
+      expect(_text(result), contains('Already recording'));
+    });
+
+    test('stop_recording when not recording returns friendly message',
+        () async {
+      final env = _RecordingTestEnv();
+      await env.connect();
+
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'stop_recording'),
+      );
+
+      expect(result.isError, isFalse);
+      expect(_text(result), contains('No active recording'));
+    });
+
+    test('recording://status is idle when not recording', () async {
+      final env = _RecordingTestEnv();
+      await env.connect();
+
+      final result = await env.client.readResource(
+        const ReadResourceRequest(uri: 'recording://status'),
+      );
+
+      final json =
+          jsonDecode(_resourceText(result)) as Map<String, dynamic>;
+      expect(json['is_recording'], isFalse);
+    });
+
+    test('recording://status reflects active recording', () async {
+      final env = _RecordingTestEnv();
+      await env.connect();
+
+      await env.client.callTool(
+        const CallToolRequest(
+          name: 'start_mirroring',
+          arguments: {'device_id': 'device1'},
+        ),
+      );
+      await env.client.callTool(
+        const CallToolRequest(name: 'start_recording'),
+      );
+
+      final result = await env.client.readResource(
+        const ReadResourceRequest(uri: 'recording://status'),
+      );
+      final json =
+          jsonDecode(_resourceText(result)) as Map<String, dynamic>;
+
+      expect(json['is_recording'], isTrue);
+      expect(json['device_id'], 'device1');
     });
   });
 }

@@ -14,6 +14,7 @@ void main(List<String> args) async {
   final server = ScrcpyMcpServer(
     session: viewController,
     adb: scrcpyAdb,
+    recordingAdb: scrcpyAdb,
   );
 
   final transport = StdioServerTransport();
