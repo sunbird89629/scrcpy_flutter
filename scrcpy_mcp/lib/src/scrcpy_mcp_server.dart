@@ -461,7 +461,17 @@ class ScrcpyMcpServer {
         isError: true,
       );
     }
-    final deviceId = _connectedDeviceId!;
+    final deviceId = _connectedDeviceId;
+    if (deviceId == null) {
+      return const CallToolResult(
+        content: [
+          TextContent(
+            text: 'No active mirroring session. Call start_mirroring first.',
+          ),
+        ],
+        isError: true,
+      );
+    }
     final bitrate = args['bitrate'] as int? ?? 4000000;
     final maxTime = args['max_time'] as int? ?? 180;
     try {
