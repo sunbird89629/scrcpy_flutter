@@ -1,0 +1,102 @@
+<h2>配对码输入框什么时候出现？</h2>
+<p class="subtitle">三种交互方式，哪种更符合你的预期？</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#1e1e2e;">
+      <div style="font-family:sans-serif;max-width:300px;margin:0 auto;">
+        <!-- Step 1 -->
+        <div style="background:#2a2a3e;border-radius:10px;padding:16px;margin-bottom:8px;">
+          <div style="font-size:11px;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">第一步：输入设备地址</div>
+          <div style="margin-bottom:8px;">
+            <div style="font-size:11px;color:#aaa;margin-bottom:3px;">IP 地址</div>
+            <div style="background:#3a3a4e;border:1px solid #555;border-radius:5px;padding:7px 9px;font-size:12px;color:#e0e0e0;">192.168.1.100</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#aaa;margin-bottom:3px;">端口</div>
+            <div style="background:#3a3a4e;border:1px solid #555;border-radius:5px;padding:7px 9px;font-size:12px;color:#e0e0e0;">37000</div>
+          </div>
+          <div style="text-align:right;margin-top:10px;">
+            <div style="display:inline-block;padding:6px 14px;border-radius:5px;background:#6c5ce7;font-size:12px;color:#fff;">连接</div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#666;margin:4px 0;">▼ 连接失败，设备未配对</div>
+        <!-- Step 2 -->
+        <div style="background:#2a2a3e;border-radius:10px;padding:16px;border:1px solid #6c5ce755;">
+          <div style="font-size:11px;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">第二步：输入配对码</div>
+          <div style="font-size:12px;color:#aaa;margin-bottom:10px;">设备未配对，请在手机「无线调试」中获取 6 位配对码</div>
+          <div>
+            <div style="font-size:11px;color:#aaa;margin-bottom:3px;">配对码</div>
+            <div style="background:#3a3a4e;border:1px solid #6c5ce7;border-radius:5px;padding:7px 9px;font-size:12px;color:#e0e0e0;">______</div>
+          </div>
+          <div style="text-align:right;margin-top:10px;">
+            <div style="display:inline-block;padding:6px 14px;border-radius:5px;background:#6c5ce7;font-size:12px;color:#fff;">配对</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — 渐进展开</h3>
+      <p>先只显示 IP + 端口，点「连接」后失败才展开配对码输入框。首次配对和重连用同一个入口，流程自然。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#1e1e2e;">
+      <div style="background:#2a2a3e;border-radius:10px;padding:16px;font-family:sans-serif;max-width:300px;margin:0 auto;">
+        <div style="font-size:14px;font-weight:600;color:#e0e0e0;margin-bottom:14px;">连接设备</div>
+        <div style="margin-bottom:8px;">
+          <div style="font-size:11px;color:#aaa;margin-bottom:3px;">IP 地址</div>
+          <div style="background:#3a3a4e;border:1px solid #555;border-radius:5px;padding:7px 9px;font-size:12px;color:#e0e0e0;">192.168.1.100</div>
+        </div>
+        <div style="margin-bottom:8px;">
+          <div style="font-size:11px;color:#aaa;margin-bottom:3px;">端口</div>
+          <div style="background:#3a3a4e;border:1px solid #555;border-radius:5px;padding:7px 9px;font-size:12px;color:#e0e0e0;">37000</div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px;color:#aaa;margin-bottom:3px;">配对码（首次配对填写，重连留空）</div>
+          <div style="background:#3a3a4e;border:1px solid #555;border-radius:5px;padding:7px 9px;font-size:12px;color:#666;">可选</div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <div style="padding:6px 12px;border-radius:5px;font-size:12px;color:#aaa;">取消</div>
+          <div style="padding:6px 12px;border-radius:5px;background:#6c5ce7;font-size:12px;color:#fff;">连接 / 配对</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — 始终显示，配对码可选</h3>
+      <p>三个字段一次性全部显示，配对码标注「可选」。有码就配对，无码就直接连接。一步到位，但稍显复杂。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#1e1e2e;">
+      <div style="background:#2a2a3e;border-radius:10px;padding:16px;font-family:sans-serif;max-width:300px;margin:0 auto;">
+        <div style="font-size:14px;font-weight:600;color:#e0e0e0;margin-bottom:12px;">连接设备</div>
+        <!-- Toggle -->
+        <div style="display:flex;background:#1e1e2e;border-radius:8px;padding:3px;margin-bottom:14px;">
+          <div style="flex:1;text-align:center;padding:6px;border-radius:6px;background:#6c5ce7;font-size:12px;color:#fff;">重新连接</div>
+          <div style="flex:1;text-align:center;padding:6px;border-radius:6px;font-size:12px;color:#888;">首次配对</div>
+        </div>
+        <div style="margin-bottom:8px;">
+          <div style="font-size:11px;color:#aaa;margin-bottom:3px;">IP 地址</div>
+          <div style="background:#3a3a4e;border:1px solid #555;border-radius:5px;padding:7px 9px;font-size:12px;color:#e0e0e0;">192.168.1.100</div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:11px;color:#aaa;margin-bottom:3px;">端口</div>
+          <div style="background:#3a3a4e;border:1px solid #555;border-radius:5px;padding:7px 9px;font-size:12px;color:#e0e0e0;">37000</div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <div style="padding:6px 12px;border-radius:5px;font-size:12px;color:#aaa;">取消</div>
+          <div style="padding:6px 12px;border-radius:5px;background:#6c5ce7;font-size:12px;color:#fff;">连接</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Tab 切换</h3>
+      <p>「重新连接」和「首次配对」用 Tab 分开，切换到「首次配对」时才出现配对码字段。意图最清晰，但多一次点击。</p>
+    </div>
+  </div>
+
+</div>

@@ -17,7 +17,7 @@ class ScrcpyApp extends StatelessWidget {
         colorSchemeSeed: Colors.indigo,
         brightness: Brightness.dark,
       ),
-      home: HomePage(),
+      home: const HomePage(),
     );
   }
 }

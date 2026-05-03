@@ -1,0 +1,91 @@
+<h2>配对失败时，错误信息显示在哪？</h2>
+<p class="subtitle">以下三种方案，哪种体验更好？</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #1e1e2e;">
+      <div style="background:#2a2a3e;border-radius:12px;padding:20px;font-family:sans-serif;max-width:320px;margin:0 auto;">
+        <div style="font-size:15px;font-weight:600;color:#e0e0e0;margin-bottom:16px;">连接设备</div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:11px;color:#aaa;margin-bottom:4px;">IP 地址</div>
+          <div style="background:#3a3a4e;border:1px solid #ff6b6b;border-radius:6px;padding:8px 10px;font-size:13px;color:#e0e0e0;">192.168.1.100</div>
+          <div style="font-size:11px;color:#ff6b6b;margin-top:3px;">⚠ 无效的 IP 地址格式</div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:11px;color:#aaa;margin-bottom:4px;">端口</div>
+          <div style="background:#3a3a4e;border:1px solid #555;border-radius:6px;padding:8px 10px;font-size:13px;color:#e0e0e0;">37000</div>
+        </div>
+        <div style="background:#ff6b6b22;border:1px solid #ff6b6b55;border-radius:6px;padding:10px;font-size:12px;color:#ff8888;margin-bottom:14px;">
+          ✕ 连接被拒绝，请确认手机上已开启无线调试
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <div style="padding:7px 14px;border-radius:6px;font-size:12px;color:#aaa;cursor:pointer;">取消</div>
+          <div style="padding:7px 14px;border-radius:6px;background:#6c5ce7;font-size:12px;color:#fff;cursor:pointer;">重试</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — 对话框内联错误</h3>
+      <p>字段校验红色提示 + 对话框顶部/底部显示操作失败原因。对话框保持打开，用户可直接修改后重试。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #1e1e2e; position:relative;">
+      <div style="background:#2a2a3e;border-radius:12px;padding:20px;font-family:sans-serif;max-width:320px;margin:0 auto;opacity:0.5;">
+        <div style="font-size:15px;font-weight:600;color:#e0e0e0;margin-bottom:16px;">连接设备</div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:11px;color:#aaa;margin-bottom:4px;">IP 地址</div>
+          <div style="background:#3a3a4e;border:1px solid #555;border-radius:6px;padding:8px 10px;font-size:13px;color:#e0e0e0;">192.168.1.100</div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:11px;color:#aaa;margin-bottom:4px;">端口</div>
+          <div style="background:#3a3a4e;border:1px solid #555;border-radius:6px;padding:8px 10px;font-size:13px;color:#e0e0e0;">37000</div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <div style="padding:7px 14px;border-radius:6px;font-size:12px;color:#aaa;">取消</div>
+          <div style="padding:7px 14px;border-radius:6px;background:#6c5ce7;font-size:12px;color:#fff;">连接</div>
+        </div>
+      </div>
+      <div style="position:absolute;bottom:24px;left:16px;right:16px;background:#323248;border-radius:8px;padding:12px 16px;font-size:12px;color:#e0e0e0;font-family:sans-serif;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px #0008;">
+        <span style="color:#ff6b6b;font-size:16px;">✕</span>
+        连接被拒绝，请确认手机上已开启无线调试
+        <span style="margin-left:auto;color:#aaa;font-size:11px;">关闭</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Snackbar</h3>
+      <p>错误以 Snackbar 形式出现在屏幕底部，对话框字段保持原样。适合不影响对话框焦点的轻量提示。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #1e1e2e;">
+      <div style="background:#2a2a3e;border-radius:12px;padding:20px;font-family:sans-serif;max-width:320px;margin:0 auto;">
+        <div style="font-size:15px;font-weight:600;color:#e0e0e0;margin-bottom:12px;">连接设备</div>
+        <div style="background:#ff6b6b18;border-left:3px solid #ff6b6b;border-radius:4px;padding:10px 12px;font-size:12px;color:#ff8888;margin-bottom:14px;line-height:1.5;">
+          <strong style="display:block;margin-bottom:2px;">连接失败</strong>
+          连接被拒绝，请确认手机上已开启无线调试
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:11px;color:#aaa;margin-bottom:4px;">IP 地址</div>
+          <div style="background:#3a3a4e;border:1px solid #555;border-radius:6px;padding:8px 10px;font-size:13px;color:#e0e0e0;">192.168.1.100</div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:11px;color:#aaa;margin-bottom:4px;">端口</div>
+          <div style="background:#3a3a4e;border:1px solid #555;border-radius:6px;padding:8px 10px;font-size:13px;color:#e0e0e0;">37000</div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <div style="padding:7px 14px;border-radius:6px;font-size:12px;color:#aaa;">取消</div>
+          <div style="padding:7px 14px;border-radius:6px;background:#6c5ce7;font-size:12px;color:#fff;">重试</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — 对话框顶部 Banner</h3>
+      <p>错误 Banner 插入在对话框标题下方、输入字段上方，醒目但不遮盖内容。对话框保持打开。</p>
+    </div>
+  </div>
+
+</div>

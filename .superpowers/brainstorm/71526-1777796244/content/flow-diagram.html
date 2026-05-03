@@ -1,0 +1,113 @@
+<h2>配对对话框完整流程</h2>
+<p class="subtitle">_ConnectPairDialog — 两步状态机</p>
+
+<div class="mockup">
+  <div class="mockup-header">交互状态机</div>
+  <div class="mockup-body" style="font-family:sans-serif;padding:8px;">
+
+    <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+
+      <!-- Step 1: Connect -->
+      <div style="flex:1;min-width:180px;">
+        <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Step 1 — connect</div>
+        <div style="background:#2a2a3e;border-radius:10px;padding:14px;border:1px solid #6c5ce7;">
+          <div style="font-size:13px;font-weight:600;color:#e0e0e0;margin-bottom:12px;">连接设备</div>
+          <div style="margin-bottom:8px;">
+            <div style="font-size:10px;color:#aaa;margin-bottom:3px;">IP 地址 *</div>
+            <div style="background:#3a3a4e;border:1px solid #555;border-radius:5px;padding:6px 8px;font-size:11px;color:#e0e0e0;">192.168.1.100</div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="font-size:10px;color:#aaa;margin-bottom:3px;">端口 *</div>
+            <div style="background:#3a3a4e;border:1px solid #555;border-radius:5px;padding:6px 8px;font-size:11px;color:#e0e0e0;">37000</div>
+          </div>
+          <div style="display:flex;gap:6px;justify-content:flex-end;">
+            <div style="padding:5px 10px;border-radius:5px;font-size:11px;color:#aaa;background:#1e1e2e;">取消</div>
+            <div style="padding:5px 10px;border-radius:5px;font-size:11px;color:#fff;background:#6c5ce7;">连接</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Arrow area -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:60px;min-width:80px;">
+        <div style="font-size:10px;color:#4ade80;text-align:center;">✓ 连接成功</div>
+        <div style="font-size:18px;color:#4ade80;">→</div>
+        <div style="height:20px;"></div>
+        <div style="font-size:10px;color:#ff6b6b;text-align:center;">✗ 未配对</div>
+        <div style="font-size:18px;color:#ff6b6b;">↓</div>
+      </div>
+
+      <!-- Success -->
+      <div style="flex:1;min-width:160px;padding-top:12px;">
+        <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">成功路径</div>
+        <div style="background:#2a2a3e;border-radius:10px;padding:14px;border:1px solid #4ade8066;">
+          <div style="font-size:12px;color:#4ade80;margin-bottom:6px;">✓ 已连接</div>
+          <div style="font-size:11px;color:#aaa;line-height:1.5;">
+            1. 关闭对话框<br>
+            2. 底部 Snackbar：<span style="color:#4ade80;">「已连接到 192.168.1.100」</span><br>
+            3. 刷新设备列表
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Step 2 -->
+    <div style="margin-top:16px;">
+      <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Step 2 — pair（connect 失败后展开）</div>
+      <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+
+        <div style="flex:1;min-width:180px;">
+          <div style="background:#2a2a3e;border-radius:10px;padding:14px;border:1px solid #f59e0b;">
+            <div style="font-size:13px;font-weight:600;color:#e0e0e0;margin-bottom:4px;">连接设备</div>
+            <div style="font-size:10px;color:#f59e0b;margin-bottom:10px;">设备未配对，请输入配对码</div>
+            <div style="margin-bottom:8px;">
+              <div style="font-size:10px;color:#aaa;margin-bottom:3px;">IP 地址</div>
+              <div style="background:#3a3a4e;border:1px solid #444;border-radius:5px;padding:6px 8px;font-size:11px;color:#888;">192.168.1.100（锁定）</div>
+            </div>
+            <div style="margin-bottom:8px;">
+              <div style="font-size:10px;color:#aaa;margin-bottom:3px;">端口</div>
+              <div style="background:#3a3a4e;border:1px solid #444;border-radius:5px;padding:6px 8px;font-size:11px;color:#888;">37000（锁定）</div>
+            </div>
+            <div style="margin-bottom:12px;">
+              <div style="font-size:10px;color:#aaa;margin-bottom:3px;">配对码（6 位）*</div>
+              <div style="background:#3a3a4e;border:1px solid #f59e0b;border-radius:5px;padding:6px 8px;font-size:11px;color:#e0e0e0;letter-spacing:4px;">______</div>
+            </div>
+            <div style="display:flex;gap:6px;justify-content:flex-end;">
+              <div style="padding:5px 10px;border-radius:5px;font-size:11px;color:#aaa;background:#1e1e2e;">← 返回</div>
+              <div style="padding:5px 10px;border-radius:5px;font-size:11px;color:#fff;background:#f59e0b;">配对</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:50px;min-width:80px;">
+          <div style="font-size:10px;color:#4ade80;text-align:center;">✓ 配对 + 连接成功</div>
+          <div style="font-size:18px;color:#4ade80;">→</div>
+          <div style="height:20px;"></div>
+          <div style="font-size:10px;color:#ff6b6b;text-align:center;">✗ 失败</div>
+          <div style="font-size:18px;color:#ff6b6b;">→</div>
+        </div>
+
+        <div style="flex:1;min-width:160px;padding-top:12px;display:flex;flex-direction:column;gap:10px;">
+          <div style="background:#2a2a3e;border-radius:10px;padding:12px;border:1px solid #4ade8066;">
+            <div style="font-size:11px;color:#4ade80;margin-bottom:4px;">✓ 配对成功路径</div>
+            <div style="font-size:10px;color:#aaa;line-height:1.5;">pair() → connect() → 关闭 → Snackbar → 刷新</div>
+          </div>
+          <div style="background:#2a2a3e;border-radius:10px;padding:12px;border:1px solid #ff6b6b66;">
+            <div style="font-size:11px;color:#ff6b6b;margin-bottom:4px;">✗ 失败路径</div>
+            <div style="font-size:10px;color:#aaa;line-height:1.5;">对话框保持开启<br>底部 Snackbar 显示具体原因<br>（无效配对码 / 连接被拒 / 超时）</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Loading state note -->
+    <div style="margin-top:16px;background:#1e1e2e;border-radius:8px;padding:12px;border:1px solid #444;">
+      <div style="font-size:11px;color:#888;margin-bottom:6px;">Loading 状态（两步共用）</div>
+      <div style="font-size:11px;color:#aaa;line-height:1.6;">
+        操作进行中：按钮替换为 <code style="background:#2a2a3e;padding:1px 5px;border-radius:3px;">CircularProgressIndicator</code>，IP / 端口 / 配对码字段全部 <code style="background:#2a2a3e;padding:1px 5px;border-radius:3px;">enabled: false</code>
+      </div>
+    </div>
+
+  </div>
+</div>
