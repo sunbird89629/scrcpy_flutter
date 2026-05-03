@@ -283,7 +283,7 @@ class _StatusBadge extends StatelessWidget {
     };
   }
 
-  Widget _badge(ThemeData t, IconData icon, double size, Color color,
+  Widget _badge(ThemeData theme, IconData icon, double size, Color color,
       String label) {
     return Row(
       mainAxisSize: MainAxisSize.min,
