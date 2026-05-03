@@ -43,8 +43,8 @@ class DevicesPage extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline, size: 48,
-                  color: theme.colorScheme.error),
+              Icon(Icons.error_outline,
+                  size: 48, color: theme.colorScheme.error),
               const SizedBox(height: AppSpacing.md),
               Text('Error: $e'),
             ],
@@ -56,8 +56,8 @@ class DevicesPage extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.devices_other, size: 64,
-                      color: theme.colorScheme.outline),
+                  Icon(Icons.devices_other,
+                      size: 64, color: theme.colorScheme.outline),
                   const SizedBox(height: AppSpacing.md),
                   Text(t.devices_page.no_devices,
                       style: theme.textTheme.titleMedium),
@@ -68,16 +68,14 @@ class DevicesPage extends ConsumerWidget {
           return ListView.separated(
             padding: AppSpacing.edgeInsetsMd,
             itemCount: devices.length,
-            separatorBuilder: (_, __) =>
-                const SizedBox(height: AppSpacing.sm),
+            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
             itemBuilder: (_, index) {
               final info = devices[index];
               return _DeviceCard(
                 info: info,
                 isSelected: info.serial == selectedId,
-                onTap: () => ref
-                    .read(selectedDeviceIdProvider.notifier)
-                    .state = info.serial,
+                onTap: () => ref.read(selectedDeviceIdProvider.notifier).state =
+                    info.serial,
               );
             },
           );
@@ -85,7 +83,6 @@ class DevicesPage extends ConsumerWidget {
       ),
     );
   }
-
 }
 
 // ---------------------------------------------------------------------------
@@ -135,8 +132,7 @@ class _DeviceCard extends StatelessWidget {
         ),
         title: Text(
           info.displayName,
-          style: TextStyle(
-              fontWeight: isSelected ? FontWeight.bold : null),
+          style: TextStyle(fontWeight: isSelected ? FontWeight.bold : null),
         ),
         subtitle: _CardSubtitle(info: info),
         trailing: _StatusBadge(status: info.status),
@@ -153,14 +149,12 @@ class _CardSubtitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasDetails =
-        info.manufacturer != null || info.androidVersion != null;
+    final hasDetails = info.manufacturer != null || info.androidVersion != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (hasDetails)
-          Text(_detailLine(), style: theme.textTheme.bodySmall),
+        if (hasDetails) Text(_detailLine(), style: theme.textTheme.bodySmall),
         Row(
           children: [
             Flexible(
@@ -186,8 +180,7 @@ class _CardSubtitle extends StatelessWidget {
     final parts = <String>[];
     if (info.manufacturer != null) parts.add(info.manufacturer!);
     if (info.androidVersion != null) {
-      final sdk =
-          info.sdkVersion != null ? ' (API ${info.sdkVersion})' : '';
+      final sdk = info.sdkVersion != null ? ' (API ${info.sdkVersion})' : '';
       parts.add('Android ${info.androidVersion}$sdk');
     }
     return parts.join(' · ');
@@ -202,26 +195,23 @@ class _StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return switch (status) {
-      DeviceStatus.online => _badge(
-          theme, Icons.circle, 10, theme.colorScheme.primary, 'online'),
-      DeviceStatus.offline => _badge(
-          theme, Icons.circle_outlined, 10, theme.colorScheme.outline,
-          'offline'),
-      DeviceStatus.unauthorized => _badge(
-          theme, Icons.warning_amber, 14, theme.colorScheme.error,
-          'unauthorized'),
+      DeviceStatus.online =>
+        _badge(theme, Icons.circle, 10, theme.colorScheme.primary, 'online'),
+      DeviceStatus.offline => _badge(theme, Icons.circle_outlined, 10,
+          theme.colorScheme.outline, 'offline'),
+      DeviceStatus.unauthorized => _badge(theme, Icons.warning_amber, 14,
+          theme.colorScheme.error, 'unauthorized'),
     };
   }
 
-  Widget _badge(ThemeData theme, IconData icon, double size, Color color,
-      String label) {
+  Widget _badge(
+      ThemeData theme, IconData icon, double size, Color color, String label) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: size, color: color),
         const SizedBox(width: 4),
-        Text(label,
-            style: TextStyle(fontSize: 12, color: color)),
+        Text(label, style: TextStyle(fontSize: 12, color: color)),
       ],
     );
   }
@@ -237,8 +227,7 @@ class _ConnectPairDialog extends ConsumerStatefulWidget {
   const _ConnectPairDialog();
 
   @override
-  ConsumerState<_ConnectPairDialog> createState() =>
-      _ConnectPairDialogState();
+  ConsumerState<_ConnectPairDialog> createState() => _ConnectPairDialogState();
 }
 
 class _ConnectPairDialogState extends ConsumerState<_ConnectPairDialog> {
@@ -331,11 +320,10 @@ class _ConnectPairDialogState extends ConsumerState<_ConnectPairDialog> {
           else
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(t.devices_page.cancel),
             ),
           FilledButton(
-            onPressed:
-                _step == _DialogStep.connect ? _onConnect : _onPair,
+            onPressed: _step == _DialogStep.connect ? _onConnect : _onPair,
             child: Text(_step == _DialogStep.connect
                 ? t.devices_page.connect
                 : t.devices_page.pair),
@@ -420,8 +408,8 @@ class _ConnectPairDialogState extends ConsumerState<_ConnectPairDialog> {
       ScaffoldMessenger.of(context)
         ..clearSnackBars()
         ..showSnackBar(SnackBar(
-            content: Text(
-                t.devices_page.paired_and_connected(serial: serial))));
+            content:
+                Text(t.devices_page.paired_and_connected(serial: serial))));
       ref.invalidate(adbDevicesWithInfoProvider);
     } on AdbException catch (e) {
       if (!mounted) return;

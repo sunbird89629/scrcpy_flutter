@@ -33,19 +33,17 @@
     "code": "Pairing Code (6 digits)",
     "connect_device": "Connect Device",
     "connect": "Connect",
-    "connecting": "Connecting...",
     "not_paired_hint": "Device not paired. Enter the pairing code from Wireless Debugging.",
     "pair": "Pair",
-    "pairing": "Pairing...",
     "back": "Back",
+    "cancel": "Cancel",
     "connected_to": "Connected to {serial}",
     "paired_and_connected": "Paired and connected to {serial}",
     "invalid_ip": "Invalid IP address",
     "invalid_port": "Port must be between 1 and 65535",
     "invalid_code": "Pairing code must be 6 digits",
     "connection_refused": "Connection refused. Make sure Wireless Debugging is enabled on the device.",
-    "invalid_pairing_code": "Invalid pairing code. Get a new one from Wireless Debugging.",
-    "already_connected": "Device already connected."
+    "invalid_pairing_code": "Invalid pairing code. Get a new one from Wireless Debugging."
   },
   "settings": {
     "theme": {

@@ -33,14 +33,18 @@ class _FakeAdbClient extends AdbClient {
 
   @override
   Future<String> connect(String ip, int port) async {
-    final r = _connectQ.isNotEmpty ? _connectQ.removeFirst() : 'connected to $ip:$port';
+    final r = _connectQ.isNotEmpty
+        ? _connectQ.removeFirst()
+        : 'connected to $ip:$port';
     if (r is AdbException) throw r;
     return r as String;
   }
 
   @override
   Future<String> pair(String ip, int port, String code) async {
-    final r = _pairQ.isNotEmpty ? _pairQ.removeFirst() : 'Successfully paired to $ip:$port';
+    final r = _pairQ.isNotEmpty
+        ? _pairQ.removeFirst()
+        : 'Successfully paired to $ip:$port';
     if (r is AdbException) throw r;
     return r as String;
   }
