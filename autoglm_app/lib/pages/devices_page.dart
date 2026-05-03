@@ -29,7 +29,10 @@ class DevicesPage extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.add_link),
             tooltip: t.devices_page.pair_device,
-            onPressed: () => _showPairDialog(context, ref),
+            onPressed: () => showDialog<void>(
+              context: context,
+              builder: (_) => const _ConnectPairDialog(),
+            ),
           ),
           const SizedBox(width: AppSpacing.sm),
         ],
@@ -83,79 +86,6 @@ class DevicesPage extends ConsumerWidget {
     );
   }
 
-  void _showPairDialog(BuildContext context, WidgetRef ref) {
-    final ipCtrl = TextEditingController();
-    final portCtrl = TextEditingController();
-    final codeCtrl = TextEditingController();
-
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(t.devices_page.pair_device),
-        shape: RoundedRectangleBorder(borderRadius: AppRadius.borderLg),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: ipCtrl,
-              decoration: InputDecoration(
-                labelText: t.devices_page.ip,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.network_wifi),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextField(
-              controller: portCtrl,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: t.devices_page.port,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.numbers),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextField(
-              controller: codeCtrl,
-              decoration: InputDecoration(
-                labelText: t.devices_page.code,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.lock_outline),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final port = int.tryParse(portCtrl.text) ?? 0;
-              try {
-                final client = await ref.read(adbClientProvider.future);
-                final res =
-                    await client.pair(ipCtrl.text, port, codeCtrl.text);
-                if (ctx.mounted) {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(ctx)
-                      .showSnackBar(SnackBar(content: Text(res)));
-                  ref.invalidate(adbDevicesWithInfoProvider);
-                }
-              } on Exception catch (e) {
-                if (ctx.mounted) {
-                  ScaffoldMessenger.of(ctx).showSnackBar(
-                      SnackBar(content: Text(e.toString())));
-                }
-              }
-            },
-            child: const Text('Pair'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -294,5 +224,240 @@ class _StatusBadge extends StatelessWidget {
             style: TextStyle(fontSize: 12, color: color)),
       ],
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Connect / Pair dialog
+// ---------------------------------------------------------------------------
+
+enum _DialogStep { connect, pair }
+
+class _ConnectPairDialog extends ConsumerStatefulWidget {
+  const _ConnectPairDialog();
+
+  @override
+  ConsumerState<_ConnectPairDialog> createState() =>
+      _ConnectPairDialogState();
+}
+
+class _ConnectPairDialogState extends ConsumerState<_ConnectPairDialog> {
+  _DialogStep _step = _DialogStep.connect;
+  bool _isLoading = false;
+
+  final _ipCtrl = TextEditingController();
+  final _portCtrl = TextEditingController();
+  final _codeCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _ipCtrl.dispose();
+    _portCtrl.dispose();
+    _codeCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      title: Text(t.devices_page.connect_device),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.borderLg),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_step == _DialogStep.pair)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: Text(
+                t.devices_page.not_paired_hint,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.secondary,
+                ),
+              ),
+            ),
+          TextField(
+            controller: _ipCtrl,
+            enabled: !_isLoading,
+            decoration: InputDecoration(
+              labelText: t.devices_page.ip,
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.network_wifi),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          TextField(
+            controller: _portCtrl,
+            enabled: !_isLoading,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: t.devices_page.port,
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.numbers),
+            ),
+          ),
+          if (_step == _DialogStep.pair) ...[
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              key: const Key('code_field'),
+              controller: _codeCtrl,
+              enabled: !_isLoading,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: t.devices_page.code,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.lock_outline),
+              ),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        if (_isLoading)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: CircularProgressIndicator(),
+          )
+        else ...[
+          if (_step == _DialogStep.pair)
+            TextButton(
+              onPressed: () => setState(() {
+                _step = _DialogStep.connect;
+                _codeCtrl.clear();
+              }),
+              child: Text(t.devices_page.back),
+            )
+          else
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          FilledButton(
+            onPressed:
+                _step == _DialogStep.connect ? _onConnect : _onPair,
+            child: Text(_step == _DialogStep.connect
+                ? t.devices_page.connect
+                : t.devices_page.pair),
+          ),
+        ],
+      ],
+    );
+  }
+
+  bool _validate() {
+    final ip = _ipCtrl.text.trim();
+    final port = _portCtrl.text.trim();
+
+    if (ip.isEmpty ||
+        !RegExp(r'^[\d.]+$').hasMatch(ip) ||
+        '.'.allMatches(ip).length < 2) {
+      _showSnackbar(t.devices_page.invalid_ip);
+      return false;
+    }
+
+    final portNum = int.tryParse(port);
+    if (portNum == null || portNum < 1 || portNum > 65535) {
+      _showSnackbar(t.devices_page.invalid_port);
+      return false;
+    }
+
+    if (_step == _DialogStep.pair) {
+      final code = _codeCtrl.text.trim();
+      if (code.length != 6 || int.tryParse(code) == null) {
+        _showSnackbar(t.devices_page.invalid_code);
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  Future<void> _onConnect() async {
+    if (!_validate()) return;
+    setState(() => _isLoading = true);
+    try {
+      final client = await ref.read(adbClientProvider.future);
+      await client.connect(
+        _ipCtrl.text.trim(),
+        int.parse(_portCtrl.text.trim()),
+      );
+      if (!mounted) return;
+      final serial = '${_ipCtrl.text.trim()}:${_portCtrl.text.trim()}';
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(t.devices_page.connected_to(serial: serial))),
+      );
+      ref.invalidate(adbDevicesWithInfoProvider);
+    } on AdbException catch (e) {
+      if (!mounted) return;
+      if (e.message.contains('already connected')) {
+        final serial =
+            '${_ipCtrl.text.trim()}:${_portCtrl.text.trim()}';
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text(t.devices_page.connected_to(serial: serial))),
+        );
+        ref.invalidate(adbDevicesWithInfoProvider);
+      } else {
+        _showSnackbar(e.message);
+        setState(() => _step = _DialogStep.pair);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _onPair() async {
+    if (!_validate()) return;
+    setState(() => _isLoading = true);
+    try {
+      final client = await ref.read(adbClientProvider.future);
+      await client.pair(
+        _ipCtrl.text.trim(),
+        int.parse(_portCtrl.text.trim()),
+        _codeCtrl.text.trim(),
+      );
+      await client.connect(
+        _ipCtrl.text.trim(),
+        int.parse(_portCtrl.text.trim()),
+      );
+      if (!mounted) return;
+      final serial = '${_ipCtrl.text.trim()}:${_portCtrl.text.trim()}';
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(
+            content: Text(
+                t.devices_page.paired_and_connected(serial: serial))));
+      ref.invalidate(adbDevicesWithInfoProvider);
+    } on AdbException catch (e) {
+      if (!mounted) return;
+      _showSnackbar(_mapPairError(e.message));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  String _mapPairError(String raw) {
+    if (raw.toLowerCase().contains('refused')) {
+      return t.devices_page.connection_refused;
+    }
+    if (raw.contains('Invalid pairing code')) {
+      return t.devices_page.invalid_pairing_code;
+    }
+    if (raw.contains('Pairing code must be 6 digits')) {
+      return t.devices_page.invalid_code;
+    }
+    return raw;
+  }
+
+  void _showSnackbar(String message) {
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 }
