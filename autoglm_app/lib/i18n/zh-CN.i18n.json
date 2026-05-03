@@ -30,7 +30,22 @@
     "pair_device": "无线配对",
     "ip": "IP 地址",
     "port": "端口",
-    "code": "配对码 (6位)"
+    "code": "配对码 (6位)",
+    "connect_device": "连接设备",
+    "connect": "连接",
+    "connecting": "连接中…",
+    "not_paired_hint": "设备未配对，请从手机「无线调试」获取配对码",
+    "pair": "配对",
+    "pairing": "配对中…",
+    "back": "返回",
+    "connected_to": "已连接到 {serial}",
+    "paired_and_connected": "已配对并连接到 {serial}",
+    "invalid_ip": "IP 地址格式无效",
+    "invalid_port": "端口必须在 1–65535 之间",
+    "invalid_code": "配对码必须是 6 位数字",
+    "connection_refused": "连接被拒绝，请确认手机上已开启无线调试",
+    "invalid_pairing_code": "配对码无效，请在手机上重新获取",
+    "already_connected": "设备已连接"
   },
   "settings": {
     "theme": {
