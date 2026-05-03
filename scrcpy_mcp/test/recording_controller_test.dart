@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:autoglm_core/autoglm_core.dart';
+import 'package:autoglm_logger/autoglm_logger.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scrcpy_mcp/src/recording_adb.dart';
 import 'package:scrcpy_mcp/src/recording_controller.dart';
