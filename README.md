@@ -57,99 +57,76 @@ cd autoglm_app && flutter run -d macos
 ```
 autoglm_app/           # Main AutoGLM Flutter desktop app
   lib/
-    main.dart          # App bootstrap: logging, settings repository, MCP toolkit, MediaKit
-    app.dart           # MaterialApp, themes, NavigationRail shell
-    router.dart        # go_router routes: devices/chat/workflows/history/settings
-    pages/
-      devices_page.dart    # Device list with rich cards (model, status, connection type)
-      chat_page.dart       # AI agent chat workspace (placeholder)
-      history_page.dart    # Execution history viewer (placeholder)
-      workflows_page.dart  # Workflow management (placeholder)
-      settings_page.dart   # Theme, locale, LLM config
-    providers/
-      adb_provider.dart        # AdbClient, AdbBinaryManager, adbDevicesProvider, adbDevicesWithInfoProvider
-      device_provider.dart     # selectedDeviceIdProvider
-      scrcpy_provider.dart     # ScrcpyViewController lifecycle
-      history_provider.dart    # HistoryDatabase, TraceManager
-      settings_provider.dart   # SettingsRepository
-      locale_provider.dart     # localeProvider
-      theme_mode_provider.dart # themeModeProvider
-    scrcpy/
-      autoglm_scrcpy_bridge.dart  # Adapter: AdbClient → ScrcpyAdb, appLogger → ScrcpyLogger
-    theme/
-      design_tokens.dart  # AppSpacing, AppRadius shared constants
-      light_theme.dart
-      dark_theme.dart
-    i18n/               # slang JSON source files + generated strings.g.dart
+    main.dart          # App bootstrap
+    app.dart           # MaterialApp + NavigationRail shell
+    router.dart        # go_router: devices/chat/workflows/history/settings
+    pages/             # devices (rich cards), chat, history, workflows, settings
+    providers/         # ADB, device selection, scrcpy, history, settings, locale, theme
+    scrcpy/            # Adapter: AdbClient → ScrcpyAdb, appLogger → ScrcpyLogger
+    theme/             # design_tokens, light_theme, dark_theme
+    i18n/              # slang JSON + generated strings
   pubspec.yaml
 
-scrcpy_app/            # Standalone scrcpy client (device selector + mirroring + MCP panel)
+scrcpy_app/            # Standalone scrcpy client (mirroring + MCP panel)
   lib/
-    main.dart
-    scrcpy_app.dart
     app_controller.dart        # Wires ScrcpyViewController + McpServerController
-    device_list_widget.dart    # Device picker
-    home_page.dart             # Main layout: viewer + controls + MCP panel
-    scrcpy_app_adb.dart        # Adapter: AdbClient → ScrcpyAdb for scrcpy_app
-    mcp_server_controller.dart # Start/stop McpHttpServer, exposes port + URL + error state
-    mcp_server_panel.dart      # UI panel: port field, start/stop, copy URL
-    views/
-      control_view.dart        # Touch/key/scroll control overlay
-      control_button_widget.dart
+    home_page.dart             # Viewer + controls + MCP panel layout
+    mcp_server_controller.dart # McpHttpServer lifecycle (port, URL, error state)
+    mcp_server_panel.dart      # Start/stop UI + copy URL
+    device_list_widget.dart
+    scrcpy_app_adb.dart        # AdbClient → ScrcpyAdb adapter
+    views/                     # Control overlay widgets
     widgets/
-      control_button.dart
-  macos/               # macOS runner + entitlements
+  macos/
   pubspec.yaml
 
-scrcpy_view/           # Reusable Flutter package: scrcpy protocol + WebView widget
+scrcpy_view/           # Reusable package: scrcpy protocol + WebView widget
   lib/
     scrcpy_view.dart   # Public exports
     src/
-      scrcpy_server.dart          # Full lifecycle: push JAR, ADB forward, launch, bridge sockets
-      scrcpy_stream_parser.dart   # Binary frame parser: device-info header + PTS/length frames
-      scrcpy_proxy_server.dart    # HTTP server remuxing H.264 → MPEG-TS for media_kit
-      scrcpy_websocket_server.dart # WebSocket + static HTTP for web player; SPS/PPS injection
-      control_message.dart        # Scrcpy v3 control protocol: keycode, text, touch, scroll
-      mpeg_ts_muxer.dart          # Custom 188-byte MPEG-TS muxer (90 kHz PTS)
+      scrcpy_server.dart           # Server lifecycle: push JAR, ADB forward, sockets
+      scrcpy_stream_parser.dart    # Binary frame parser (PTS + length frames)
+      scrcpy_proxy_server.dart     # H.264 → MPEG-TS HTTP proxy
+      scrcpy_websocket_server.dart # WebSocket player + SPS/PPS injection
+      control_message.dart         # Scrcpy v3 control protocol
+      mpeg_ts_muxer.dart           # 188-byte MPEG-TS muxer
       backends/
   assets/
     scrcpy-server-v3.3.4
     web_player/
-  example/             # Package example app
+  example/
   test/
   pubspec.yaml
 
 scrcpy_mcp/            # MCP server wrapping scrcpy operations
   lib/
-    scrcpy_mcp.dart    # Public exports
+    scrcpy_mcp.dart
     src/
-      scrcpy_mcp_server.dart   # McpServer with 8 tools, 2 resources, 2 prompts
+      scrcpy_mcp_server.dart   # 8 tools, 2 resources, 2 prompts
       mcp_http_server.dart     # StreamableMcpServer HTTP wrapper
-      scrcpy_mcp_adapters.dart # AdbClient → ScrcpyAdb adapter for MCP context
+      scrcpy_mcp_adapters.dart # AdbClient → ScrcpyAdb adapter
   bin/
-    scrcpy_mcp_test.dart       # CLI entry point for Stdio MCP server
+    scrcpy_mcp_test.dart       # Stdio MCP CLI entry point
   test/
   pubspec.yaml
 
 packages/
-  autoglm_core/        # Shared settings, history, trace models/managers, logger exports
+  autoglm_core/        # Settings, history (SQLite), trace (JSONL), logger re-export
     lib/
-      autoglm_core.dart
       src/
-        history/   # HistoryDatabase (SQLite via sqflite_common_ffi)
+        history/
         models/
-        settings/  # Settings, SettingsRepository
-        trace/     # TraceManager (daily-rolling JSONL)
+        settings/
+        trace/
     test/
 
   autoglm_adb/         # ADB binary lifecycle and command wrapper
     lib/
-      autoglm_adb.dart
       src/
-        adb_binary_manager.dart  # Downloads and caches platform-tools
-        adb_client.dart          # shell, forward, push, pair, connect, getDevices, getDevicesWithInfo
+        adb_binary_manager.dart  # Downloads/caches platform-tools
+        adb_client.dart          # shell, forward, push, pair, connect, getDevicesWithInfo
         adb_process_runner.dart
-        device_info.dart         # DeviceInfo, DeviceStatus (model, manufacturer, Android version, connection type)
+        device_info.dart         # DeviceInfo + DeviceStatus enum
         exceptions.dart
     test/
 
