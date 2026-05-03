@@ -5,9 +5,24 @@ import 'package:autoglm_adb/autoglm_adb.dart';
 import 'package:autoglm_logger/autoglm_logger.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
+import 'recording_adb.dart';
+import 'recording_controller.dart';
+
+/// Wraps [dart:io Process] to expose only what [RecordingController] needs.
+class _RealProcess implements RecordingProcess {
+  _RealProcess(this._process);
+  final Process _process;
+
+  @override
+  Future<int> get exitCode => _process.exitCode;
+
+  @override
+  bool kill([ProcessSignal signal = ProcessSignal.sigterm]) =>
+      _process.kill(signal);
+}
+
 /// Bridges the MCP package's ADB client to the scrcpy package boundary.
-class ScrcpyMcpAdb implements ScrcpyAdb {
-  /// Creates an ADB bridge around [AdbClient].
+class ScrcpyMcpAdb implements ScrcpyAdb, RecordingAdb {
   const ScrcpyMcpAdb(this._client);
 
   final AdbClient _client;
@@ -66,11 +81,56 @@ class ScrcpyMcpAdb implements ScrcpyAdb {
     }
     return Uint8List.fromList(result.stdout as List<int>);
   }
+
+  // ── RecordingAdb ──────────────────────────────────────────────────────────
+
+  @override
+  Future<RecordingProcess> startScreenrecord(
+    String deviceId,
+    String remotePath, {
+    int bitrate = 4000000,
+    int maxTime = 180,
+  }) async {
+    final process = await Process.start(adbPath, [
+      '-s', deviceId, 'shell', 'screenrecord',
+      '--bit-rate', '$bitrate',
+      '--time-limit', '$maxTime',
+      remotePath,
+    ]);
+    // Drain to prevent pipe backpressure from blocking the recording process.
+    process.stdout.drain<void>();
+    process.stderr.drain<void>();
+    return _RealProcess(process);
+  }
+
+  @override
+  Future<void> pullFile(
+    String deviceId,
+    String remotePath,
+    String localPath,
+  ) async {
+    final result = await Process.run(
+      adbPath,
+      ['-s', deviceId, 'pull', remotePath, localPath],
+    );
+    if (result.exitCode != 0) {
+      throw Exception(
+        'adb pull failed (exit ${result.exitCode}): ${result.stderr}',
+      );
+    }
+  }
+
+  @override
+  Future<void> removeFile(String deviceId, String remotePath) async {
+    await Process.run(
+      adbPath,
+      ['-s', deviceId, 'shell', 'rm', '-f', remotePath],
+    );
+  }
 }
 
 /// Bridges MCP scrcpy logs to the shared application logger.
 class ScrcpyMcpLogger implements ScrcpyLogger {
-  /// Creates a logger bridge around the application logger.
   const ScrcpyMcpLogger();
 
   @override
