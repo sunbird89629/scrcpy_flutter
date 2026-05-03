@@ -170,7 +170,7 @@ void main() {
     test('start() while recording throws StateError', () async {
       await ctrl.start('emulator-5554');
 
-      expect(() => ctrl.start('emulator-5554'), throwsStateError);
+      await expectLater(() => ctrl.start('emulator-5554'), throwsStateError);
     });
 
     test('pullFile failure rethrows and does NOT call removeFile', () async {
