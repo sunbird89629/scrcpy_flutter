@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:autoglm_core/autoglm_core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scrcpy_mcp/src/recording_adb.dart';
 import 'package:scrcpy_mcp/src/recording_controller.dart';
@@ -76,10 +77,17 @@ void main() {
   group('RecordingController', () {
     late _MockRecordingAdb adb;
     late RecordingController ctrl;
+    late Directory tempDir;
 
     setUp(() {
+      tempDir = Directory.systemTemp.createTempSync('recording_test');
+      initAppLogger(logsDir: tempDir.path);
       adb = _MockRecordingAdb();
       ctrl = RecordingController(adb);
+    });
+
+    tearDown(() {
+      tempDir.deleteSync(recursive: true);
     });
 
     // ── Initial state ──────────────────────────────────────────────────────
@@ -155,6 +163,58 @@ void main() {
 
       expect(localPath, contains('Downloads/scrcpy_records/rec_'));
       expect(localPath, endsWith('.mp4'));
+    });
+
+    // ── Error cases ────────────────────────────────────────────────────────
+
+    test('start() while recording throws StateError', () async {
+      await ctrl.start('emulator-5554');
+
+      expect(() => ctrl.start('emulator-5554'), throwsStateError);
+    });
+
+    test('pullFile failure rethrows and does NOT call removeFile', () async {
+      adb.pullError = Exception('adb pull failed');
+      await ctrl.start('emulator-5554');
+
+      await expectLater(
+        () => ctrl.stop(savePath: '/tmp/rec_test.mp4'),
+        throwsException,
+      );
+      expect(adb.removeCalls, isEmpty);
+    });
+
+    // ── Unexpected exit ────────────────────────────────────────────────────
+
+    test('unexpected process exit resets state to idle', () async {
+      await ctrl.start('emulator-5554');
+      expect(ctrl.isRecording, isTrue);
+
+      adb.simulateUnexpectedExit(1);
+      await Future<void>.delayed(Duration.zero); // let then() callback run
+
+      expect(ctrl.isRecording, isFalse);
+    });
+
+    // ── Status JSON ────────────────────────────────────────────────────────
+
+    test('status.toJson() when idle omits optional keys', () {
+      final json = ctrl.status.toJson();
+
+      expect(json['is_recording'], isFalse);
+      expect(json.containsKey('device_id'), isFalse);
+      expect(json.containsKey('start_time'), isFalse);
+      expect(json.containsKey('remote_path'), isFalse);
+    });
+
+    test('status.toJson() while recording includes all keys', () async {
+      await ctrl.start('emulator-5554');
+      final json = ctrl.status.toJson();
+
+      expect(json['is_recording'], isTrue);
+      expect(json['device_id'], 'emulator-5554');
+      expect(json.containsKey('start_time'), isTrue);
+      expect(json.containsKey('remote_path'), isTrue);
     });
   });
 }
