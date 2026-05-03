@@ -507,8 +507,6 @@ void main() {
       await httpServer.start(port: 19817, session: vc, adb: adb);
       expect(httpServer.serverUrl, 'http://localhost:19817/mcp');
 
-      await Future.delayed(Duration(hours: 1), () {});
-
       await httpServer.stop();
       expect(httpServer.serverUrl, isNull);
     });
