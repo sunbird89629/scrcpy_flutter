@@ -1,4 +1,5 @@
 import 'package:mcp_dart/mcp_dart.dart';
+import 'package:scrcpy_mcp/src/recording_adb.dart';
 import 'package:scrcpy_mcp/src/scrcpy_mcp_server.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
@@ -12,11 +13,13 @@ class McpHttpServer {
     required int port,
     required ScrcpySession session,
     required ScrcpyAdb adb,
+    RecordingAdb? recordingAdb,
   }) async {
     _server = StreamableMcpServer(
       serverFactory: (_) => ScrcpyMcpServer(
         session: session,
         adb: adb,
+        recordingAdb: recordingAdb,
       ).mcpServer,
       port: port,
       enableDnsRebindingProtection: false,

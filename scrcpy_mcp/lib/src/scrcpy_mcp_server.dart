@@ -1,21 +1,23 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:mcp_dart/mcp_dart.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
+import 'recording_adb.dart';
+import 'recording_controller.dart';
+
 /// MCP server exposing scrcpy operations via the Model Context Protocol.
 class ScrcpyMcpServer {
-  /// Creates a scrcpy MCP server.
-  ///
-  /// [session] controls the active mirroring session (start, stop, inject).
-  /// Typically a [ScrcpyViewController] shared with the UI so both the widget
-  /// and the MCP server operate on the same session.
-  /// [adb] provides device enumeration and screenshot capture.
   ScrcpyMcpServer({
     required ScrcpySession session,
     required ScrcpyAdb adb,
+    RecordingAdb? recordingAdb,
   })  : _session = session,
         _adb = adb {
+    if (recordingAdb != null) {
+      _recordingController = RecordingController(recordingAdb);
+    }
     _mcpServer = McpServer(
       const Implementation(name: 'scrcpy-mcp', version: '0.2.0'),
       options: const McpServerOptions(
@@ -32,9 +34,9 @@ class ScrcpyMcpServer {
   final ScrcpySession _session;
   final ScrcpyAdb _adb;
   late final McpServer _mcpServer;
+  RecordingController? _recordingController;
   String? _connectedDeviceId;
 
-  /// The underlying [McpServer] used to connect to a transport.
   McpServer get mcpServer => _mcpServer;
 
   void _registerAll() {
@@ -136,7 +138,8 @@ class ScrcpyMcpServer {
       )
       ..registerTool(
         'take_screenshot',
-        description: 'Capture the current screen of the device as a PNG image.',
+        description:
+            'Capture the current screen of the device as a PNG image.',
         inputSchema: JsonSchema.object(
           properties: {
             'device_id': JsonSchema.string(
@@ -147,6 +150,43 @@ class ScrcpyMcpServer {
         ),
         callback: _takeScreenshot,
       );
+
+    if (_recordingController != null) {
+      _mcpServer
+        ..registerTool(
+          'start_recording',
+          description: 'Start screen recording on the active mirroring device '
+              '(max 180 s, Android limit). '
+              'Protected content may record as black.',
+          inputSchema: JsonSchema.object(
+            properties: {
+              'bitrate': JsonSchema.integer(
+                description: 'Video bitrate in bps (default: 4000000)',
+              ),
+              'max_time': JsonSchema.integer(
+                description:
+                    'Max duration in seconds, Android limit is 180 '
+                    '(default: 180)',
+              ),
+            },
+          ),
+          callback: _startRecording,
+        )
+        ..registerTool(
+          'stop_recording',
+          description:
+              'Stop the active screen recording and save to local disk.',
+          inputSchema: JsonSchema.object(
+            properties: {
+              'save_path': JsonSchema.string(
+                description: 'Local file path '
+                    '(default: ~/Downloads/scrcpy_records/rec_<timestamp>.mp4)',
+              ),
+            },
+          ),
+          callback: _stopRecording,
+        );
+    }
   }
 
   void _registerResources() {
@@ -169,6 +209,18 @@ class ScrcpyMcpServer {
         ),
         _readMirroringStatus,
       );
+
+    if (_recordingController != null) {
+      _mcpServer.registerResource(
+        'Recording Status',
+        'recording://status',
+        (
+          description: 'Current screen recording state.',
+          mimeType: 'application/json',
+        ),
+        _readRecordingStatus,
+      );
+    }
   }
 
   void _registerPrompts() {
@@ -265,9 +317,7 @@ class ScrcpyMcpServer {
       ScrcpyInjectKeyMessage(action: action, keycode: keycode),
     );
     return CallToolResult.fromContent([
-      TextContent(
-        text: 'Key event sent: keycode=$keycode, action=$action',
-      ),
+      TextContent(text: 'Key event sent: keycode=$keycode, action=$action'),
     ]);
   }
 
@@ -345,9 +395,7 @@ class ScrcpyMcpServer {
       ),
     );
     return CallToolResult.fromContent([
-      TextContent(
-        text: 'Scroll event sent: ($x, $y) h=$hScroll v=$vScroll',
-      ),
+      TextContent(text: 'Scroll event sent: ($x, $y) h=$hScroll v=$vScroll'),
     ]);
   }
 
@@ -374,14 +422,95 @@ class ScrcpyMcpServer {
     try {
       final pngBytes = await _adb.takeScreenshot(deviceId);
       return CallToolResult.fromContent([
-        ImageContent(
-          data: base64Encode(pngBytes),
-          mimeType: 'image/png',
-        ),
+        ImageContent(data: base64Encode(pngBytes), mimeType: 'image/png'),
       ]);
     } on Exception catch (e) {
       return CallToolResult(
         content: [TextContent(text: 'Screenshot failed: $e')],
+        isError: true,
+      );
+    }
+  }
+
+  Future<CallToolResult> _startRecording(
+    Map<String, dynamic> args,
+    RequestHandlerExtra extra,
+  ) async {
+    if (!_session.isConnected) {
+      return const CallToolResult(
+        content: [
+          TextContent(
+            text: 'No active mirroring session. Call start_mirroring first.',
+          ),
+        ],
+        isError: true,
+      );
+    }
+    if (_recordingController!.isRecording) {
+      final s = _recordingController!.status;
+      return CallToolResult(
+        content: [
+          TextContent(
+            text: jsonEncode({
+              'error': 'Already recording',
+              'device_id': s.deviceId,
+              'start_time': s.startTime?.toUtc().toIso8601String(),
+            }),
+          ),
+        ],
+        isError: true,
+      );
+    }
+    final deviceId = _connectedDeviceId!;
+    final bitrate = args['bitrate'] as int? ?? 4000000;
+    final maxTime = args['max_time'] as int? ?? 180;
+    try {
+      final remotePath = await _recordingController!.start(
+        deviceId,
+        bitrate: bitrate,
+        maxTime: maxTime,
+      );
+      return CallToolResult.fromContent([
+        TextContent(
+          text: jsonEncode({
+            'status': 'recording',
+            'path_on_device': remotePath,
+          }),
+        ),
+      ]);
+    } on Exception catch (e) {
+      return CallToolResult(
+        content: [TextContent(text: 'Failed to start recording: $e')],
+        isError: true,
+      );
+    }
+  }
+
+  Future<CallToolResult> _stopRecording(
+    Map<String, dynamic> args,
+    RequestHandlerExtra extra,
+  ) async {
+    if (!_recordingController!.isRecording) {
+      return CallToolResult.fromContent(
+        [const TextContent(text: 'No active recording.')],
+      );
+    }
+    final savePath = args['save_path'] as String?;
+    try {
+      final localPath = await _recordingController!.stop(savePath: savePath);
+      final sizeBytes = await File(localPath).length();
+      return CallToolResult.fromContent([
+        TextContent(
+          text: jsonEncode({
+            'status': 'finished',
+            'local_path': localPath,
+            'size_bytes': sizeBytes,
+          }),
+        ),
+      ]);
+    } on Exception catch (e) {
+      return CallToolResult(
+        content: [TextContent(text: 'Failed to stop recording: $e')],
         isError: true,
       );
     }
@@ -424,6 +553,21 @@ class ScrcpyMcpServer {
     );
   }
 
+  Future<ReadResourceResult> _readRecordingStatus(
+    Uri uri,
+    RequestHandlerExtra extra,
+  ) async {
+    return ReadResourceResult(
+      contents: [
+        TextResourceContents(
+          uri: uri.toString(),
+          mimeType: 'application/json',
+          text: jsonEncode(_recordingController!.status.toJson()),
+        ),
+      ],
+    );
+  }
+
   // ── Prompt implementations ────────────────────────────────────────────────
 
   Future<GetPromptResult> _getControlDevicePrompt(
@@ -435,6 +579,10 @@ class ScrcpyMcpServer {
     final deviceInfo = deviceId != null
         ? 'Target device: $deviceId'
         : 'Available devices: ${devices.join(", ")}';
+    final recordingLine = _recordingController != null
+        ? '- start_recording, stop_recording '
+            '(max 180 s; requires active mirroring)\n'
+        : '';
 
     return GetPromptResult(
       description: 'Device control assistant',
@@ -448,7 +596,8 @@ class ScrcpyMcpServer {
                 '- list_devices, start_mirroring, stop_mirroring\n'
                 '- inject_key (Home=3, Back=4, AppSwitch=187)\n'
                 '- inject_touch, inject_text, inject_scroll\n'
-                '- take_screenshot\n\n'
+                '- take_screenshot\n'
+                '$recordingLine\n'
                 'Help the user control their Android device.',
           ),
         ),
@@ -477,7 +626,9 @@ class ScrcpyMcpServer {
                 '1. No devices: Check USB connection, enable USB debugging\n'
                 '2. Connection refused: Run adb kill-server\n'
                 '3. Mirroring fails: Check scrcpy server version\n'
-                '4. Black screen: Device may be locked\n\n'
+                '4. Black screen: Device may be locked\n'
+                '5. Black recording: Protected content (payment/login screens) '
+                'records as black — Android security restriction.\n\n'
                 'Help the user diagnose and resolve their issue.',
           ),
         ),
