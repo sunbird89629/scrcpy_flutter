@@ -14,7 +14,6 @@ class DevicesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final devicesAsync = ref.watch(adbDevicesWithInfoProvider);
-    final selectedId = ref.watch(selectedDeviceIdProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -73,7 +72,6 @@ class DevicesPage extends ConsumerWidget {
               final info = devices[index];
               return _DeviceCard(
                 info: info,
-                isSelected: info.serial == selectedId,
                 onTap: () => ref.read(selectedDeviceIdProvider.notifier).state =
                     info.serial,
               );
@@ -89,20 +87,21 @@ class DevicesPage extends ConsumerWidget {
 // Private widgets
 // ---------------------------------------------------------------------------
 
-class _DeviceCard extends StatelessWidget {
+class _DeviceCard extends ConsumerWidget {
   const _DeviceCard({
     required this.info,
-    required this.isSelected,
     required this.onTap,
   });
 
   final DeviceInfo info;
-  final bool isSelected;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedId = ref.watch(selectedDeviceIdProvider);
+    final isSelected = info.serial == selectedId;
     final theme = Theme.of(context);
+
     return Card(
       elevation: isSelected ? 2 : 0,
       color: isSelected

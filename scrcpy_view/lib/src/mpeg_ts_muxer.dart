@@ -33,12 +33,17 @@ class MpegTsMuxer {
     final pts90k = _pts90kNow();
     final pes = _buildPes(auBytes, pts90k);
 
-    final out = BytesBuilder();
-    var offset = 0;
+    // Conservative estimate of packets needed.
+    // Each packet carries roughly 170-184 bytes of payload.
+    final packetsNeeded = (pes.length / 170).ceil() + 1;
+    final buffer = Uint8List(packetsNeeded * _tsSize);
+    var bufferOffset = 0;
+
+    var pesOffset = 0;
     var first = true;
 
-    while (offset < pes.length) {
-      final remaining = pes.length - offset;
+    while (pesOffset < pes.length) {
+      final remaining = pes.length - pesOffset;
       final needPcr = first && isKey;
 
       var maxPayload = _tsSize - 4;
@@ -62,21 +67,22 @@ class MpegTsMuxer {
         }
       }
 
-      out.add(
-        _buildTsPacket(
-          pid: _videoPid,
-          pusi: first,
-          af: af,
-          payload: Uint8List.sublistView(pes, offset, offset + chunkLen),
-          cc: _advanceVideoCc(),
-        ),
+      _writeTsPacket(
+        buffer,
+        bufferOffset,
+        pid: _videoPid,
+        pusi: first,
+        af: af,
+        payload: Uint8List.sublistView(pes, pesOffset, pesOffset + chunkLen),
+        cc: _advanceVideoCc(),
       );
 
-      offset += chunkLen;
+      bufferOffset += _tsSize;
+      pesOffset += chunkLen;
       first = false;
     }
 
-    return out.takeBytes();
+    return Uint8List.sublistView(buffer, 0, bufferOffset);
   }
 
   int _advancePatCc() {
@@ -156,17 +162,18 @@ class MpegTsMuxer {
     return out;
   }
 
-  Uint8List _buildTsPacket({
+  void _writeTsPacket(
+    Uint8List out,
+    int start, {
     required int pid,
     required bool pusi,
     required Uint8List payload,
     required int cc,
     Uint8List? af,
   }) {
-    final out = Uint8List(_tsSize);
-    out[0] = _sync;
-    out[1] = (pusi ? 0x40 : 0x00) | ((pid >> 8) & 0x1F);
-    out[2] = pid & 0xFF;
+    out[start + 0] = _sync;
+    out[start + 1] = (pusi ? 0x40 : 0x00) | ((pid >> 8) & 0x1F);
+    out[start + 2] = pid & 0xFF;
 
     final int afc;
     if (af != null && payload.isNotEmpty) {
@@ -176,21 +183,20 @@ class MpegTsMuxer {
     } else {
       afc = 0x10;
     }
-    out[3] = afc | (cc & 0x0F);
+    out[start + 3] = afc | (cc & 0x0F);
 
     var cursor = 4;
     if (af != null) {
-      out.setRange(cursor, cursor + af.length, af);
+      out.setRange(start + cursor, start + cursor + af.length, af);
       cursor += af.length;
     }
     if (payload.isNotEmpty) {
-      out.setRange(cursor, cursor + payload.length, payload);
+      out.setRange(start + cursor, start + cursor + payload.length, payload);
       cursor += payload.length;
     }
     for (var i = cursor; i < _tsSize; i++) {
-      out[i] = 0xFF;
+      out[start + i] = 0xFF;
     }
-    return out;
   }
 
   Uint8List _wrapPsi(Uint8List section, int pid, int cc) {

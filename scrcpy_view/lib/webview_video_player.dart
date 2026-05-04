@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
@@ -21,7 +22,7 @@ class WebViewVideoPlayer extends StatelessWidget {
       initialUrlRequest: URLRequest(url: WebUri(playerUrl)),
       initialSettings: InAppWebViewSettings(
         preferredContentMode: UserPreferredContentMode.DESKTOP,
-        isInspectable: true,
+        isInspectable: kDebugMode,
       ),
       onWebViewCreated: (controller) {
         controller.addJavaScriptHandler(

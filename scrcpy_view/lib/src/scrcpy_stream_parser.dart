@@ -24,7 +24,7 @@ class ScrcpyStreamParser {
 
   final ScrcpyLogger logger;
 
-  final _buffer = <int>[];
+  Uint8List _buffer = Uint8List(0);
   final _controller = StreamController<ScrcpyPacket>.broadcast();
   final _metadataController = StreamController<ScrcpyMetadata>.broadcast();
 
@@ -43,11 +43,19 @@ class ScrcpyStreamParser {
 
   /// Feed raw bytes into the parser.
   void feed(Uint8List data) {
-    _buffer.addAll(data);
+    if (_buffer.isEmpty) {
+      _buffer = data;
+    } else {
+      final newBuffer = Uint8List(_buffer.length + data.length);
+      newBuffer.setRange(0, _buffer.length, _buffer);
+      newBuffer.setRange(_buffer.length, newBuffer.length, data);
+      _buffer = newBuffer;
+    }
     _process();
   }
 
   void _process() {
+    var offset = 0;
     if (!_headerParsed) {
       const headerSize = 64 + 12; // name + codec + resolution
       if (_buffer.length < headerSize) {
@@ -58,14 +66,12 @@ class ScrcpyStreamParser {
         return;
       }
 
-      final nameBytes = Uint8List.fromList(_buffer.sublist(0, 64));
+      final nameBytes = Uint8List.sublistView(_buffer, 0, 64);
       final deviceName = const Utf8Decoder(
         allowMalformed: true,
       ).convert(nameBytes.takeWhile((c) => c != 0).toList());
 
-      final bd = ByteData.sublistView(
-        Uint8List.fromList(_buffer.sublist(64, headerSize)),
-      );
+      final bd = ByteData.sublistView(_buffer, 64, headerSize);
       final codecId = bd.getUint32(0);
       final width = bd.getUint32(4);
       final height = bd.getUint32(8);
@@ -82,22 +88,22 @@ class ScrcpyStreamParser {
       _currentMetadata = metadataObj;
       _metadataController.add(metadataObj);
 
-      _buffer.removeRange(0, headerSize);
+      offset = headerSize;
       _headerParsed = true;
     }
 
     // Process packets: 8 bytes PTS + 4 bytes Length + payload
-    while (_buffer.length >= 12) {
-      final bd = ByteData.sublistView(
-        Uint8List.fromList(_buffer.sublist(0, 12)),
-      );
+    while (_buffer.length - offset >= 12) {
+      final bd = ByteData.sublistView(_buffer, offset, offset + 12);
       final ptsRaw = bd.getUint64(0);
       final length = bd.getUint32(8);
 
-      if (_buffer.length < 12 + length) break;
+      if (_buffer.length - offset < 12 + length) break;
 
-      final payload = Uint8List.fromList(_buffer.sublist(12, 12 + length));
-      _buffer.removeRange(0, 12 + length);
+      final payload = Uint8List.fromList(
+        _buffer.sublist(offset + 12, offset + 12 + length),
+      );
+      offset += 12 + length;
 
       const ptsConfig = 0x8000000000000000;
       const ptsKeyframe = 0x4000000000000000;
@@ -133,6 +139,14 @@ class ScrcpyStreamParser {
             isKeyFrame: isKey,
           ),
         );
+      }
+    }
+
+    if (offset > 0) {
+      if (offset >= _buffer.length) {
+        _buffer = Uint8List(0);
+      } else {
+        _buffer = Uint8List.sublistView(_buffer, offset);
       }
     }
   }
