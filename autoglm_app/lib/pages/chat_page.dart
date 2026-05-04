@@ -9,6 +9,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+final _log = Logger('autoglm.app.ChatPage');
+
 /// Page for chat and screen streaming.
 class ChatPage extends ConsumerWidget {
   /// Creates a [ChatPage].
@@ -69,7 +71,7 @@ class ChatPage extends ConsumerWidget {
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, st) {
-                  appLogger.e('scrcpyServerProvider error', e, st);
+                  _log.severe('scrcpyServerProvider error', e, st);
                   return Center(
                     child: Text(
                       'Error: $e',
@@ -165,31 +167,31 @@ class _ScreenViewState extends State<_ScreenView> {
     }
 
     _errorSubscription = player.stream.error.listen((error) {
-      appLogger.e('[ChatPage] Player Error: $error');
+      _log.severe('Player Error: $error');
     });
 
     _videoParamsSubscription = player.stream.videoParams.listen((params) {
-      appLogger.i(
-        '[ChatPage] Video Params: ${params.w}x${params.h} aspect=${params.aspect}',
+      _log.info(
+        'Video Params: ${params.w}x${params.h} aspect=${params.aspect}',
       );
     });
 
     _logSubscription = player.stream.log.listen((e) {
-      appLogger.d('[mpv][${e.prefix}][${e.level}] ${e.text}');
+      _log.fine('[mpv][${e.prefix}][${e.level}] ${e.text}');
     });
 
     controller = VideoController(player);
 
     final url = widget.server.proxyUrl;
-    appLogger.i('[ChatPage] Waiting for scrcpy proxy to be ready…');
+    _log.info('Waiting for scrcpy proxy to be ready…');
     widget.server.proxyReady.then(
       (_) {
         if (!mounted) return;
-        appLogger.i('[ChatPage] Opening media at $url');
+        _log.info('Opening media at $url');
         player.open(Media(url));
       },
       onError: (Object e, StackTrace st) {
-        appLogger.e('[ChatPage] Proxy never became ready', e, st);
+        _log.severe('Proxy never became ready', e, st);
       },
     );
   }

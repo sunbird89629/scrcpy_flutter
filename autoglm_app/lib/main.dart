@@ -15,6 +15,8 @@ import 'package:media_kit/media_kit.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+final _log = Logger('autoglm.app');
+
 void main() async {
   runZonedGuarded(
     () async {
@@ -34,13 +36,13 @@ void main() async {
         logsDir.createSync(recursive: true);
       }
 
-      initAppLogger(logsDir: logsDir.path);
-      appLogger.info('Starting AutoGLM Desktop...');
+      initLogging(logsDir: logsDir.path);
+      _log.info('Starting AutoGLM Desktop...');
 
       // Global Error Handling
       FlutterError.onError = (details) {
         FlutterError.presentError(details);
-        appLogger.e(
+        _log.severe(
           'Flutter error: ${details.exception}',
           details.exception,
           details.stack,
@@ -48,7 +50,7 @@ void main() async {
       };
 
       PlatformDispatcher.instance.onError = (error, stack) {
-        appLogger.e('Platform error: $error', error, stack);
+        _log.severe('Platform error: $error', error, stack);
         return true;
       };
 
@@ -68,7 +70,7 @@ void main() async {
     },
     (error, stack) {
       // Critical: Handle zone errors for MCP server error reporting
-      appLogger.e('Zone error: $error', error, stack);
+      _log.severe('Zone error: $error', error, stack);
       MCPToolkitBinding.instance.handleZoneError(error, stack);
     },
   );
@@ -83,7 +85,7 @@ class _LoggerObserver extends ProviderObserver {
     ProviderContainer container,
   ) {
     if (newValue is AsyncValue && newValue.hasError) {
-      appLogger.e(
+      _log.severe(
         'Provider ${provider.name ?? provider.runtimeType} error: ${newValue.error}',
         newValue.error,
         newValue.stackTrace,
@@ -91,7 +93,7 @@ class _LoggerObserver extends ProviderObserver {
     } else if (kDebugMode) {
       // Log provider transitions for debugging
       final name = provider.name ?? provider.runtimeType;
-      appLogger.d('Provider $name update: $newValue');
+      _log.fine('Provider $name update: $newValue');
     }
   }
 
@@ -102,7 +104,7 @@ class _LoggerObserver extends ProviderObserver {
     StackTrace stackTrace,
     ProviderContainer container,
   ) {
-    appLogger.e(
+    _log.severe(
       'Provider ${provider.name ?? provider.runtimeType} fatal failure: $error',
       error,
       stackTrace,
@@ -116,7 +118,7 @@ class _LoggerObserver extends ProviderObserver {
     ProviderContainer container,
   ) {
     if (kDebugMode) {
-      appLogger.d(
+      _log.fine(
         'Provider ${provider.name ?? provider.runtimeType} added: $value',
       );
     }

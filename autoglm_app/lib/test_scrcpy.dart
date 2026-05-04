@@ -18,7 +18,7 @@ void main() async {
 
   // Initialize the logger for the test
   final tempDir = await getTemporaryDirectory();
-  initAppLogger(logsDir: p.join(tempDir.path, 'autoglm_logs'));
+  initLogging(logsDir: p.join(tempDir.path, 'autoglm_logs'));
 
   runApp(
     const MaterialApp(

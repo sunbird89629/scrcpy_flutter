@@ -73,22 +73,23 @@ class AutoGlmScrcpyAdb implements ScrcpyAdb {
 
 /// Bridges AutoGLM's application logger to scrcpy logging.
 class AutoGlmScrcpyLogger implements ScrcpyLogger {
-  /// Creates a logger bridge around AutoGLM's global logger.
+  static final _log = Logger('autoglm.scrcpy');
+
   const AutoGlmScrcpyLogger();
 
   @override
-  void debug(String message) => appLogger.d(message);
+  void debug(String message) => _log.fine(message);
 
   @override
-  void info(String message) => appLogger.i(message);
+  void info(String message) => _log.info(message);
 
   @override
   void warn(String message, [Object? error, StackTrace? stack]) {
-    appLogger.w(message, error, stack);
+    _log.warning(message, error, stack);
   }
 
   @override
   void error(String message, [Object? error, StackTrace? stack]) {
-    appLogger.e(message, error, stack);
+    _log.severe(message, error, stack);
   }
 }

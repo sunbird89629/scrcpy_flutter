@@ -14,6 +14,7 @@ abstract class SettingsRepository {
 
 /// JSON file based implementation of [SettingsRepository].
 class JsonFileSettingsRepository implements SettingsRepository {
+  static final _log = Logger('autoglm.app.SettingsRepository');
   /// Creates new [JsonFileSettingsRepository].
   JsonFileSettingsRepository({required this.filePath});
 
@@ -28,7 +29,7 @@ class JsonFileSettingsRepository implements SettingsRepository {
       final content = await file.readAsString();
       return Settings.fromJson(jsonDecode(content) as Map<String, dynamic>);
     } on Object catch (e, st) {
-      AppLogger.maybeError('Failed to load settings from $filePath', e, st);
+      _log.warning('Failed to load settings from $filePath', e, st);
       return const Settings();
     }
   }
