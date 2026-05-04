@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:logging/logging.dart';
+import 'package:autoglm_logger/autoglm_logger.dart';
 
 import 'recording_adb.dart';
 

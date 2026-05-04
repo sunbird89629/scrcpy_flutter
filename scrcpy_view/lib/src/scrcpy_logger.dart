@@ -1,7 +1,7 @@
 /// Logging sink for scrcpy operations.
 ///
 /// Package consumers wire this to their own logging infrastructure
-/// (e.g., `autoglm_logger`'s `appLogger` or a no-op).
+/// (e.g., `autoglm_logger`'s `initLogging()` or a no-op).
 abstract class ScrcpyLogger {
   /// Debug-level message.
   void debug(String message);
