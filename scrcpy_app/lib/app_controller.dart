@@ -1,4 +1,4 @@
-import 'package:autoglm_adb/autoglm_adb.dart';
+import 'package:adb_tools/adb_tools.dart';
 import 'package:flutter/material.dart';
 import 'package:scrcpy_app/mcp_server_controller.dart';
 import 'package:scrcpy_app/scrcpy_app_adb.dart';

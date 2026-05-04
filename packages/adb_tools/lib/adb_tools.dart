@@ -1,4 +1,4 @@
-/// ADB client and binary management for AutoGLM.
+/// ADB client and binary management tools.
 library;
 
 export 'src/adb_binary_manager.dart';

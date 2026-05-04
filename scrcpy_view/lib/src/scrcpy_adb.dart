@@ -4,7 +4,7 @@ import 'dart:typed_data';
 /// Abstract ADB operations required by the scrcpy protocol.
 ///
 /// Package consumers implement this using their own ADB client
-/// (e.g., `autoglm_adb`'s `AdbClient`).
+/// (e.g., `adb_tools`'s `AdbClient`).
 abstract class ScrcpyAdb {
   /// Path to the ADB executable.
   String get adbPath;

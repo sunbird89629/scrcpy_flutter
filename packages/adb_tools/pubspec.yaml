@@ -1,5 +1,5 @@
-name: autoglm_adb
-description: ADB client and binary manager for AutoGLM.
+name: adb_tools
+description: ADB client and binary management tools.
 publish_to: none
 version: 0.1.0
 

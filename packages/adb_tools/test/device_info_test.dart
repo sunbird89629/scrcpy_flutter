@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:autoglm_adb/src/adb_client.dart';
-import 'package:autoglm_adb/src/adb_process_runner.dart';
-import 'package:autoglm_adb/src/device_info.dart';
-import 'package:autoglm_adb/src/exceptions.dart';
+import 'package:adb_tools/src/adb_client.dart';
+import 'package:adb_tools/src/adb_process_runner.dart';
+import 'package:adb_tools/src/device_info.dart';
+import 'package:adb_tools/src/exceptions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // ---------------------------------------------------------------------------

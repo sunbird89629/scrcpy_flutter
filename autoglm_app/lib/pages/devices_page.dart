@@ -1,4 +1,4 @@
-import 'package:autoglm_adb/autoglm_adb.dart';
+import 'package:adb_tools/adb_tools.dart';
 import 'package:autoglm_app/i18n/strings.g.dart';
 import 'package:autoglm_app/providers/adb_provider.dart';
 import 'package:autoglm_app/providers/device_provider.dart';

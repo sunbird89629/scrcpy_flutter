@@ -10,8 +10,8 @@ environment:
 resolution: workspace
 
 dependencies:
-  autoglm_adb:
-    path: ../packages/autoglm_adb
+  adb_tools:
+    path: ../packages/adb_tools
   autoglm_core:
     path: ../packages/autoglm_core
   autoglm_logger:
