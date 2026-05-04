@@ -1,6 +1,6 @@
 #!/usr/bin/env dart
 
-import 'package:autoglm_adb/autoglm_adb.dart';
+import 'package:adb_tools/adb_tools.dart';
 import 'package:mcp_dart/mcp_dart.dart';
 import 'package:scrcpy_mcp/scrcpy_mcp.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';

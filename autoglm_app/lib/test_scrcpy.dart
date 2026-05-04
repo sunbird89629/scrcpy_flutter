@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:autoglm_adb/autoglm_adb.dart';
+import 'package:adb_tools/adb_tools.dart';
 import 'package:autoglm_logger/autoglm_logger.dart';
 import 'package:autoglm_app/scrcpy/autoglm_scrcpy_bridge.dart';
 import 'package:flutter/material.dart';

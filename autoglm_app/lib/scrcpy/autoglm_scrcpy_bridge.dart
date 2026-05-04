@@ -1,8 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:autoglm_adb/autoglm_adb.dart';
-import 'package:autoglm_logger/autoglm_logger.dart';
+import 'package:adb_tools/adb_tools.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
 /// Bridges AutoGLM's ADB client to the scrcpy package boundary.

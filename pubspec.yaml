@@ -7,7 +7,7 @@ environment:
 workspace:
   - autoglm_app
   - packages/autoglm_logger
-  - packages/autoglm_adb
+  - packages/adb_tools
   - scrcpy_app
   - scrcpy_mcp
   - scrcpy_view

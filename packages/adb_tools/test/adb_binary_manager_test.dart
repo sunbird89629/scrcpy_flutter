@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:autoglm_adb/src/adb_binary_manager.dart';
+import 'package:adb_tools/src/adb_binary_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
