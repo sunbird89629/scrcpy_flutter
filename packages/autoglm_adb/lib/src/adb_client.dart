@@ -11,8 +11,6 @@ import 'package:autoglm_adb/src/device_info.dart';
 abstract class AdbClient {
   const AdbClient();
 
-  String get adbPath => throw UnimplementedError();
-
   Future<String> getVersion() => throw UnimplementedError();
 
   Future<ProcessResult> shell(
@@ -68,7 +66,6 @@ class AdbClientImpl extends AdbClient {
     this.runner = const AdbProcessRunnerImpl(),
   });
 
-  @override
   final String adbPath;
   final AdbProcessRunner runner;
 
