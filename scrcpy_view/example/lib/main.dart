@@ -1,4 +1,4 @@
-import 'package:autoglm_logger/app_logger.dart';
+import 'package:autoglm_logger/autoglm_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_driver/driver_extension.dart';
 import 'package:scrcpy_view_example/webview_screen.dart';
@@ -6,7 +6,7 @@ import 'package:scrcpy_view_example/webview_screen.dart';
 void main() {
   enableFlutterDriverExtension();
   WidgetsFlutterBinding.ensureInitialized();
-  initAppLogger();
+  initLogging();
   runApp(const ExampleApp());
 }
 
