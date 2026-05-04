@@ -3,6 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:scrcpy_app/scrcpy_app.dart';
 
 void main() {
-  initAppLogger();
+  initLogging();
   runApp(const ScrcpyApp());
 }
