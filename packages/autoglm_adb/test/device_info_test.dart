@@ -27,6 +27,19 @@ class _MapRunner extends AdbProcessRunner {
     }
     return ProcessResult(0, 0, _map[key] ?? '', '');
   }
+
+  @override
+  Future<ProcessResult> run(
+    String executable,
+    List<String> arguments, {
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    final key = arguments.join(' ');
+    if (throwOn != null && key.contains(throwOn!)) {
+      throw const AdbException('Command failed');
+    }
+    return ProcessResult(0, 0, _map[key] ?? '', '');
+  }
 }
 
 const _devicesHeader = 'List of devices attached\n';
@@ -42,7 +55,7 @@ const _sampleGetprop = '''
 void main() {
   group('AdbClient.getDevicesWithInfo', () {
     test('returns online device with model info', () async {
-      final client = AdbClient(
+      final client = AdbClientImpl(
         runner: _MapRunner({
           'devices': '${_devicesHeader}R3CN12345\tdevice\n',
           '-s R3CN12345 shell getprop': _sampleGetprop,
@@ -64,7 +77,7 @@ void main() {
     });
 
     test('Wi-Fi serial sets isWifi true', () async {
-      final client = AdbClient(
+      final client = AdbClientImpl(
         runner: _MapRunner({
           'devices': '${_devicesHeader}192.168.1.5:5555\tdevice\n',
           '-s 192.168.1.5:5555 shell getprop': _sampleGetprop,
@@ -76,7 +89,7 @@ void main() {
     });
 
     test('offline device skips getprop, info fields are null', () async {
-      final client = AdbClient(
+      final client = AdbClientImpl(
         runner: _MapRunner({
           'devices': '${_devicesHeader}emulator-5554\toffline\n',
         }),
@@ -94,7 +107,7 @@ void main() {
     });
 
     test('unauthorized device skips getprop', () async {
-      final client = AdbClient(
+      final client = AdbClientImpl(
         runner: _MapRunner({
           'devices': '${_devicesHeader}192.168.1.8:5555\tunauthorized\n',
         }),
@@ -107,7 +120,7 @@ void main() {
     });
 
     test('getprop exception degrades gracefully', () async {
-      final client = AdbClient(
+      final client = AdbClientImpl(
         runner: _MapRunner(
           {'devices': '${_devicesHeader}R3CN12345\tdevice\n'},
           throwOn: 'getprop',
@@ -124,7 +137,7 @@ void main() {
     });
 
     test('mixes online and offline devices', () async {
-      final client = AdbClient(
+      final client = AdbClientImpl(
         runner: _MapRunner({
           'devices':
               '${_devicesHeader}R3CN12345\tdevice\nemulator-5554\toffline\n',
@@ -146,7 +159,7 @@ void main() {
     });
 
     test('empty device list returns empty', () async {
-      final client = AdbClient(
+      final client = AdbClientImpl(
         runner: _MapRunner({'devices': _devicesHeader}),
       );
       final devices = await client.getDevicesWithInfo();
