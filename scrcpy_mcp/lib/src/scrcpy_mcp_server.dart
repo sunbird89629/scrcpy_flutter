@@ -138,8 +138,7 @@ class ScrcpyMcpServer {
       )
       ..registerTool(
         'take_screenshot',
-        description:
-            'Capture the current screen of the device as a PNG image.',
+        description: 'Capture the current screen of the device as a PNG image.',
         inputSchema: JsonSchema.object(
           properties: {
             'device_id': JsonSchema.string(
@@ -164,8 +163,7 @@ class ScrcpyMcpServer {
                 description: 'Video bitrate in bps (default: 4000000)',
               ),
               'max_time': JsonSchema.integer(
-                description:
-                    'Max duration in seconds, Android limit is 180 '
+                description: 'Max duration in seconds, Android limit is 180 '
                     '(default: 180)',
               ),
             },

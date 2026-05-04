@@ -680,8 +680,7 @@ void main() {
         const ReadResourceRequest(uri: 'recording://status'),
       );
 
-      final json =
-          jsonDecode(_resourceText(result)) as Map<String, dynamic>;
+      final json = jsonDecode(_resourceText(result)) as Map<String, dynamic>;
       expect(json['is_recording'], isFalse);
     });
 
@@ -702,8 +701,7 @@ void main() {
       final result = await env.client.readResource(
         const ReadResourceRequest(uri: 'recording://status'),
       );
-      final json =
-          jsonDecode(_resourceText(result)) as Map<String, dynamic>;
+      final json = jsonDecode(_resourceText(result)) as Map<String, dynamic>;
 
       expect(json['is_recording'], isTrue);
       expect(json['device_id'], 'device1');

@@ -34,8 +34,7 @@ class _MockViewController extends ScrcpyViewController {
 
 /// Fake controller that doesn't bind a real port, for widget-only tests.
 class _FakeController extends McpServerController {
-  _FakeController()
-      : super(session: _MockViewController(), adb: _MockAdb());
+  _FakeController() : super(session: _MockViewController(), adb: _MockAdb());
 
   bool _fakeRunning = false;
   String? _fakeUrl;

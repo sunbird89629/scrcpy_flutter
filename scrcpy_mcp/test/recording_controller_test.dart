@@ -157,7 +157,8 @@ void main() {
       expect(localPath, '/tmp/rec_out.mp4');
     });
 
-    test('stop() uses default ~/Downloads path when savePath is null', () async {
+    test('stop() uses default ~/Downloads path when savePath is null',
+        () async {
       await ctrl.start('emulator-5554');
       final localPath = await ctrl.stop();
 

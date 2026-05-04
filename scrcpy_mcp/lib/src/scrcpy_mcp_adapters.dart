@@ -92,9 +92,14 @@ class ScrcpyMcpAdb implements ScrcpyAdb, RecordingAdb {
     int maxTime = 180,
   }) async {
     final process = await Process.start(adbPath, [
-      '-s', deviceId, 'shell', 'screenrecord',
-      '--bit-rate', '$bitrate',
-      '--time-limit', '$maxTime',
+      '-s',
+      deviceId,
+      'shell',
+      'screenrecord',
+      '--bit-rate',
+      '$bitrate',
+      '--time-limit',
+      '$maxTime',
       remotePath,
     ]);
     // Drain to prevent pipe backpressure from blocking the recording process.
