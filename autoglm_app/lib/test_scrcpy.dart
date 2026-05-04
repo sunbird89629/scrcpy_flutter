@@ -102,7 +102,7 @@ class _ScrcpyTestScreenState extends State<ScrcpyTestScreen> {
       _logs.clear();
     });
 
-    const adbClient = AdbClient();
+    const adbClient = AdbClientImpl();
 
     _addLog('Searching for devices...');
     final devices = await adbClient.getDevices();

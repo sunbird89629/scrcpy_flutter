@@ -16,7 +16,7 @@ final adbBinaryManagerProvider = Provider<Future<AdbBinaryManager>>((
 final adbClientProvider = FutureProvider<AdbClient>((ref) async {
   final manager = await ref.watch(adbBinaryManagerProvider);
   final adbPath = await manager.ensureAdb();
-  return AdbClient(adbPath: adbPath);
+  return AdbClientImpl(adbPath: adbPath);
 });
 
 /// Provider for the list of connected ADB devices.

@@ -4,153 +4,188 @@ import 'package:autoglm_adb/src/adb_process_runner.dart';
 import 'package:autoglm_adb/src/exceptions.dart';
 import 'package:autoglm_adb/src/device_info.dart';
 
-/// Provides high-level ADB commands.
-class AdbClient {
-  /// Creates a new [AdbClient].
-  const AdbClient({
-    this.adbPath = 'adb',
-    this.runner = const AdbProcessRunner(),
-  });
+/// Abstract ADB client.
+///
+/// All methods default to [UnimplementedError] so partial test fakes can
+/// extend this class and only override the methods they exercise.
+abstract class AdbClient {
+  const AdbClient();
 
-  /// The path to the adb executable.
-  final String adbPath;
+  Future<String> getVersion() => throw UnimplementedError();
 
-  /// The runner used to execute adb commands.
-  final AdbProcessRunner runner;
-
-  /// Checks if adb is accessible and returns its version string.
-  Future<String> getVersion() async {
-    final result = await runner.runRaw(adbPath, ['version']);
-    return result.stdout.toString().trim();
-  }
-
-  /// Runs an adb shell command.
   Future<ProcessResult> shell(
     List<String> arguments, {
     String? deviceId,
     Duration timeout = const Duration(seconds: 30),
-  }) async {
-    final args = <String>[];
-    if (deviceId != null) {
-      args.addAll(['-s', deviceId]);
-    }
-    args
-      ..add('shell')
-      ..addAll(arguments);
-    return runner.runRaw(adbPath, args, timeout: timeout);
+  }) =>
+      throw UnimplementedError();
+
+  Future<void> forward(
+    String local,
+    String remote, {
+    String? deviceId,
+    bool noRebind = false,
+  }) =>
+      throw UnimplementedError();
+
+  Future<void> forwardRemove(String local, {String? deviceId}) =>
+      throw UnimplementedError();
+
+  Future<void> reverse(
+    String remote,
+    String local, {
+    String? deviceId,
+    bool noRebind = false,
+  }) =>
+      throw UnimplementedError();
+
+  Future<void> reverseRemove(String remote, {String? deviceId}) =>
+      throw UnimplementedError();
+
+  Future<void> push(
+    String localPath,
+    String remotePath, {
+    String? deviceId,
+  }) =>
+      throw UnimplementedError();
+
+  Future<String> pair(String ip, int port, String code) =>
+      throw UnimplementedError();
+
+  Future<String> connect(String ip, int port) => throw UnimplementedError();
+
+  Future<List<String>> getDevices() => throw UnimplementedError();
+
+  Future<List<DeviceInfo>> getDevicesWithInfo() => throw UnimplementedError();
+}
+
+/// Concrete ADB client implementation.
+class AdbClientImpl extends AdbClient {
+  const AdbClientImpl({
+    this.adbPath = 'adb',
+    this.runner = const AdbProcessRunnerImpl(),
+  });
+
+  final String adbPath;
+  final AdbProcessRunner runner;
+
+  List<String> _baseArgs(String? deviceId) =>
+      deviceId != null ? ['-s', deviceId] : const [];
+
+  @override
+  Future<String> getVersion() async {
+    final result = await runner.run(adbPath, ['version']);
+    return result.stdout.toString().trim();
   }
 
-  /// Sets up an adb port forward.
+  @override
+  Future<ProcessResult> shell(
+    List<String> arguments, {
+    String? deviceId,
+    Duration timeout = const Duration(seconds: 30),
+  }) {
+    return runner.runRaw(
+      adbPath,
+      [..._baseArgs(deviceId), 'shell', ...arguments],
+      timeout: timeout,
+    );
+  }
+
+  @override
   Future<void> forward(
     String local,
     String remote, {
     String? deviceId,
     bool noRebind = false,
   }) async {
-    final args = <String>[];
-    if (deviceId != null) {
-      args.addAll(['-s', deviceId]);
-    }
-    args.add('forward');
-    if (noRebind) {
-      args.add('--no-rebind');
-    }
-    args.addAll([local, remote]);
-    await runner.runRaw(adbPath, args);
+    await runner.run(adbPath, [
+      ..._baseArgs(deviceId),
+      'forward',
+      if (noRebind) '--no-rebind',
+      local,
+      remote,
+    ]);
   }
 
-  /// Removes an adb port forward.
+  @override
   Future<void> forwardRemove(String local, {String? deviceId}) async {
-    final args = <String>[];
-    if (deviceId != null) {
-      args.addAll(['-s', deviceId]);
-    }
-    args.addAll(['forward', '--remove', local]);
-    await runner.runRaw(adbPath, args);
+    await runner.run(adbPath, [
+      ..._baseArgs(deviceId),
+      'forward',
+      '--remove',
+      local,
+    ]);
   }
 
-  /// Sets up an adb reverse tunnel.
+  @override
   Future<void> reverse(
     String remote,
     String local, {
     String? deviceId,
     bool noRebind = false,
   }) async {
-    final args = <String>[];
-    if (deviceId != null) {
-      args.addAll(['-s', deviceId]);
-    }
-    args.add('reverse');
-    if (noRebind) {
-      args.add('--no-rebind');
-    }
-    args.addAll([remote, local]);
-    await runner.runRaw(adbPath, args);
+    await runner.run(adbPath, [
+      ..._baseArgs(deviceId),
+      'reverse',
+      if (noRebind) '--no-rebind',
+      remote,
+      local,
+    ]);
   }
 
-  /// Removes an adb reverse tunnel.
+  @override
   Future<void> reverseRemove(String remote, {String? deviceId}) async {
-    final args = <String>[];
-    if (deviceId != null) {
-      args.addAll(['-s', deviceId]);
-    }
-    args.addAll(['reverse', '--remove', remote]);
-    await runner.runRaw(adbPath, args);
+    await runner.run(adbPath, [
+      ..._baseArgs(deviceId),
+      'reverse',
+      '--remove',
+      remote,
+    ]);
   }
 
-  /// Pushes a file to the device.
+  @override
   Future<void> push(
     String localPath,
     String remotePath, {
     String? deviceId,
   }) async {
-    final args = <String>[];
-    if (deviceId != null) {
-      args.addAll(['-s', deviceId]);
-    }
-    args.addAll(['push', localPath, remotePath]);
-    await runner.runRaw(adbPath, args);
+    await runner.run(adbPath, [
+      ..._baseArgs(deviceId),
+      'push',
+      localPath,
+      remotePath,
+    ]);
   }
 
-  /// Pairs a device using Android 11+ wireless debugging.
-  /// Returns success message or throws [AdbException] on failure.
+  @override
   Future<String> pair(String ip, int port, String code) async {
     if (code.length != 6 || int.tryParse(code) == null) {
       throw const AdbException('Pairing code must be 6 digits.');
     }
-
     final address = '$ip:$port';
-    try {
-      final result = await runner.runRaw(adbPath, ['pair', address, code]);
-      final output =
-          result.stdout.toString().trim() + result.stderr.toString().trim();
-
-      if (output.toLowerCase().contains('successfully paired') ||
-          output.toLowerCase().contains('success')) {
-        return 'Successfully paired to $address';
-      }
-      throw AdbException('Pairing failed: $output');
-    } catch (e) {
-      if (e is AdbException) {
-        final msg = e.message.toLowerCase();
-        if (msg.contains('pairing code')) {
-          throw const AdbException('Invalid pairing code');
-        } else if (msg.contains('refused')) {
-          throw const AdbException(
-            'Connection refused - check if wireless debugging is enabled',
-          );
-        }
-      }
-      rethrow;
+    final result = await runner.runRaw(adbPath, ['pair', address, code]);
+    final stdout = result.stdout.toString().trim();
+    final stderr = result.stderr.toString().trim();
+    if (stdout.toLowerCase().contains('successfully paired') ||
+        stdout.toLowerCase().contains('success')) {
+      return 'Successfully paired to $address';
     }
+    final combined = '$stdout $stderr'.toLowerCase();
+    if (combined.contains('refused')) {
+      throw const AdbException(
+        'Connection refused - check if wireless debugging is enabled',
+      );
+    }
+    throw AdbException(
+      'Pairing failed: ${stdout.isNotEmpty ? stdout : stderr}',
+    );
   }
 
-  /// Connects to a previously paired device or an open ADB port.
+  @override
   Future<String> connect(String ip, int port) async {
     final address = '$ip:$port';
     final result = await runner.runRaw(adbPath, ['connect', address]);
     final output = result.stdout.toString().trim();
-
     if (output.contains('connected to $address') ||
         output.contains('already connected')) {
       return output;
@@ -158,29 +193,20 @@ class AdbClient {
     throw AdbException('Connect failed: $output');
   }
 
-  /// Returns serial numbers for devices currently reported by `adb devices`.
+  @override
   Future<List<String>> getDevices() async {
-    final result = await runner.runRaw(adbPath, ['devices']);
+    final result = await runner.run(adbPath, ['devices']);
     final lines = result.stdout.toString().split('\n');
-    final devices = <String>[];
-
-    // First line is "List of devices attached"
-    for (var i = 1; i < lines.length; i++) {
-      final line = lines[i].trim();
-      if (line.isNotEmpty && line.contains('\t')) {
-        devices.add(line.split('\t').first);
-      }
-    }
-    return devices;
+    return [
+      for (var i = 1; i < lines.length; i++)
+        if (lines[i].trim().isNotEmpty && lines[i].contains('\t'))
+          lines[i].trim().split('\t').first,
+    ];
   }
 
-  /// Returns [DeviceInfo] for every device reported by `adb devices`.
-  ///
-  /// For online devices, `adb shell getprop` is called in parallel to populate
-  /// model/manufacturer/version fields. If getprop fails the device is still
-  /// returned with only the serial and status fields populated.
+  @override
   Future<List<DeviceInfo>> getDevicesWithInfo() async {
-    final result = await runner.runRaw(adbPath, ['devices']);
+    final result = await runner.run(adbPath, ['devices']);
     final lines = result.stdout.toString().split('\n');
 
     final entries = <({String serial, DeviceStatus status})>[];
@@ -204,7 +230,7 @@ class AdbClient {
           return DeviceInfo(serial: e.serial, status: e.status);
         }
         try {
-          final propResult = await runner.runRaw(
+          final propResult = await runner.run(
             adbPath,
             ['-s', e.serial, 'shell', 'getprop'],
           );
