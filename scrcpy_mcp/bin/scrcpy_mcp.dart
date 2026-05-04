@@ -7,7 +7,7 @@ import 'package:scrcpy_view/scrcpy_view.dart';
 
 void main(List<String> args) async {
   final adbPath = args.isNotEmpty ? args[0] : 'adb';
-  final adb = AdbClient(adbPath: adbPath);
+  final adb = AdbClientImpl(adbPath: adbPath);
   final scrcpyAdb = ScrcpyMcpAdb(adb);
 
   final viewController = ScrcpyViewController(adb: scrcpyAdb);
