@@ -5,7 +5,6 @@ environment:
   sdk: ^3.5.0
 
 workspace:
-  - autoglm_app
   - packages/autoglm_logger
   - packages/adb_tools
   - scrcpy_app
@@ -51,6 +50,3 @@ melos:
       packageFilters:
         dependsOn: build_runner
 
-    gen:i18n:
-      description: Regenerate slang i18n strings
-      run: cd autoglm_app && dart run slang
