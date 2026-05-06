@@ -17,21 +17,11 @@ class FakeRunner extends AdbProcessRunner {
   final int exitCode;
 
   @override
-  Future<ProcessResult> runRaw(
-    String executable,
-    List<String> arguments, {
-    Duration timeout = const Duration(seconds: 30),
-  }) async {
-    return ProcessResult(0, exitCode, stdoutResponse, stderrResponse);
-  }
-
-  @override
   Future<ProcessResult> run(
     String executable,
     List<String> arguments, {
     Duration timeout = const Duration(seconds: 30),
   }) async {
-    if (exitCode != 0) throw const AdbException('Command failed');
     return ProcessResult(0, exitCode, stdoutResponse, stderrResponse);
   }
 }
@@ -41,14 +31,15 @@ void main() {
     test('pair validates 6 digit code', () async {
       final client = AdbClientImpl(runner: const FakeRunner(''));
       await expectLater(
-        () => client.pair('192.168.1.1', 5555, '123'),
+        client.pair('192.168.1.1', 5555, '123'),
         throwsA(isA<AdbException>()),
       );
     });
 
     test('pair success parses output', () async {
       final client = AdbClientImpl(
-        runner: const FakeRunner('Successfully paired to 192.168.1.1:5555 [guid]'),
+        runner:
+            const FakeRunner('Successfully paired to 192.168.1.1:5555 [guid]'),
       );
       final res = await client.pair('192.168.1.1', 5555, '123456');
       expect(res, contains('Successfully paired'));
@@ -59,7 +50,7 @@ void main() {
         runner: const FakeRunner('', 1, 'error: Connection refused'),
       );
       await expectLater(
-        () => client.pair('192.168.1.1', 5555, '123456'),
+        client.pair('192.168.1.1', 5555, '123456'),
         throwsA(
           isA<AdbException>().having(
             (e) => e.message,

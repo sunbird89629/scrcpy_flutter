@@ -41,7 +41,10 @@ void main() {
     test('getVersion fails with wrong adb path', () async {
       const badClient = AdbClientImpl(adbPath: '/nonexistent/adb');
 
-      expect(() => badClient.getVersion(), throwsA(isA<AdbException>()));
+      await expectLater(
+        badClient.getVersion(),
+        throwsA(isA<AdbException>()),
+      );
     });
 
     test(

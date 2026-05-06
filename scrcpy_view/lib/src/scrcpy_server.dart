@@ -255,11 +255,13 @@ class ScrcpyServer {
     );
 
     unawaited(
-      _serverProcess!.exitCode.then((code) async {
-        _log.warn('[ScrcpyServer] server process exited with code $code');
-        _parser.close();
-        await _proxy.stop();
-      }),
+      _serverProcess!.exitCode.then(
+        (code) async {
+          _log.warn('[ScrcpyServer] server process exited with code $code');
+          _parser.close();
+          await _proxy.stop();
+        },
+      ),
     );
 
     await Future<void>.delayed(const Duration(seconds: 1));
