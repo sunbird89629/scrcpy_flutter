@@ -9,7 +9,6 @@ import 'package:scrcpy_view/webview_video_player.dart';
 class ScrcpyView extends StatefulWidget {
   const ScrcpyView({required this.controller, super.key});
 
-  /// Controller that owns the mirroring session and exposes input injection.
   final ScrcpyViewController controller;
 
   @override

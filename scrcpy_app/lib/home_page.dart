@@ -76,29 +76,43 @@ class _HomePageState extends State<HomePage> with TrayListener {
       builder: (context, child) {
         final mainContent = appController.running
             ? ScrcpyView(controller: appController.scrcpyViewController)
-            : FutureBuilder(
-                future: appController.scrcpyViewController.getDevices(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final devices = snapshot.data!;
-                  if (devices.isEmpty) {
-                    return const Center(child: Text('No device found'));
-                  }
-                  return DeviceListWidget(
-                    devices: devices,
-                    onItemTap: (index) {
-                      appController.connectDevice(devices[index]);
-                    },
-                  );
-                },
-              );
+            : DeviceView(appController: appController);
         return Row(
           children: [
             Expanded(child: mainContent),
             ControlView(),
           ],
+        );
+      },
+    );
+  }
+}
+
+class DeviceView extends StatelessWidget {
+  const DeviceView({
+    super.key,
+    required this.appController,
+  });
+
+  final AppController appController;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: appController.scrcpyViewController.getDevices(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final devices = snapshot.data!;
+        if (devices.isEmpty) {
+          return const Center(child: Text('No device found'));
+        }
+        return DeviceListWidget(
+          devices: devices,
+          onItemTap: (index) {
+            appController.connectDevice(devices[index]);
+          },
         );
       },
     );
