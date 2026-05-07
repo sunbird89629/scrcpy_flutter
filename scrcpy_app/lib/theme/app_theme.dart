@@ -19,7 +19,8 @@ class AppColors extends ThemeExtension<AppColors> {
   AppColors lerp(ThemeExtension<AppColors>? other, double t) {
     if (other is! AppColors) return this;
     return AppColors(
-      sidebarBackground: Color.lerp(sidebarBackground, other.sidebarBackground, t),
+      sidebarBackground:
+          Color.lerp(sidebarBackground, other.sidebarBackground, t),
     );
   }
 }
@@ -31,12 +32,6 @@ class AppTheme {
     useMaterial3: true,
     colorSchemeSeed: _indigoSeed,
     brightness: Brightness.light,
-    scaffoldBackgroundColor: const Color(0xFFF9FAFB),
-    extensions: const [
-      AppColors(
-        sidebarBackground: Color(0xFFF3F4F6),
-      ),
-    ],
   );
 
   static final dark = ThemeData(

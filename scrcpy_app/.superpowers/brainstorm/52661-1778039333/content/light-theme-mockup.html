@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Light Theme Mockups</title>
+    <style>
+        :root {
+            --bg-base: #F9FAFB;
+            --bg-sidebar: #F3F4F6;
+            --bg-card: #FFFFFF;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+            --indigo: #3F51B5;
+            --cyan: #00BCD4;
+            --border: #E5E7EB;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #E5E7EB;
+            display: flex;
+            gap: 40px;
+            padding: 40px;
+            justify-content: center;
+        }
+        .mockup {
+            width: 400px;
+            height: 300px;
+            background: var(--bg-base);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            border: 1px solid var(--border);
+        }
+        .sidebar {
+            width: 120px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            padding: 15px;
+        }
+        .main {
+            flex: 1;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .sidebar-item {
+            height: 12px;
+            width: 80%;
+            background: var(--border);
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .sidebar-item.active {
+            background: var(--indigo);
+            opacity: 0.2;
+        }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .button {
+            height: 30px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+            cursor: default;
+        }
+        .btn-indigo { background: var(--indigo); }
+        .btn-cyan { background: var(--cyan); }
+        
+        .approach-label {
+            position: absolute;
+            top: -30px;
+            left: 0;
+            font-weight: bold;
+            color: #374151;
+        }
+        .container { position: relative; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="approach-label">Approach A: Indigo Focused</div>
+        <div class="mockup">
+            <div class="sidebar">
+                <div class="sidebar-item active"></div>
+                <div class="sidebar-item"></div>
+                <div class="sidebar-item"></div>
+            </div>
+            <div class="main">
+                <div class="card">
+                    <div style="height: 100px; background: #F3F4F6; border-radius: 4px; margin-bottom: 10px; border: 1px dashed var(--border);"></div>
+                    <div class="button btn-indigo">Connect Device</div>
+                </div>
+            </div>
+        </div>
+        <p style="margin-top: 15px; font-size: 13px; color: #6B7280; width: 400px;">
+            <b>Indigo Focused:</b> Uses Indigo as the primary signal color for all actions. Clean, professional, and consistent with the brand's core color.
+        </p>
+    </div>
+
+    <div class="container">
+        <div class="approach-label">Approach B: Dual-Tone Harmony</div>
+        <div class="mockup">
+            <div class="sidebar">
+                <div class="sidebar-item" style="background: var(--cyan); opacity: 0.2;"></div>
+                <div class="sidebar-item"></div>
+                <div class="sidebar-item"></div>
+            </div>
+            <div class="main">
+                <div class="card">
+                    <div style="height: 100px; background: #F3F4F6; border-radius: 4px; margin-bottom: 10px; border: 1px dashed var(--border);"></div>
+                    <div style="display: flex; gap: 10px;">
+                        <div class="button btn-indigo" style="flex: 1;">Control</div>
+                        <div class="button btn-cyan" style="flex: 1;">Screen</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p style="margin-top: 15px; font-size: 13px; color: #6B7280; width: 400px;">
+            <b>Dual-Tone:</b> Balanced use of Indigo and Cyan. Indigo for high-level control/navigation, Cyan for "perception" and secondary actions. More vibrant.
+        </p>
+    </div>
+</body>
+</html>

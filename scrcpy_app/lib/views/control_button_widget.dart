@@ -17,8 +17,12 @@ class ControlButtonWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = AppController();
     return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF111111),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      width: 300,
       padding: const EdgeInsets.symmetric(vertical: 8),
-      color: const Color(0xFF111111),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: _navButtons

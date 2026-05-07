@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:scrcpy_app/app_controller.dart';
 import 'package:scrcpy_app/mcp_server_panel.dart';
-import 'package:scrcpy_app/views/control_button_widget.dart';
+import 'package:scrcpy_app/views/floating_control_button.dart';
 
 class ControlView extends StatelessWidget {
   const ControlView({
@@ -16,15 +16,20 @@ class ControlView extends StatelessWidget {
       child: ListenableBuilder(
         listenable: appController.mcpServerController,
         builder: (_, __) {
-          return Column(
-            children: [
-              Expanded(
-                child: McpServerPanel(
-                  controller: appController.mcpServerController,
+          return Scaffold(
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerFloat,
+            floatingActionButton: FloatingControlButton(),
+            body: Column(
+              children: [
+                Expanded(
+                  child: McpServerPanel(
+                    controller: appController.mcpServerController,
+                  ),
                 ),
-              ),
-              ControlButtonWidget(),
-            ],
+                // ControlButtonWidget(),
+              ],
+            ),
           );
         },
       ),
