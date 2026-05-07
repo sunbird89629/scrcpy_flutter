@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:scrcpy_view/src/backends/scrcpy_video_backend.dart';
 import 'package:scrcpy_view/src/control_message.dart';
 import 'package:scrcpy_view/src/scrcpy_adb.dart';
@@ -30,7 +31,10 @@ class ScrcpyViewController extends ChangeNotifier implements ScrcpySession {
   /// Creates a controller backed by an injected ADB bridge.
   ScrcpyViewController({
     required ScrcpyAdb adb,
-  }) : _adb = adb;
+  }) : _adb = adb {
+    PlatformInAppWebViewController.debugLoggingSettings.excludeFilter
+        .add(RegExp('statsHandler'));
+  }
 
   final ScrcpyAdb _adb;
   // final ScrcpyLogger _logger;

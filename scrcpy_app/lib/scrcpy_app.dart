@@ -11,7 +11,7 @@ class ScrcpyApp extends StatelessWidget {
       title: 'ScrcpyApp',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      darkTheme: AppTheme.light,
+      darkTheme: AppTheme.dark,
       home: const HomePage(),
     );
   }
