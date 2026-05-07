@@ -15,7 +15,8 @@ class ControlView extends StatelessWidget {
     final sidebarColor =
         Theme.of(context).extension<AppColors>()?.sidebarBackground;
 
-    return Expanded(
+    return AspectRatio(
+      aspectRatio: 0.6,
       child: Container(
         color: sidebarColor,
         child: ListenableBuilder(
