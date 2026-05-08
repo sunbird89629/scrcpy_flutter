@@ -475,5 +475,52 @@ void main() {
         reason: 'Home key should trigger navigation or launcher animation',
       );
     }, timeout: const Timeout(Duration(seconds: 60)));
+
+    test('inject_touch at centre succeeds', () async {
+      if (realDevices.isEmpty) {
+        markTestSkipped('No Android device connected via ADB');
+        return;
+      }
+      final (w, h) = screenSize;
+
+      final downResult = await e2eEnv.client.callTool(
+        CallToolRequest(
+          name: 'inject_touch',
+          arguments: {
+            'x': w ~/ 2,
+            'y': h ~/ 2,
+            'width': w,
+            'height': h,
+            'action': 0, // ScrcpyAction.down
+          },
+        ),
+      );
+      expect(downResult.isError, isFalse, reason: _text(downResult));
+
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      final upResult = await e2eEnv.client.callTool(
+        CallToolRequest(
+          name: 'inject_touch',
+          arguments: {
+            'x': w ~/ 2,
+            'y': h ~/ 2,
+            'width': w,
+            'height': h,
+            'action': 1, // ScrcpyAction.up
+          },
+        ),
+      );
+      expect(upResult.isError, isFalse, reason: _text(upResult));
+
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+
+      // Weak assertion: log screenshot size for debugging, no pixel-diff required.
+      // Tapping empty space produces no guaranteed visual change.
+      final after = _screenshotBytes(await e2eEnv.client.callTool(
+        const CallToolRequest(name: 'take_screenshot'),
+      ));
+      printOnFailure('inject_touch screenshot size: ${after.length} bytes');
+    }, timeout: const Timeout(Duration(seconds: 60)));
   });
 }
