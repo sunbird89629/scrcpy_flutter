@@ -14,6 +14,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:adb_tools/adb_tools.dart';
 import 'package:autoglm_logger/app_logger.dart';
@@ -107,10 +108,82 @@ class _Env {
 }
 
 // ---------------------------------------------------------------------------
+// E2E environment — real ScrcpySessionImpl, real ADB, in-memory MCP transport
+// ---------------------------------------------------------------------------
+
+// Used by upcoming e2e inject tests (Tasks 3-6).
+// ignore: unused_element
+class _E2eEnv {
+  _E2eEnv({required ScrcpyMcpAdb adb, required ScrcpySession session}) {
+    server = ScrcpyMcpServer(session: session, adb: adb);
+  }
+
+  late final ScrcpyMcpServer server;
+  late McpClient client;
+
+  Future<void> connect() async {
+    final serverToClient = StreamController<List<int>>();
+    final clientToServer = StreamController<List<int>>();
+
+    await server.mcpServer.connect(
+      IOStreamTransport(
+        stream: clientToServer.stream,
+        sink: serverToClient.sink,
+      ),
+    );
+
+    client = McpClient(
+      const Implementation(name: 'test-client', version: '0.0.1'),
+      options: const McpClientOptions(capabilities: ClientCapabilities()),
+    );
+    await client.connect(
+      IOStreamTransport(
+        stream: serverToClient.stream,
+        sink: clientToServer.sink,
+      ),
+    );
+
+    addTearDown(() async {
+      await serverToClient.close();
+      await clientToServer.close();
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 String _text(CallToolResult r) => (r.content.first as TextContent).text;
+
+// Used by upcoming e2e inject tests (Tasks 3-6).
+// ignore: unused_element
+Uint8List _screenshotBytes(CallToolResult r) =>
+    base64Decode((r.content.first as ImageContent).data);
+
+// Used by upcoming e2e inject tests (Tasks 3-6).
+// ignore: unused_element
+bool _hasScreenChanged(
+  Uint8List before,
+  Uint8List after, {
+  int threshold = 100,
+}) {
+  if (before.length != after.length) return true;
+  var diff = 0;
+  for (var i = 0; i < before.length; i++) {
+    if (before[i] != after[i] && ++diff > threshold) return true;
+  }
+  return false;
+}
+
+// Used by upcoming e2e inject tests (Tasks 3-6).
+// ignore: unused_element
+Future<(int, int)> _getScreenSize(ScrcpyMcpAdb adb, String deviceId) async {
+  final result = await adb.shell(['wm', 'size'], deviceId: deviceId);
+  final m = RegExp(r'(\d+)x(\d+)').firstMatch(result.stdout as String);
+  if (m == null) return (1080, 1920);
+  return (int.parse(m.group(1)!), int.parse(m.group(2)!));
+}
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -259,6 +332,7 @@ void main() {
       await env.client.callTool(const CallToolRequest(name: 'start_recording'));
 
       // Record for a short moment so the file is non-empty
+      // ignore: inference_failure_on_instance_creation
       await Future.delayed(const Duration(seconds: 3));
 
       final stopResult = await env.client.callTool(
