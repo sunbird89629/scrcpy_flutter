@@ -15,7 +15,7 @@ import '../session_context.dart';
 ///
 /// Android hard-limits recordings to 180 seconds. Protected content
 /// (payment screens, DRM video) records as a black frame.
-class StartRecordingTool implements McpTool {
+class StartRecordingTool extends McpTool {
   StartRecordingTool(this._controller, this._ctx, this._session);
   final RecordingController _controller;
   final SessionContext _ctx;
@@ -44,7 +44,7 @@ class StartRecordingTool implements McpTool {
   );
 
   @override
-  Future<CallToolResult> call(
+  Future<CallToolResult> execute(
     Map<String, dynamic> args,
     RequestHandlerExtra extra,
   ) async {

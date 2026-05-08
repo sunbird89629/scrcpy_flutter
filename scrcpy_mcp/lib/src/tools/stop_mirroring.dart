@@ -7,7 +7,7 @@ import '../session_context.dart';
 /// Stops the active scrcpy mirroring session and clears the connected device.
 ///
 /// Returns immediately without error when no session is active.
-class StopMirroringTool implements McpTool {
+class StopMirroringTool extends McpTool {
   StopMirroringTool(this._session, this._ctx);
   final ScrcpySession _session;
   final SessionContext _ctx;
@@ -22,7 +22,7 @@ class StopMirroringTool implements McpTool {
   final ToolInputSchema inputSchema = JsonSchema.object(properties: {});
 
   @override
-  Future<CallToolResult> call(
+  Future<CallToolResult> execute(
     Map<String, dynamic> args,
     RequestHandlerExtra extra,
   ) async {

@@ -9,7 +9,7 @@ import '../mcp_tool.dart';
 /// `hScroll`/`vScroll` are signed integers; positive values scroll
 /// right/down, negative values scroll left/up. Requires an active
 /// mirroring session.
-class InjectScrollTool implements McpTool {
+class InjectScrollTool extends McpTool {
   InjectScrollTool(this._session);
   final ScrcpySession _session;
 
@@ -33,7 +33,7 @@ class InjectScrollTool implements McpTool {
   );
 
   @override
-  Future<CallToolResult> call(
+  Future<CallToolResult> execute(
     Map<String, dynamic> args,
     RequestHandlerExtra extra,
   ) async {

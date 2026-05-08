@@ -11,7 +11,7 @@ import '../session_context.dart';
 /// On success, sets `SessionContext.connectedDeviceId` and returns the
 /// `proxy_url` (MPEG-TS stream) and `player_url` (web player) for the
 /// active session.
-class StartMirroringTool implements McpTool {
+class StartMirroringTool extends McpTool {
   StartMirroringTool(this._session, this._ctx);
   final ScrcpySession _session;
   final SessionContext _ctx;
@@ -33,7 +33,7 @@ class StartMirroringTool implements McpTool {
   );
 
   @override
-  Future<CallToolResult> call(
+  Future<CallToolResult> execute(
     Map<String, dynamic> args,
     RequestHandlerExtra extra,
   ) async {

@@ -12,7 +12,7 @@ import '../session_context.dart';
 /// arguments are needed. When no `device_id` is supplied the tool falls
 /// back to `SessionContext.connectedDeviceId`, then to the first available
 /// ADB device.
-class TakeScreenshotTool implements McpTool {
+class TakeScreenshotTool extends McpTool {
   TakeScreenshotTool(this._adb, this._ctx);
   final ScrcpyAdb _adb;
   final SessionContext _ctx;
@@ -35,7 +35,7 @@ class TakeScreenshotTool implements McpTool {
   );
 
   @override
-  Future<CallToolResult> call(
+  Future<CallToolResult> execute(
     Map<String, dynamic> args,
     RequestHandlerExtra extra,
   ) async {

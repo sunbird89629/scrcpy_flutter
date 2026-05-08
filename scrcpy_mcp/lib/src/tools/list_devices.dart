@@ -9,7 +9,7 @@ import '../mcp_tool.dart';
 ///
 /// Returns a JSON-encoded array of device serial strings, e.g.
 /// `["emulator-5554", "192.168.1.5:5555"]`.
-class ListDevicesTool implements McpTool {
+class ListDevicesTool extends McpTool {
   ListDevicesTool(this._adb);
   final ScrcpyAdb _adb;
 
@@ -23,7 +23,7 @@ class ListDevicesTool implements McpTool {
   final ToolInputSchema inputSchema = JsonSchema.object(properties: {});
 
   @override
-  Future<CallToolResult> call(
+  Future<CallToolResult> execute(
     Map<String, dynamic> args,
     RequestHandlerExtra extra,
   ) async {

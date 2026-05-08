@@ -7,7 +7,7 @@ import '../mcp_tool.dart';
 ///
 /// Common keycodes: Home = 3, Back = 4, AppSwitch = 187, Power = 26.
 /// Requires an active mirroring session.
-class InjectKeyTool implements McpTool {
+class InjectKeyTool extends McpTool {
   InjectKeyTool(this._session);
   final ScrcpySession _session;
 
@@ -31,7 +31,7 @@ class InjectKeyTool implements McpTool {
   );
 
   @override
-  Future<CallToolResult> call(
+  Future<CallToolResult> execute(
     Map<String, dynamic> args,
     RequestHandlerExtra extra,
   ) async {

@@ -9,7 +9,7 @@ import '../mcp_tool.dart';
 /// Coordinates are in device pixels; pass the actual screen resolution as
 /// `width`/`height` so scrcpy can scale correctly. Requires an active
 /// mirroring session.
-class InjectTouchTool implements McpTool {
+class InjectTouchTool extends McpTool {
   InjectTouchTool(this._session);
   final ScrcpySession _session;
 
@@ -34,7 +34,7 @@ class InjectTouchTool implements McpTool {
   );
 
   @override
-  Future<CallToolResult> call(
+  Future<CallToolResult> execute(
     Map<String, dynamic> args,
     RequestHandlerExtra extra,
   ) async {

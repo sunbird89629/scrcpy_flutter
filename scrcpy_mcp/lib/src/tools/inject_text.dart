@@ -7,7 +7,7 @@ import '../mcp_tool.dart';
 ///
 /// Supports Unicode; the text is sent as-is without simulating individual
 /// key events. Requires an active mirroring session.
-class InjectTextTool implements McpTool {
+class InjectTextTool extends McpTool {
   InjectTextTool(this._session);
   final ScrcpySession _session;
 
@@ -26,7 +26,7 @@ class InjectTextTool implements McpTool {
   );
 
   @override
-  Future<CallToolResult> call(
+  Future<CallToolResult> execute(
     Map<String, dynamic> args,
     RequestHandlerExtra extra,
   ) async {

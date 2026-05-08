@@ -11,7 +11,7 @@ import '../recording_controller.dart';
 /// The device-side recording process is killed via SIGINT so the MP4 container
 /// is properly finalised before the file is pulled. The local save path
 /// defaults to `~/Downloads/scrcpy_records/rec_<timestamp>.mp4`.
-class StopRecordingTool implements McpTool {
+class StopRecordingTool extends McpTool {
   StopRecordingTool(this._controller);
   final RecordingController _controller;
 
@@ -33,7 +33,7 @@ class StopRecordingTool implements McpTool {
   );
 
   @override
-  Future<CallToolResult> call(
+  Future<CallToolResult> execute(
     Map<String, dynamic> args,
     RequestHandlerExtra extra,
   ) async {
