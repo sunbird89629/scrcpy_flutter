@@ -6,10 +6,16 @@ import 'package:scrcpy_view/scrcpy_core.dart';
 import 'recording_adb.dart';
 import 'recording_controller.dart';
 import 'session_context.dart';
-import 'tools/device_tools.dart';
-import 'tools/input_tools.dart';
-import 'tools/mirroring_tools.dart';
-import 'tools/recording_tools.dart';
+import 'tools/inject_key.dart';
+import 'tools/inject_scroll.dart';
+import 'tools/inject_text.dart';
+import 'tools/inject_touch.dart';
+import 'tools/list_devices.dart';
+import 'tools/start_mirroring.dart';
+import 'tools/start_recording.dart';
+import 'tools/stop_mirroring.dart';
+import 'tools/stop_recording.dart';
+import 'tools/take_screenshot.dart';
 
 /// MCP server exposing scrcpy operations via the Model Context Protocol.
 class ScrcpyMcpServer {
@@ -52,15 +58,18 @@ class ScrcpyMcpServer {
 
   void _registerTools() {
     final tools = [
-      ...deviceTools(_adb, _ctx),
-      ...mirroringTools(_session, _ctx),
-      ...inputTools(_session),
-      if (_recordingController != null)
-        ...recordingTools(
-          _recordingController!,
-          _ctx,
-          _session,
-        ),
+      listDevicesTool(_adb),
+      takeScreenshotTool(_adb, _ctx),
+      startMirroringTool(_session, _ctx),
+      stopMirroringTool(_session, _ctx),
+      injectKeyTool(_session),
+      injectTouchTool(_session),
+      injectTextTool(_session),
+      injectScrollTool(_session),
+      if (_recordingController != null) ...[
+        startRecordingTool(_recordingController!, _ctx, _session),
+        stopRecordingTool(_recordingController!),
+      ],
     ];
     for (final tool in tools) {
       _mcpServer.registerTool(
