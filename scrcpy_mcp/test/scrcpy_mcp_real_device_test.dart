@@ -444,5 +444,36 @@ void main() {
         reason: 'Screen should change after scrolling',
       );
     }, timeout: const Timeout(Duration(seconds: 60)));
+
+    test('inject_key Home navigates to launcher', () async {
+      if (realDevices.isEmpty) {
+        markTestSkipped('No Android device connected via ADB');
+        return;
+      }
+
+      final before = _screenshotBytes(await e2eEnv.client.callTool(
+        const CallToolRequest(name: 'take_screenshot'),
+      ));
+
+      final keyResult = await e2eEnv.client.callTool(
+        const CallToolRequest(
+          name: 'inject_key',
+          arguments: {'keycode': 3},
+        ),
+      );
+      expect(keyResult.isError, isFalse, reason: _text(keyResult));
+
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+
+      final after = _screenshotBytes(await e2eEnv.client.callTool(
+        const CallToolRequest(name: 'take_screenshot'),
+      ));
+
+      expect(
+        _hasScreenChanged(before, after),
+        isTrue,
+        reason: 'Home key should trigger navigation or launcher animation',
+      );
+    }, timeout: const Timeout(Duration(seconds: 60)));
   });
 }
