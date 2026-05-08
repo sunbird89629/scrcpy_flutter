@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:adb_tools/src/exceptions.dart';
+import 'package:autoglm_logger/autoglm_logger.dart';
 
 /// Abstract base for running ADB processes.
 ///
@@ -26,6 +27,7 @@ abstract class AdbProcessRunner {
 
 /// Default implementation using [Process.run].
 class AdbProcessRunnerImpl extends AdbProcessRunner {
+  static final _log = Logger('AdbTools.AdbProcessRunnerImpl');
   const AdbProcessRunnerImpl();
 
   @override
@@ -34,16 +36,10 @@ class AdbProcessRunnerImpl extends AdbProcessRunner {
     List<String> arguments, {
     Duration timeout = const Duration(seconds: 30),
   }) async {
-    try {
-      return await Process.run(executable, arguments).timeout(timeout);
-    } on TimeoutException {
-      throw AdbException(
-        'Command timeout after ${timeout.inSeconds}s '
-        '($executable ${arguments.join(' ')})',
-      );
-    } on ProcessException catch (e) {
-      throw AdbException('Failed to start process: ${e.message}');
-    }
+    _log.info([executable, ...arguments].join(' '));
+    final result = await Process.run(executable, arguments).timeout(timeout);
+    _log.info(result.toString());
+    return result;
   }
 
   @override
@@ -52,14 +48,6 @@ class AdbProcessRunnerImpl extends AdbProcessRunner {
     List<String> arguments, {
     Duration timeout = const Duration(seconds: 30),
   }) async {
-    final result = await runRaw(executable, arguments, timeout: timeout);
-    if (result.exitCode != 0) {
-      final err = result.stderr.toString().trim();
-      final out = result.stdout.toString().trim();
-      throw AdbException(
-        'Command failed ($executable ${arguments.join(' ')}):\n$err\n$out',
-      );
-    }
-    return result;
+    return runRaw(executable, arguments, timeout: timeout);
   }
 }
