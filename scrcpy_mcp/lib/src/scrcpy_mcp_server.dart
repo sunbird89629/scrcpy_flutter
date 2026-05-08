@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:mcp_dart/mcp_dart.dart';
-import 'package:scrcpy_view/scrcpy_view.dart';
+import 'package:scrcpy_view/scrcpy_core.dart';
 
 import 'recording_adb.dart';
 import 'recording_controller.dart';

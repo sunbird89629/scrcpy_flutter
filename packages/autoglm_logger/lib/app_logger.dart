@@ -8,7 +8,6 @@ import 'dart:io';
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart';
-import 'package:path/path.dart';
 
 StreamSubscription<LogRecord>? _subscription;
 

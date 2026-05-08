@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:scrcpy_view/src/control_message.dart';
 import 'package:scrcpy_view/src/scrcpy_adb.dart';
 import 'package:scrcpy_view/src/scrcpy_logger.dart';
@@ -18,10 +17,14 @@ class ScrcpyServer {
   ScrcpyServer({
     required this.adb,
     required this.deviceId,
+    required Uint8List serverJarBytes,
+    required Uint8List webPlayerBytes,
     this.port = 27183,
     ScrcpyLogger logger = const NoOpScrcpyLogger(),
     StreamSink<List<int>>? controlSink,
-  })  : _log = logger,
+  })  : _serverJarBytes = serverJarBytes,
+        _webPlayerBytes = webPlayerBytes,
+        _log = logger,
         _controlSink = controlSink,
         _proxy = ScrcpyProxyServer(logger: logger),
         _wsProxy = ScrcpyWebsocketServer(logger: logger),
@@ -35,6 +38,9 @@ class ScrcpyServer {
 
   /// The preferred local port to forward to the scrcpy server.
   final int port;
+
+  final Uint8List _serverJarBytes;
+  final Uint8List _webPlayerBytes;
 
   final ScrcpyLogger _log;
 
@@ -111,17 +117,13 @@ class ScrcpyServer {
   }
 
   Future<String> _prepareWebPlayer() async {
-    const assetPath = 'packages/scrcpy_view/assets/web_player/index.html';
     try {
-      _log.debug('[ScrcpyServer] Extracting web player asset: $assetPath');
-      final data = await rootBundle.load(assetPath);
-      final bytes = data.buffer.asUint8List();
-
-      final tempDir = await getTemporaryDirectory();
+      _log.debug('[ScrcpyServer] Extracting web player asset');
+      final tempDir = Directory.systemTemp;
       final webDir = Directory(p.join(tempDir.path, 'autoglm_web_player'))
         ..createSync(recursive: true);
       final indexFile = File(p.join(webDir.path, 'index.html'));
-      await indexFile.writeAsBytes(bytes, flush: true);
+      await indexFile.writeAsBytes(_webPlayerBytes, flush: true);
       return webDir.path;
     } catch (e) {
       _log.error('[ScrcpyServer] Failed to prepare web player', e);
@@ -131,25 +133,16 @@ class ScrcpyServer {
 
   Future<void> _pushServer() async {
     const version = '3.3.4';
-    const assetPath = 'packages/scrcpy_view/assets/scrcpy-server-v$version';
     const remotePath = '/data/local/tmp/scrcpy-server-v$version.jar';
 
     try {
-      _log.debug('[ScrcpyServer] Extracting server asset: $assetPath');
+      _log.debug('[ScrcpyServer] Writing server JAR to temp file');
 
-      final data = await rootBundle.load(assetPath);
-      final bytes = data.buffer.asUint8List();
-
-      Directory tempDir;
-      try {
-        tempDir = await getTemporaryDirectory();
-      } catch (_) {
-        tempDir = Directory.systemTemp;
-      }
+      final tempDir = Directory.systemTemp;
       final localTempFile = File(
         p.join(tempDir.path, 'scrcpy-server-v$version.jar'),
       );
-      await localTempFile.writeAsBytes(bytes, flush: true);
+      await localTempFile.writeAsBytes(_serverJarBytes, flush: true);
 
       _log.debug('[ScrcpyServer] Pushing server to device: $remotePath');
       await adb.push(localTempFile.path, remotePath, deviceId: deviceId);

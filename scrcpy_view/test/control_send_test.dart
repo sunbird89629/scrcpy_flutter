@@ -56,6 +56,8 @@ void main() {
     final server = ScrcpyServer(
       adb: const _NoOpAdb(),
       deviceId: 'test-device',
+      serverJarBytes: Uint8List(0),
+      webPlayerBytes: Uint8List(0),
       controlSink: controller.sink,
     );
     return (server, captured);

@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:mcp_dart/mcp_dart.dart';
 import 'package:scrcpy_mcp/src/mcp_http_server.dart';
 import 'package:scrcpy_mcp/src/recording_adb.dart';
 import 'package:scrcpy_mcp/src/scrcpy_mcp_server.dart';
-import 'package:scrcpy_view/scrcpy_view.dart';
+import 'package:scrcpy_view/scrcpy_core.dart';
+import 'package:test/test.dart';
 
 // ---------------------------------------------------------------------------
 // Mock ADB
@@ -125,47 +125,36 @@ class MockAdb implements ScrcpyAdb {
 }
 
 // ---------------------------------------------------------------------------
-// Mock ScrcpyViewController
+// Mock ScrcpySession
 // ---------------------------------------------------------------------------
 
-class MockScrcpyViewController extends ScrcpyViewController {
-  MockScrcpyViewController() : super(adb: MockAdb());
-
+class MockScrcpySession implements ScrcpySession {
   bool _fakeConnected = false;
 
   @override
   bool get isConnected => _fakeConnected;
 
   @override
-  bool get isActive => _fakeConnected;
+  String? get proxyUrl =>
+      _fakeConnected ? 'http://127.0.0.1:27183/live' : null;
 
   @override
-  ScrcpyServer? get server => null;
+  String? get playerUrl => _fakeConnected
+      ? 'http://127.0.0.1:27184/index.html?ws=ws://127.0.0.1:27184/ws'
+      : null;
 
   @override
-  Future<void> start(
-    String deviceId, {
-    ScrcpyLogger? logger,
-    VoidCallback? onStarted,
-    VoidCallback? onStopped,
-    ValueChanged<String>? onError,
-  }) async {
+  Future<void> start(String deviceId) async {
     _fakeConnected = true;
-    onStarted?.call();
-    notifyListeners();
   }
 
   @override
   Future<void> stop() async {
     _fakeConnected = false;
-    notifyListeners();
   }
 
   @override
   void sendControlMessage(ScrcpyControlMessage message) {}
-
-  @override
-  void injectKey(int keycode, {int metastate = 0}) {}
 
   @override
   void injectText(String text) {}
@@ -178,12 +167,12 @@ class MockScrcpyViewController extends ScrcpyViewController {
 class _TestEnv {
   _TestEnv({List<String>? devices})
       : adb = MockAdb(devices: devices ?? ['device1']),
-        viewController = MockScrcpyViewController() {
-    server = ScrcpyMcpServer(session: viewController, adb: adb);
+        session = MockScrcpySession() {
+    server = ScrcpyMcpServer(session: session, adb: adb);
   }
 
   final MockAdb adb;
-  final MockScrcpyViewController viewController;
+  final MockScrcpySession session;
   late final ScrcpyMcpServer server;
   late McpClient client;
 
@@ -211,7 +200,6 @@ class _TestEnv {
     addTearDown(() async {
       await serverToClient.close();
       await clientToServer.close();
-      viewController.dispose();
     });
   }
 }
@@ -262,9 +250,9 @@ class _RecordingTestEnv {
   _RecordingTestEnv({List<String>? devices})
       : adb = MockAdb(devices: devices ?? ['device1']),
         recordingAdb = _MockRecordingAdb(),
-        viewController = MockScrcpyViewController() {
+        session = MockScrcpySession() {
     server = ScrcpyMcpServer(
-      session: viewController,
+      session: session,
       adb: adb,
       recordingAdb: recordingAdb,
     );
@@ -272,7 +260,7 @@ class _RecordingTestEnv {
 
   final MockAdb adb;
   final _MockRecordingAdb recordingAdb;
-  final MockScrcpyViewController viewController;
+  final MockScrcpySession session;
   late final ScrcpyMcpServer server;
   late McpClient client;
 
@@ -300,7 +288,6 @@ class _RecordingTestEnv {
     addTearDown(() async {
       await serverToClient.close();
       await clientToServer.close();
-      viewController.dispose();
     });
   }
 }
@@ -587,14 +574,13 @@ void main() {
   group('McpHttpServer — lifecycle', () {
     test('starts and stops cleanly on a local port', () async {
       final adb = MockAdb();
-      final vc = MockScrcpyViewController();
-      addTearDown(vc.dispose);
+      final session = MockScrcpySession();
 
       final httpServer = McpHttpServer();
 
       expect(httpServer.serverUrl, isNull);
 
-      await httpServer.start(port: 19817, session: vc, adb: adb);
+      await httpServer.start(port: 19817, session: session, adb: adb);
       expect(httpServer.serverUrl, 'http://localhost:19817/mcp');
 
       await httpServer.stop();

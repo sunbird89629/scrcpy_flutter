@@ -14,3 +14,4 @@ dependencies:
 
 dev_dependencies:
   test: any
+  very_good_analysis: ^7.0.0
