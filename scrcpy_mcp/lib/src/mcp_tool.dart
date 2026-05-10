@@ -1,5 +1,6 @@
 import 'package:autoglm_logger/autoglm_logger.dart';
 import 'package:mcp_dart/mcp_dart.dart' hide Logger;
+import 'package:scrcpy_view/scrcpy_core.dart';
 
 final _logger = Logger('mcp');
 
@@ -43,4 +44,19 @@ abstract class McpTool {
     content: [TextContent(text: 'No active mirroring session.')],
     isError: true,
   );
+}
+
+/// Coordinate rescaling for scrcpy control messages.
+///
+/// scrcpy silently drops touch/scroll events whose reported (width, height)
+/// does not equal the encoded video size. This extension resolves the video
+/// dimensions and rescales device-resolution coordinates into video space.
+extension ScrcpyCoordRescale on ScrcpySession {
+  (int vw, int vh) videoSize(int width, int height) =>
+      (videoWidth ?? width, videoHeight ?? height);
+
+  (int x, int y) rescale(int x, int y, int width, int height) {
+    final (vw, vh) = videoSize(width, height);
+    return (x * vw ~/ width, y * vh ~/ height);
+  }
 }

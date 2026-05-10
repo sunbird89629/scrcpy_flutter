@@ -44,14 +44,16 @@ class InjectTouchTool extends McpTool {
     final width = args['width'] as int;
     final height = args['height'] as int;
     final action = args['action'] as int? ?? ScrcpyAction.down;
+    final (vw, vh) = _session.videoSize(width, height);
+    final (rx, ry) = _session.rescale(x, y, width, height);
     _session.sendControlMessage(
       ScrcpyInjectTouchMessage(
         action: action,
         pointerId: 0,
-        x: x,
-        y: y,
-        width: width,
-        height: height,
+        x: rx,
+        y: ry,
+        width: vw,
+        height: vh,
       ),
     );
     return CallToolResult.fromContent([

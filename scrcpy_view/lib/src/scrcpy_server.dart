@@ -280,6 +280,9 @@ class ScrcpyServer {
 
     await Future<void>.delayed(const Duration(milliseconds: 300));
     _controlSocket = await _connectSocket('Control');
+    // Without TCP_NODELAY, sub-MTU control messages (DOWN/MOVE/UP) are batched,
+    // collapsing gesture timing and breaking velocity-sensitive input handling.
+    _controlSocket!.setOption(SocketOption.tcpNoDelay, true);
 
     _controlSocket!.listen(
       (data) => _log.debug('[ScrcpyServer] Control data: ${data.length} bytes'),

@@ -149,7 +149,7 @@ void main() {
   });
 
   group('ScrcpyInjectScrollMessage', () {
-    test('binary layout is 21 bytes with signed 16-bit scroll values', () {
+    test('binary layout is 21 bytes with i16fp-encoded scroll values', () {
       const msg = ScrcpyInjectScrollMessage(
         x: 100,
         y: 200,
@@ -168,9 +168,23 @@ void main() {
       expect(bd.getUint32(5), 200);
       expect(bd.getUint16(9), 1080);
       expect(bd.getUint16(11), 1920);
-      expect(bd.getInt16(13), -10);
-      expect(bd.getInt16(15), 50);
+      // hScroll=-10: -10/16=-0.625, clamped=-0.625, i16fp=(-0.625*32767).toInt()=-20479
+      expect(bd.getInt16(13), -20479);
+      // vScroll=50: 50/16=3.125, clamped=1.0, i16fp=(1.0*32767).toInt()=32767
+      expect(bd.getInt16(15), 32767);
       expect(bd.getUint32(17), 0);
+    });
+
+    test('values clamped to max scroll magnitude outside [-16, 16]', () {
+      const msg = ScrcpyInjectScrollMessage(
+        x: 0, y: 0, width: 1080, height: 1920,
+        hScroll: -100,
+        vScroll: 100,
+      );
+      final bd = ByteData.sublistView(msg.toBinary());
+      // Both values clamped to ±1.0, encoded as ±32767
+      expect(bd.getInt16(13), -32767);
+      expect(bd.getInt16(15), 32767);
     });
   });
 

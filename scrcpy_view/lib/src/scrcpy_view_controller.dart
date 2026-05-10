@@ -77,6 +77,12 @@ class ScrcpyViewController extends ChangeNotifier implements ScrcpySession {
   @override
   String? get playerUrl => _impl?.playerUrl;
 
+  @override
+  int? get videoWidth => _impl?.videoWidth;
+
+  @override
+  int? get videoHeight => _impl?.videoHeight;
+
   /// Starts a mirroring session for [deviceId].
   ///
   /// No-ops if a session is already starting or active.

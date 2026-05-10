@@ -51,6 +51,12 @@ class ScrcpySessionImpl implements ScrcpySession {
   @override
   String? get playerUrl => _server?.playerUrl;
 
+  @override
+  int? get videoWidth => _server?.currentMetadata?.width;
+
+  @override
+  int? get videoHeight => _server?.currentMetadata?.height;
+
   Future<List<String>> getDevices() => _adb.getDevices();
 
   @override
@@ -70,6 +76,7 @@ class ScrcpySessionImpl implements ScrcpySession {
       deviceId: deviceId,
       serverJarBytes: _serverJarBytes,
       webPlayerBytes: _webPlayerBytes,
+      logger: logger ?? const NoOpScrcpyLogger(),
     );
     try {
       await server.start();

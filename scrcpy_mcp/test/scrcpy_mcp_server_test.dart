@@ -10,6 +10,8 @@ import 'package:scrcpy_mcp/src/scrcpy_mcp_server.dart';
 import 'package:scrcpy_view/scrcpy_core.dart';
 import 'package:test/test.dart';
 
+import 'real_device_test_utils.dart' show connectMcpPair, textContent;
+
 // ---------------------------------------------------------------------------
 // Mock ADB
 // ---------------------------------------------------------------------------
@@ -130,6 +132,13 @@ class MockAdb implements ScrcpyAdb {
 
 class MockScrcpySession implements ScrcpySession {
   bool _fakeConnected = false;
+  final List<ScrcpyControlMessage> sentMessages = [];
+
+  @override
+  int? get videoWidth => _fakeConnected ? 1080 : null;
+
+  @override
+  int? get videoHeight => _fakeConnected ? 1920 : null;
 
   @override
   bool get isConnected => _fakeConnected;
@@ -154,7 +163,9 @@ class MockScrcpySession implements ScrcpySession {
   }
 
   @override
-  void sendControlMessage(ScrcpyControlMessage message) {}
+  void sendControlMessage(ScrcpyControlMessage message) {
+    sentMessages.add(message);
+  }
 
   @override
   void injectText(String text) {}
@@ -177,30 +188,9 @@ class _TestEnv {
   late McpClient client;
 
   Future<void> connect() async {
-    final serverToClient = StreamController<List<int>>();
-    final clientToServer = StreamController<List<int>>();
-
-    final serverTransport = IOStreamTransport(
-      stream: clientToServer.stream,
-      sink: serverToClient.sink,
-    );
-    final clientTransport = IOStreamTransport(
-      stream: serverToClient.stream,
-      sink: clientToServer.sink,
-    );
-
-    await server.mcpServer.connect(serverTransport);
-
-    client = McpClient(
-      const Implementation(name: 'test-client', version: '0.0.1'),
-      options: const McpClientOptions(capabilities: ClientCapabilities()),
-    );
-    await client.connect(clientTransport);
-
-    addTearDown(() async {
-      await serverToClient.close();
-      await clientToServer.close();
-    });
+    final (c, close) = await connectMcpPair(server);
+    client = c;
+    addTearDown(close);
   }
 }
 
@@ -265,30 +255,9 @@ class _RecordingTestEnv {
   late McpClient client;
 
   Future<void> connect() async {
-    final serverToClient = StreamController<List<int>>();
-    final clientToServer = StreamController<List<int>>();
-
-    final serverTransport = IOStreamTransport(
-      stream: clientToServer.stream,
-      sink: serverToClient.sink,
-    );
-    final clientTransport = IOStreamTransport(
-      stream: serverToClient.stream,
-      sink: clientToServer.sink,
-    );
-
-    await server.mcpServer.connect(serverTransport);
-
-    client = McpClient(
-      const Implementation(name: 'test-client', version: '0.0.1'),
-      options: const McpClientOptions(capabilities: ClientCapabilities()),
-    );
-    await client.connect(clientTransport);
-
-    addTearDown(() async {
-      await serverToClient.close();
-      await clientToServer.close();
-    });
+    final (c, close) = await connectMcpPair(server);
+    client = c;
+    addTearDown(close);
   }
 }
 
@@ -296,7 +265,6 @@ class _RecordingTestEnv {
 // Helpers
 // ---------------------------------------------------------------------------
 
-String _text(CallToolResult r) => (r.content.first as TextContent).text;
 String _resourceText(ReadResourceResult r) =>
     (r.contents.first as TextResourceContents).text;
 
@@ -306,7 +274,7 @@ String _resourceText(ReadResourceResult r) =>
 
 void main() {
   group('ScrcpyMcpServer — initialization', () {
-    test('advertises 8 tools after connect', () async {
+    test('advertises 9 tools after connect', () async {
       final env = _TestEnv();
       await env.connect();
 
@@ -323,6 +291,7 @@ void main() {
           'inject_touch',
           'inject_text',
           'inject_scroll',
+          'inject_swipe',
           'take_screenshot',
         ]),
       );
@@ -359,7 +328,7 @@ void main() {
       );
 
       expect(result.isError, isFalse);
-      final devices = jsonDecode(_text(result)) as List;
+      final devices = jsonDecode(textContent(result)) as List;
       expect(devices, containsAll(['emulator-5554', 'R3CN12345']));
     });
 
@@ -372,7 +341,7 @@ void main() {
       );
 
       expect(result.isError, isFalse);
-      expect(jsonDecode(_text(result)), isEmpty);
+      expect(jsonDecode(textContent(result)), isEmpty);
     });
 
     test('stop_mirroring without active session returns informational message',
@@ -385,7 +354,7 @@ void main() {
       );
 
       expect(result.isError, isFalse);
-      expect(_text(result), contains('No active'));
+      expect(textContent(result), contains('No active'));
     });
 
     test('inject_key without active session returns error', () async {
@@ -449,6 +418,104 @@ void main() {
       );
 
       expect(result.isError, isTrue);
+    });
+
+    test('inject_swipe without active session returns error', () async {
+      final env = _TestEnv();
+      await env.connect();
+
+      final result = await env.client.callTool(
+        const CallToolRequest(
+          name: 'inject_swipe',
+          arguments: {
+            'x1': 540,
+            'y1': 1500,
+            'x2': 540,
+            'y2': 500,
+            'width': 1080,
+            'height': 1920,
+          },
+        ),
+      );
+
+      expect(result.isError, isTrue);
+    });
+
+    test('inject_swipe sends DOWN + steps×MOVE + UP with interpolated coords',
+        () async {
+      final env = _TestEnv();
+      await env.connect();
+      await env.client.callTool(
+        const CallToolRequest(
+          name: 'start_mirroring',
+          arguments: {'device_id': 'device1'},
+        ),
+      );
+      env.session.sentMessages.clear();
+
+      final result = await env.client.callTool(
+        const CallToolRequest(
+          name: 'inject_swipe',
+          arguments: {
+            'x1': 100,
+            'y1': 1000,
+            'x2': 100,
+            'y2': 200,
+            'width': 1080,
+            'height': 1920,
+            'durationMs': 50,
+            'steps': 4,
+          },
+        ),
+      );
+
+      expect(result.isError, isFalse, reason: textContent(result));
+
+      final touches = env.session.sentMessages
+          .whereType<ScrcpyInjectTouchMessage>()
+          .toList();
+      expect(touches, hasLength(6), reason: '1 DOWN + 4 MOVE + 1 UP');
+
+      expect(touches.first.action, ScrcpyAction.down);
+      expect((touches.first.x, touches.first.y), (100, 1000));
+
+      expect(touches.last.action, ScrcpyAction.up);
+      expect((touches.last.x, touches.last.y), (100, 200));
+
+      // Interpolated MOVE coords: y goes 1000 → 800 → 600 → 400 → 200.
+      final moves = touches.sublist(1, 5);
+      expect(moves.every((m) => m.action == ScrcpyAction.move), isTrue);
+      expect(moves.map((m) => m.y).toList(), [800, 600, 400, 200]);
+      expect(moves.every((m) => m.x == 100), isTrue);
+    });
+
+    test('inject_swipe with steps=0 returns error', () async {
+      final env = _TestEnv();
+      await env.connect();
+      await env.client.callTool(
+        const CallToolRequest(
+          name: 'start_mirroring',
+          arguments: {'device_id': 'device1'},
+        ),
+      );
+
+      final result = await env.client.callTool(
+        const CallToolRequest(
+          name: 'inject_swipe',
+          arguments: {
+            'x1': 0,
+            'y1': 0,
+            'x2': 100,
+            'y2': 100,
+            'width': 1080,
+            'height': 1920,
+            'steps': 0,
+          },
+        ),
+      );
+
+      expect(result.isError, isTrue);
+      expect(textContent(result), contains('steps'));
     });
 
     test('take_screenshot with connected device returns ImageContent',
@@ -620,7 +687,7 @@ void main() {
       );
 
       expect(result.isError, isTrue);
-      expect(_text(result), contains('No active mirroring session'));
+      expect(textContent(result), contains('No active mirroring session'));
     });
 
     test('start_recording while already recording returns error', () async {
@@ -642,7 +709,7 @@ void main() {
       );
 
       expect(result.isError, isTrue);
-      expect(_text(result), contains('Already recording'));
+      expect(textContent(result), contains('Already recording'));
     });
 
     test('stop_recording when not recording returns friendly message',
@@ -655,7 +722,7 @@ void main() {
       );
 
       expect(result.isError, isFalse);
-      expect(_text(result), contains('No active recording'));
+      expect(textContent(result), contains('No active recording'));
     });
 
     test('recording://status is idle when not recording', () async {

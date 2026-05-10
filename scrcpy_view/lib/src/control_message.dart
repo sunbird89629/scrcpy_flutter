@@ -165,8 +165,14 @@ class ScrcpyInjectScrollMessage extends ScrcpyControlMessage {
     buffer.setUint32(5, y);
     buffer.setUint16(9, width);
     buffer.setUint16(11, height);
-    buffer.setInt16(13, hScroll);
-    buffer.setInt16(15, vScroll);
+    // scrcpy protocol: scroll values are signed 15-bit fixed-point (i16fp) where
+    // INT16_MAX (32767) = 1.0. The scrcpy client convention accepts natural values
+    // in [-16, 16], divides by 16 to normalize to [-1, 1], then multiplies by 32767.
+    // Values outside [-16, 16] are clamped to the maximum scroll magnitude.
+    final hNorm = (hScroll / 16.0).clamp(-1.0, 1.0);
+    final vNorm = (vScroll / 16.0).clamp(-1.0, 1.0);
+    buffer.setInt16(13, (hNorm * 32767).toInt());
+    buffer.setInt16(15, (vNorm * 32767).toInt());
     buffer.setUint32(17, buttons);
     return buffer.buffer.asUint8List();
   }
