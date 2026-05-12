@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:scrcpy_view/src/control_message.dart';
-import 'package:scrcpy_view/src/scrcpy_keycode.dart';
-import 'package:scrcpy_view/src/scrcpy_metastate.dart';
+import 'package:scrcpy_view/src/scrcpy_keycode_flutter.dart';
+import 'package:scrcpy_view/src/scrcpy_metastate_flutter.dart';
 import 'package:scrcpy_view/src/scrcpy_view_controller.dart';
 import 'package:scrcpy_view/webview_video_player.dart';
 

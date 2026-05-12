@@ -13,5 +13,5 @@ export 'src/scrcpy_view.dart';
 export 'src/scrcpy_session.dart';
 export 'src/scrcpy_session_impl.dart';
 export 'src/scrcpy_view_controller.dart';
-export 'src/scrcpy_keycode.dart';
-export 'src/scrcpy_metastate.dart';
+export 'src/scrcpy_keycode_flutter.dart';
+export 'src/scrcpy_metastate_flutter.dart';
