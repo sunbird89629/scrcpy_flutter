@@ -8,6 +8,7 @@ workspace:
   - packages/logger_utils
   - packages/adb_tools
   - scrcpy_app
+  - scrcpy_flutter
   - scrcpy_mcp
   - scrcpy_view
 
