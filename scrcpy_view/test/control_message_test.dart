@@ -188,6 +188,54 @@ void main() {
     });
   });
 
+  group('ScrcpySetClipboardMessage', () {
+    test('binary layout: type=9, sequence(8), paste(1), text_len(4), utf8', () {
+      const msg = ScrcpySetClipboardMessage(text: 'hello', sequence: 1);
+      final bytes = msg.toBinary();
+      final bd = ByteData.sublistView(bytes);
+
+      expect(bytes.length, 14 + 5);
+      expect(bd.getUint8(0), 9);
+      expect(bd.getUint64(1), 1);
+      expect(bd.getUint8(9), 1); // paste=true
+      expect(bd.getUint32(10), 5);
+      expect(bytes.sublist(14), 'hello'.codeUnits);
+    });
+
+    test('Chinese text: text_len reflects UTF-8 byte count, not char count', () {
+      // '你好' = 2 chars but 6 UTF-8 bytes (3 bytes each)
+      const msg = ScrcpySetClipboardMessage(text: '你好');
+      final bytes = msg.toBinary();
+      final bd = ByteData.sublistView(bytes);
+
+      expect(bytes.length, 14 + 6);
+      expect(bd.getUint32(10), 6);
+    });
+
+    test('paste=false encodes paste byte as 0', () {
+      const msg = ScrcpySetClipboardMessage(text: 'x', paste: false);
+      final bd = ByteData.sublistView(msg.toBinary());
+      expect(bd.getUint8(9), 0);
+    });
+
+    test('empty text produces 14-byte message with text_len=0', () {
+      const msg = ScrcpySetClipboardMessage(text: '');
+      final bytes = msg.toBinary();
+      final bd = ByteData.sublistView(bytes);
+      expect(bytes.length, 14);
+      expect(bd.getUint32(10), 0);
+    });
+
+    test('sequence is encoded as uint64 at offset 1', () {
+      const msg = ScrcpySetClipboardMessage(
+        text: '',
+        sequence: 0xDEADBEEFCAFEBABE,
+      );
+      final bd = ByteData.sublistView(msg.toBinary());
+      expect(bd.getUint64(1), 0xDEADBEEFCAFEBABE);
+    });
+  });
+
   group('ScrcpyBackOrScreenOnMessage', () {
     test('binary layout is 2 bytes', () {
       final bytes = const ScrcpyBackOrScreenOnMessage(

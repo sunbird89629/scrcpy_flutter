@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
-
 /// Base class for all scrcpy control messages.
 abstract class ScrcpyControlMessage {
   const ScrcpyControlMessage();
@@ -35,13 +33,6 @@ class ScrcpyKeycode {
   /// `KEYCODE_APP_SWITCH` — open the recent-apps overview.
   static const int appSwitch = 187;
 }
-
-/// Default navigation buttons: Back, Home, App Switch.
-const defaultNavButtons = [
-  (Icons.arrow_back, ScrcpyKeycode.back),
-  (Icons.circle_outlined, ScrcpyKeycode.home),
-  (Icons.menu, ScrcpyKeycode.appSwitch),
-];
 
 /// Type 0: Inject Keycode
 class ScrcpyInjectKeyMessage extends ScrcpyControlMessage {
@@ -184,6 +175,39 @@ class ScrcpyInjectScrollMessage extends ScrcpyControlMessage {
     buffer.setInt16(15, (vNorm * 32767).toInt());
     buffer.setUint32(17, buttons);
     return buffer.buffer.asUint8List();
+  }
+}
+
+/// Type 9: Set Clipboard
+///
+/// Writes [text] to the device clipboard. When [paste] is true the scrcpy
+/// server immediately triggers a paste event after setting the clipboard,
+/// making this the only reliable way to inject CJK / non-ASCII text.
+class ScrcpySetClipboardMessage extends ScrcpyControlMessage {
+  const ScrcpySetClipboardMessage({
+    required this.text,
+    this.sequence = 0,
+    this.paste = true,
+  });
+
+  final String text;
+  final int sequence;
+  final bool paste;
+
+  @override
+  int get type => 9;
+
+  @override
+  Uint8List toBinary() {
+    final utf8Text = utf8.encode(text);
+    // type(1) + sequence(8) + paste(1) + text_len(4) + text
+    final out = ByteData(14 + utf8Text.length);
+    out.setUint8(0, type);
+    out.setUint64(1, sequence);
+    out.setUint8(9, paste ? 1 : 0);
+    out.setUint32(10, utf8Text.length);
+    out.buffer.asUint8List().setAll(14, utf8Text);
+    return out.buffer.asUint8List();
   }
 }
 
