@@ -1,7 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:scrcpy_client/src/android_metastate.dart';
-import 'package:scrcpy_view/src/scrcpy_metastate_flutter.dart';
+import 'package:scrcpy_view/scrcpy_view.dart';
 
 void main() {
   group('ScrcpyMetastate', () {

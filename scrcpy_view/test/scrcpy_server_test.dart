@@ -2,8 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:scrcpy_view/src/scrcpy_adb.dart';
-import 'package:scrcpy_view/src/scrcpy_server.dart';
+import 'package:scrcpy_client/scrcpy_client.dart';
 
 class MockScrcpyAdb implements ScrcpyAdb {
   MockScrcpyAdb({this.testAdbPath = 'adb'});
@@ -64,7 +63,6 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   final mockJarBytes = Uint8List(0);
-  final mockWebPlayerBytes = Uint8List(0);
 
   group('ScrcpyServer Configuration', () {
     late MockScrcpyAdb mockAdb;
@@ -79,7 +77,6 @@ void main() {
         deviceId: 'device123',
         port: 12345,
         serverJarBytes: mockJarBytes,
-        webPlayerBytes: mockWebPlayerBytes,
       );
 
       expect(server.deviceId, 'device123');
@@ -92,7 +89,6 @@ void main() {
         adb: mockAdb,
         deviceId: 'device123',
         serverJarBytes: mockJarBytes,
-        webPlayerBytes: mockWebPlayerBytes,
       );
 
       expect(server.port, 27183);
@@ -104,7 +100,6 @@ void main() {
         adb: mockAdb,
         deviceId: 'device1',
         serverJarBytes: mockJarBytes,
-        webPlayerBytes: mockWebPlayerBytes,
       );
 
       final server2 = ScrcpyServer(
@@ -112,7 +107,6 @@ void main() {
         deviceId: 'device2',
         port: 27184,
         serverJarBytes: mockJarBytes,
-        webPlayerBytes: mockWebPlayerBytes,
       );
 
       expect(server1.port, 27183);
@@ -127,7 +121,6 @@ void main() {
         adb: mockAdb,
         deviceId: 'device123',
         serverJarBytes: mockJarBytes,
-        webPlayerBytes: mockWebPlayerBytes,
       );
 
       expect(server.adb, mockAdb);
@@ -176,14 +169,12 @@ void main() {
         adb: mockAdb,
         deviceId: 'device1',
         serverJarBytes: mockJarBytes,
-        webPlayerBytes: mockWebPlayerBytes,
       );
 
       final server2 = ScrcpyServer(
         adb: mockAdb,
         deviceId: 'device2',
         serverJarBytes: mockJarBytes,
-        webPlayerBytes: mockWebPlayerBytes,
       );
 
       expect(server1.deviceId, 'device1');

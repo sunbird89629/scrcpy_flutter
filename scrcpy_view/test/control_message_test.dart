@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:scrcpy_view/src/control_message.dart';
+import 'package:scrcpy_client/scrcpy_client.dart';
 
 void main() {
   group('ScrcpyInjectTouchMessage', () {

@@ -1,8 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:scrcpy_view/src/scrcpy_packet.dart';
-import 'package:scrcpy_view/src/scrcpy_stream_parser.dart';
+import 'package:scrcpy_client/scrcpy_client.dart';
 
 void main() {
   group('ScrcpyStreamParser', () {

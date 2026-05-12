@@ -1,5 +1,5 @@
 import 'package:flutter/services.dart';
-import 'package:scrcpy_client/src/android_metastate.dart';
+import 'package:scrcpy_client/scrcpy_client.dart';
 
 /// Tracks modifier key state and produces the Android metastate bitmask
 /// to attach to key injection messages.

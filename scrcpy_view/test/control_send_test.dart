@@ -4,9 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:scrcpy_view/src/control_message.dart';
-import 'package:scrcpy_view/src/scrcpy_adb.dart';
-import 'package:scrcpy_view/src/scrcpy_server.dart';
+import 'package:scrcpy_client/scrcpy_client.dart';
 
 /// Minimal no-op ADB implementation for tests that don't need real ADB.
 class _NoOpAdb implements ScrcpyAdb {
@@ -57,7 +55,6 @@ void main() {
       adb: const _NoOpAdb(),
       deviceId: 'test-device',
       serverJarBytes: Uint8List(0),
-      webPlayerBytes: Uint8List(0),
       controlSink: controller.sink,
     );
     return (server, captured);
