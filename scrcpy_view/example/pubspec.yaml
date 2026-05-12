@@ -17,8 +17,8 @@ dependencies:
     path: ../../packages/adb_tools
   scrcpy_view:
     path: ../
-  autoglm_logger:
-    path: ../../packages/autoglm_logger
+  logger_utils:
+    path: ../../packages/logger_utils
 dev_dependencies:
   flutter_test:
     sdk: flutter

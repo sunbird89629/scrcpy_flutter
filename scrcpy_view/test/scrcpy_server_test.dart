@@ -1,6 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scrcpy_view/src/scrcpy_adb.dart';
 import 'package:scrcpy_view/src/scrcpy_server.dart';
@@ -63,18 +63,8 @@ class MockScrcpyAdb implements ScrcpyAdb {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
-  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-      .setMockMethodCallHandler(pathProviderChannel, (
-    MethodCall methodCall,
-  ) async {
-    if (methodCall.method == 'getApplicationSupportDirectory') {
-      return Directory.systemTemp.path;
-    } else if (methodCall.method == 'getTemporaryDirectory') {
-      return Directory.systemTemp.path;
-    }
-    return null;
-  });
+  final mockJarBytes = Uint8List(0);
+  final mockWebPlayerBytes = Uint8List(0);
 
   group('ScrcpyServer Configuration', () {
     late MockScrcpyAdb mockAdb;
@@ -88,6 +78,8 @@ void main() {
         adb: mockAdb,
         deviceId: 'device123',
         port: 12345,
+        serverJarBytes: mockJarBytes,
+        webPlayerBytes: mockWebPlayerBytes,
       );
 
       expect(server.deviceId, 'device123');
@@ -96,19 +88,31 @@ void main() {
     });
 
     test('uses default port when not specified', () {
-      final server = ScrcpyServer(adb: mockAdb, deviceId: 'device123');
+      final server = ScrcpyServer(
+        adb: mockAdb,
+        deviceId: 'device123',
+        serverJarBytes: mockJarBytes,
+        webPlayerBytes: mockWebPlayerBytes,
+      );
 
       expect(server.port, 27183);
       server.stop();
     });
 
     test('supports multiple instances with different ports', () async {
-      final server1 = ScrcpyServer(adb: mockAdb, deviceId: 'device1');
+      final server1 = ScrcpyServer(
+        adb: mockAdb,
+        deviceId: 'device1',
+        serverJarBytes: mockJarBytes,
+        webPlayerBytes: mockWebPlayerBytes,
+      );
 
       final server2 = ScrcpyServer(
         adb: mockAdb,
         deviceId: 'device2',
         port: 27184,
+        serverJarBytes: mockJarBytes,
+        webPlayerBytes: mockWebPlayerBytes,
       );
 
       expect(server1.port, 27183);
@@ -119,7 +123,12 @@ void main() {
     });
 
     test('adb client reference is stored correctly', () {
-      final server = ScrcpyServer(adb: mockAdb, deviceId: 'device123');
+      final server = ScrcpyServer(
+        adb: mockAdb,
+        deviceId: 'device123',
+        serverJarBytes: mockJarBytes,
+        webPlayerBytes: mockWebPlayerBytes,
+      );
 
       expect(server.adb, mockAdb);
       server.stop();
@@ -163,9 +172,19 @@ void main() {
     });
 
     test('works with multiple device IDs', () {
-      final server1 = ScrcpyServer(adb: mockAdb, deviceId: 'device1');
+      final server1 = ScrcpyServer(
+        adb: mockAdb,
+        deviceId: 'device1',
+        serverJarBytes: mockJarBytes,
+        webPlayerBytes: mockWebPlayerBytes,
+      );
 
-      final server2 = ScrcpyServer(adb: mockAdb, deviceId: 'device2');
+      final server2 = ScrcpyServer(
+        adb: mockAdb,
+        deviceId: 'device2',
+        serverJarBytes: mockJarBytes,
+        webPlayerBytes: mockWebPlayerBytes,
+      );
 
       expect(server1.deviceId, 'device1');
       expect(server2.deviceId, 'device2');

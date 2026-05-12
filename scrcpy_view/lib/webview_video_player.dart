@@ -13,11 +13,11 @@ class WebViewVideoPlayer extends StatelessWidget {
   });
 
   final String playerUrl;
-  final ScrcpyTouchController touchController;
+  final ScrcpyTouchCallback touchController;
   final void Function(ScrcpyControlMessage) onControlMessage;
 
   @override
-  Widget build(BuildContext contex) {
+  Widget build(BuildContext context) {
     return InAppWebView(
       initialUrlRequest: URLRequest(url: WebUri(playerUrl)),
       initialSettings: InAppWebViewSettings(

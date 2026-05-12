@@ -26,4 +26,17 @@ abstract class ScrcpySession {
 
   /// Injects text into the focused field on the device.
   void injectText(String text);
+
+  /// The width of the scrcpy video stream, or `null` if no metadata yet.
+  ///
+  /// scrcpy may scale device frames (e.g. via `max_size`) so this can
+  /// differ from the device's logical resolution. Touch/scroll control
+  /// messages are silently dropped by the scrcpy server when the
+  /// `width`/`height` they report do not equal the video size, so callers
+  /// using device-resolution coordinates must rescale to this size.
+  int? get videoWidth;
+
+  /// The height of the scrcpy video stream, or `null` if no metadata yet.
+  /// See [videoWidth].
+  int? get videoHeight;
 }

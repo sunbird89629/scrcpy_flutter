@@ -106,15 +106,17 @@ class ScrcpyProxyServer {
         tsBytes = _muxer.wrapAccessUnit(au, isKey: false);
       }
 
-      for (final client in List<HttpResponse>.from(_activeClients)) {
+      final toRemove = <HttpResponse>[];
+      for (final client in _activeClients) {
         try {
           client.add(tsBytes);
-        } catch (e) {
+        } on Exception catch (e) {
           _log.warn('[ScrcpyProxyServer] Client write error: $e');
           unawaited(client.close());
-          _activeClients.remove(client);
+          toRemove.add(client);
         }
       }
+      _activeClients.removeWhere(toRemove.contains);
     });
   }
 

@@ -1,4 +1,4 @@
-import 'package:autoglm_logger/autoglm_logger.dart';
+import 'package:logger_utils/logger_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_driver/driver_extension.dart';
 import 'package:scrcpy_view_example/webview_screen.dart';

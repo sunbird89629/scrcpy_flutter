@@ -1,4 +1,4 @@
-import 'package:autoglm_logger/autoglm_logger.dart';
+import 'package:logger_utils/logger_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:scrcpy_app/scrcpy_app.dart';
 import 'package:window_manager/window_manager.dart';
@@ -6,6 +6,7 @@ import 'package:window_manager/window_manager.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
+  initLogging();
 
   const windowOptions = WindowOptions(
     size: Size(1280, 800),
@@ -17,6 +18,5 @@ void main() async {
     await windowManager.focus();
   });
 
-  initLogging();
   runApp(const ScrcpyApp());
 }

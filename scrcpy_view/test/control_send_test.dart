@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -11,8 +12,7 @@ import 'package:scrcpy_view/src/scrcpy_server.dart';
 class _NoOpAdb implements ScrcpyAdb {
   const _NoOpAdb();
 
-  @override
-  String get adbPath => 'adb';
+  @override  String get adbPath => 'adb';
 
   @override
   Future<List<String>> getDevices() async => [];
@@ -56,6 +56,8 @@ void main() {
     final server = ScrcpyServer(
       adb: const _NoOpAdb(),
       deviceId: 'test-device',
+      serverJarBytes: Uint8List(0),
+      webPlayerBytes: Uint8List(0),
       controlSink: controller.sink,
     );
     return (server, captured);
@@ -140,8 +142,40 @@ void main() {
       expect(bd.getUint32(5), 200);
       expect(bd.getUint16(9), 1080);
       expect(bd.getUint16(11), 1920);
-      expect(bd.getInt16(13), -10);
-      expect(bd.getInt16(15), 50);
+      // hScroll=-10 → -10/16=-0.625 → i16fp=-20479
+      expect(bd.getInt16(13), -20479);
+      // vScroll=50 → 50/16=3.125, clamped=1.0 → i16fp=32767
+      expect(bd.getInt16(15), 32767);
+    });
+
+    test('set-clipboard message (type 9) writes 14 + UTF-8 bytes', () {
+      final (server, captured) = createServer();
+
+      const text = '你好世界'; // 4 chars × 3 UTF-8 bytes = 12 bytes
+      server.sendControlMessage(
+        const ScrcpySetClipboardMessage(text: text, sequence: 42),
+      );
+
+      expect(captured.length, 1);
+      final bytes = Uint8List.fromList(captured.single);
+      final bd = ByteData.sublistView(bytes);
+      expect(bytes.length, 14 + 12);
+      expect(bd.getUint8(0), 9);
+      expect(bd.getUint64(1), 42);
+      expect(bd.getUint8(9), 1); // paste=true
+      expect(bd.getUint32(10), 12);
+      expect(utf8.decode(bytes.sublist(14)), text);
+    });
+
+    test('set-clipboard with paste=false sends 0 at paste offset', () {
+      final (server, captured) = createServer();
+
+      server.sendControlMessage(
+        const ScrcpySetClipboardMessage(text: 'abc', paste: false),
+      );
+
+      final bd = ByteData.sublistView(Uint8List.fromList(captured.single));
+      expect(bd.getUint8(9), 0);
     });
 
     test('back-or-screen-on message (type 4) writes 2 bytes', () {

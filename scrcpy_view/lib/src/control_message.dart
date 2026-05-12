@@ -165,10 +165,49 @@ class ScrcpyInjectScrollMessage extends ScrcpyControlMessage {
     buffer.setUint32(5, y);
     buffer.setUint16(9, width);
     buffer.setUint16(11, height);
-    buffer.setInt16(13, hScroll);
-    buffer.setInt16(15, vScroll);
+    // scrcpy protocol: scroll values are signed 15-bit fixed-point (i16fp) where
+    // INT16_MAX (32767) = 1.0. The scrcpy client convention accepts natural values
+    // in [-16, 16], divides by 16 to normalize to [-1, 1], then multiplies by 32767.
+    // Values outside [-16, 16] are clamped to the maximum scroll magnitude.
+    final hNorm = (hScroll / 16.0).clamp(-1.0, 1.0);
+    final vNorm = (vScroll / 16.0).clamp(-1.0, 1.0);
+    buffer.setInt16(13, (hNorm * 32767).toInt());
+    buffer.setInt16(15, (vNorm * 32767).toInt());
     buffer.setUint32(17, buttons);
     return buffer.buffer.asUint8List();
+  }
+}
+
+/// Type 9: Set Clipboard
+///
+/// Writes [text] to the device clipboard. When [paste] is true the scrcpy
+/// server immediately triggers a paste event after setting the clipboard,
+/// making this the only reliable way to inject CJK / non-ASCII text.
+class ScrcpySetClipboardMessage extends ScrcpyControlMessage {
+  const ScrcpySetClipboardMessage({
+    required this.text,
+    this.sequence = 0,
+    this.paste = true,
+  });
+
+  final String text;
+  final int sequence;
+  final bool paste;
+
+  @override
+  int get type => 9;
+
+  @override
+  Uint8List toBinary() {
+    final utf8Text = utf8.encode(text);
+    // type(1) + sequence(8) + paste(1) + text_len(4) + text
+    final out = ByteData(14 + utf8Text.length);
+    out.setUint8(0, type);
+    out.setUint64(1, sequence);
+    out.setUint8(9, paste ? 1 : 0);
+    out.setUint32(10, utf8Text.length);
+    out.buffer.asUint8List().setAll(14, utf8Text);
+    return out.buffer.asUint8List();
   }
 }
 

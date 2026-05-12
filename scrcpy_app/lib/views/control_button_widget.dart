@@ -4,11 +4,6 @@ import 'package:scrcpy_app/widgets/control_button.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
 class ControlButtonWidget extends StatelessWidget {
-  static const _navButtons = [
-    (Icons.arrow_back, ScrcpyKeycode.back),
-    (Icons.circle_outlined, ScrcpyKeycode.home),
-    (Icons.menu, ScrcpyKeycode.appSwitch),
-  ];
   const ControlButtonWidget({
     super.key,
   });
@@ -17,11 +12,15 @@ class ControlButtonWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = AppController();
     return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(100),
+      ),
+      width: 300,
       padding: const EdgeInsets.symmetric(vertical: 8),
-      color: Colors.blueGrey[900],
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: _navButtons
+        children: defaultNavButtons
             .map((b) => ControlButton(
                   icon: b.$1,
                   onPressed: () => controller.injectKey(b.$2),

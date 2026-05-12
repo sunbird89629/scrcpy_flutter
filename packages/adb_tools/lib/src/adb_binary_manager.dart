@@ -2,13 +2,13 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:adb_tools/src/exceptions.dart';
-import 'package:autoglm_logger/autoglm_logger.dart';
+import 'package:logger_utils/logger_utils.dart';
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as p;
 
 /// Manages the ADB binary lifecycle, including auto-downloading.
 class AdbBinaryManager {
-  static final _log = Logger('autoglm.adb.AdbBinaryManager');
+  static final _log = Logger('scrcpy.adb.AdbBinaryManager');
 
   /// Creates a new [AdbBinaryManager].
   AdbBinaryManager({required this.binDir, Dio? dio}) : _dio = dio ?? Dio();

@@ -32,6 +32,7 @@ class _McpServerPanelState extends State<McpServerPanel> {
     final theme = Theme.of(context);
 
     return Container(
+      // color: const Color(0xFF1A1A1A),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child:
           ctrl.isRunning ? _buildRunning(ctrl, theme) : _buildIdle(ctrl, theme),
@@ -78,10 +79,8 @@ class _McpServerPanelState extends State<McpServerPanel> {
           const SizedBox(height: 4),
           Text(
             ctrl.errorMessage!,
-            style: TextStyle(
-              color: theme.colorScheme.error,
-              fontSize: 12,
-            ),
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: theme.colorScheme.error),
           ),
         ],
       ],

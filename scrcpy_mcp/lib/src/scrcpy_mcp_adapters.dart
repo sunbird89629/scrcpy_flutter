@@ -2,8 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:adb_tools/adb_tools.dart';
-import 'package:autoglm_logger/autoglm_logger.dart';
-import 'package:scrcpy_view/scrcpy_view.dart';
+import 'package:scrcpy_view/scrcpy_core.dart';
 
 import 'recording_adb.dart';
 import 'recording_controller.dart';
@@ -21,9 +20,9 @@ class _RealProcess implements RecordingProcess {
       _process.kill(signal);
 }
 
-/// Bridges the MCP package's ADB client to the scrcpy package boundary.
-class ScrcpyMcpAdb implements ScrcpyAdb, RecordingAdb {
-  const ScrcpyMcpAdb(this._client);
+/// Shared adapter bridging [AdbClient] to the [ScrcpyAdb] interface.
+class ScrcpyAdbAdapter implements ScrcpyAdb {
+  const ScrcpyAdbAdapter(this._client);
 
   final AdbClient _client;
 
@@ -68,21 +67,14 @@ class ScrcpyMcpAdb implements ScrcpyAdb, RecordingAdb {
   }
 
   @override
-  Future<Uint8List> takeScreenshot(String deviceId) async {
-    final result = await Process.run(
-      adbPath,
-      ['-s', deviceId, 'exec-out', 'screencap', '-p'],
-      stdoutEncoding: null,
-    );
-    if (result.exitCode != 0) {
-      throw Exception(
-        'screencap failed (exit ${result.exitCode}): ${result.stderr}',
-      );
-    }
-    return Uint8List.fromList(result.stdout as List<int>);
+  Future<Uint8List> takeScreenshot(String deviceId) {
+    return _client.takeScreenshot(deviceId);
   }
+}
 
-  // ── RecordingAdb ──────────────────────────────────────────────────────────
+/// Extends [ScrcpyAdbAdapter] with screen recording operations for MCP.
+class ScrcpyMcpAdb extends ScrcpyAdbAdapter implements RecordingAdb {
+  const ScrcpyMcpAdb(super._client);
 
   @override
   Future<RecordingProcess> startScreenrecord(
@@ -102,7 +94,6 @@ class ScrcpyMcpAdb implements ScrcpyAdb, RecordingAdb {
       '$maxTime',
       remotePath,
     ]);
-    // Drain to prevent pipe backpressure from blocking the recording process.
     process.stdout.drain<void>();
     process.stderr.drain<void>();
     return _RealProcess(process);
@@ -131,28 +122,5 @@ class ScrcpyMcpAdb implements ScrcpyAdb, RecordingAdb {
       adbPath,
       ['-s', deviceId, 'shell', 'rm', '-f', remotePath],
     );
-  }
-}
-
-/// Bridges MCP scrcpy logs to a module-level [Logger].
-class ScrcpyMcpLogger implements ScrcpyLogger {
-  static final _log = Logger('scrcpy.mcp');
-
-  const ScrcpyMcpLogger();
-
-  @override
-  void debug(String message) => _log.fine(message);
-
-  @override
-  void info(String message) => _log.info(message);
-
-  @override
-  void warn(String message, [Object? error, StackTrace? stack]) {
-    _log.warning(message, error, stack);
-  }
-
-  @override
-  void error(String message, [Object? error, StackTrace? stack]) {
-    _log.severe(message, error, stack);
   }
 }

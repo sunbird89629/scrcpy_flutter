@@ -149,7 +149,7 @@ void main() {
   });
 
   group('ScrcpyInjectScrollMessage', () {
-    test('binary layout is 21 bytes with signed 16-bit scroll values', () {
+    test('binary layout is 21 bytes with i16fp-encoded scroll values', () {
       const msg = ScrcpyInjectScrollMessage(
         x: 100,
         y: 200,
@@ -168,9 +168,71 @@ void main() {
       expect(bd.getUint32(5), 200);
       expect(bd.getUint16(9), 1080);
       expect(bd.getUint16(11), 1920);
-      expect(bd.getInt16(13), -10);
-      expect(bd.getInt16(15), 50);
+      // hScroll=-10: -10/16=-0.625, clamped=-0.625, i16fp=(-0.625*32767).toInt()=-20479
+      expect(bd.getInt16(13), -20479);
+      // vScroll=50: 50/16=3.125, clamped=1.0, i16fp=(1.0*32767).toInt()=32767
+      expect(bd.getInt16(15), 32767);
       expect(bd.getUint32(17), 0);
+    });
+
+    test('values clamped to max scroll magnitude outside [-16, 16]', () {
+      const msg = ScrcpyInjectScrollMessage(
+        x: 0, y: 0, width: 1080, height: 1920,
+        hScroll: -100,
+        vScroll: 100,
+      );
+      final bd = ByteData.sublistView(msg.toBinary());
+      // Both values clamped to ±1.0, encoded as ±32767
+      expect(bd.getInt16(13), -32767);
+      expect(bd.getInt16(15), 32767);
+    });
+  });
+
+  group('ScrcpySetClipboardMessage', () {
+    test('binary layout: type=9, sequence(8), paste(1), text_len(4), utf8', () {
+      const msg = ScrcpySetClipboardMessage(text: 'hello', sequence: 1);
+      final bytes = msg.toBinary();
+      final bd = ByteData.sublistView(bytes);
+
+      expect(bytes.length, 14 + 5);
+      expect(bd.getUint8(0), 9);
+      expect(bd.getUint64(1), 1);
+      expect(bd.getUint8(9), 1); // paste=true
+      expect(bd.getUint32(10), 5);
+      expect(bytes.sublist(14), 'hello'.codeUnits);
+    });
+
+    test('Chinese text: text_len reflects UTF-8 byte count, not char count', () {
+      // '你好' = 2 chars but 6 UTF-8 bytes (3 bytes each)
+      const msg = ScrcpySetClipboardMessage(text: '你好');
+      final bytes = msg.toBinary();
+      final bd = ByteData.sublistView(bytes);
+
+      expect(bytes.length, 14 + 6);
+      expect(bd.getUint32(10), 6);
+    });
+
+    test('paste=false encodes paste byte as 0', () {
+      const msg = ScrcpySetClipboardMessage(text: 'x', paste: false);
+      final bd = ByteData.sublistView(msg.toBinary());
+      expect(bd.getUint8(9), 0);
+    });
+
+    test('empty text produces 14-byte message with text_len=0', () {
+      const msg = ScrcpySetClipboardMessage(text: '');
+      final bytes = msg.toBinary();
+      final bd = ByteData.sublistView(bytes);
+      expect(bytes.length, 14);
+      expect(bd.getUint32(10), 0);
+    });
+
+    test('sequence is encoded as uint64 at offset 1', () {
+      const msg = ScrcpySetClipboardMessage(
+        text: '',
+        sequence: 0xDEADBEEFCAFEBABE,
+      );
+      final bd = ByteData.sublistView(msg.toBinary());
+      expect(bd.getUint64(1), 0xDEADBEEFCAFEBABE);
     });
   });
 

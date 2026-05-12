@@ -12,8 +12,8 @@ resolution: workspace
 dependencies:
   adb_tools:
     path: ../packages/adb_tools
-  autoglm_logger:
-    path: ../packages/autoglm_logger
+  logger_utils:
+    path: ../packages/logger_utils
   flutter:
     sdk: flutter
   flutter_inappwebview: ^6.1.5

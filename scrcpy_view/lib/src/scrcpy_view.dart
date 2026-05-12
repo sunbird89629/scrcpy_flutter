@@ -9,7 +9,6 @@ import 'package:scrcpy_view/webview_video_player.dart';
 class ScrcpyView extends StatefulWidget {
   const ScrcpyView({required this.controller, super.key});
 
-  /// Controller that owns the mirroring session and exposes input injection.
   final ScrcpyViewController controller;
 
   @override
@@ -57,7 +56,6 @@ class _ScrcpyViewState extends State<ScrcpyView> {
       listenable: widget.controller,
       builder: (context, _) {
         final server = widget.controller.server;
-        debugPrint('ScrcpyView.playerUrl:${server?.playerUrl}');
         if (server == null) {
           return const Center(child: Text('点击 Start 启动服务'));
         }
