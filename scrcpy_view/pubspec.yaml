@@ -28,5 +28,4 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/scrcpy-server-v3.3.4
     - assets/web_player/
