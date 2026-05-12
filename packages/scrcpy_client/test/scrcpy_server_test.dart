@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter_test/flutter_test.dart';
 import 'package:scrcpy_client/scrcpy_client.dart';
+import 'package:test/test.dart';
 
 class MockScrcpyAdb implements ScrcpyAdb {
   MockScrcpyAdb({this.testAdbPath = 'adb'});
@@ -60,8 +60,6 @@ class MockScrcpyAdb implements ScrcpyAdb {
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-
   final mockJarBytes = Uint8List(0);
 
   group('ScrcpyServer Configuration', () {

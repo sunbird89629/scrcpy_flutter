@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -148,14 +149,17 @@ class ScrcpyViewController extends ChangeNotifier implements ScrcpySession {
   Future<void> stop() async {
     final impl = _impl;
     _impl = null;
-    notifyListeners();
+    if (!_disposed) notifyListeners();
     await _stopProxies();
     await impl?.stop();
   }
 
+  bool _disposed = false;
+
   @override
   void dispose() {
-    stop();
+    _disposed = true;
+    unawaited(stop());
     super.dispose();
   }
 

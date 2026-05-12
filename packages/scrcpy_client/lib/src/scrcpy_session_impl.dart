@@ -70,11 +70,10 @@ class ScrcpySessionImpl implements ScrcpySession {
       _pending = false;
       onStarted?.call();
     } on Exception catch (e) {
-      onError?.call(e.toString());
-      rethrow;
-    } finally {
       _pending = false;
       _onStopped = null;
+      onError?.call(e.toString());
+      rethrow;
     }
   }
 
