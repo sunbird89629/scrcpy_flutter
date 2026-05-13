@@ -21,9 +21,6 @@ class MockAdb implements ScrcpyAdb {
   final List<String> _devices;
 
   @override
-  String get adbPath => 'adb';
-
-  @override
   Future<List<String>> getDevices() async => List.unmodifiable(_devices);
 
   @override
@@ -51,6 +48,10 @@ class MockAdb implements ScrcpyAdb {
     String remotePath, {
     String? deviceId,
   }) async {}
+
+  @override
+  Future<Process> startProcess(List<String> arguments) =>
+      throw UnimplementedError();
 
   @override
   Future<Uint8List> takeScreenshot(String deviceId) async =>

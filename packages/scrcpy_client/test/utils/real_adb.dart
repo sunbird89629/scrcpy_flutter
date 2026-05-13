@@ -10,9 +10,6 @@ class RealAdb implements ScrcpyAdb {
   final adbTool = AdbClient();
 
   @override
-  String get adbPath => 'adb';
-
-  @override
   Future<List<String>> getDevices() => adbTool.getDevices();
 
   @override
@@ -38,4 +35,8 @@ class RealAdb implements ScrcpyAdb {
 
   @override
   Future<Uint8List> takeScreenshot(String deviceId) async => Uint8List(0);
+
+  @override
+  Future<Process> startProcess(List<String> arguments) =>
+      Process.start('adb', arguments);
 }

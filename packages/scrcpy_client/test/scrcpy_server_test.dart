@@ -84,6 +84,26 @@ void main() {
       mockAdb = MockScrcpyAdb();
     });
 
+    test('start() delegates server process launch to adb.startProcess()',
+        () async {
+      final server = ScrcpyServer(
+        adb: mockAdb,
+        deviceId: 'test-device',
+        serverJarBytes: mockJarBytes,
+        options: const ScrcpyServerOptions(),
+      );
+      // startProcess records args then returns a no-op process;
+      // the next step (_connectAll) will fail because nothing is listening.
+      await expectLater(server.start(), throwsA(isA<Exception>()));
+
+      expect(mockAdb.startProcessCalls, isNotEmpty);
+      final args = mockAdb.startProcessCalls.first;
+      expect(args, containsAllInOrder(['-s', 'test-device', 'shell']));
+      expect(args, anyElement(contains('CLASSPATH=')));
+      expect(args, anyElement(contains('scrcpy-server')));
+      expect(args, anyElement(contains('com.genymobile.scrcpy.Server')));
+    });
+
     test('verifies shell command with correct parameters', () async {
       await mockAdb.shell([
         'chmod',

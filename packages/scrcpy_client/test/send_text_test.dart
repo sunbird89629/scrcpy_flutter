@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:scrcpy_client/src/control_message.dart';
 import 'package:test/test.dart';
 
-import 'utils/no_op_adb.dart';
 import 'utils/server_factory.dart';
 
 void main() {
@@ -12,7 +11,7 @@ void main() {
     // Length field stores UTF-8 byte count, NOT Dart String.length.
 
     test('ASCII encodes as 5-byte header + UTF-8 bytes', () {
-      final (server, captured) = createTestServer(NoOpAdb());
+      final (server, captured) = createTestServer();
       const text = 'hello';
       server.sendControlMessage(const ScrcpyInjectTextMessage(text));
       expect(captured.length, 1);
@@ -26,7 +25,7 @@ void main() {
     });
 
     test('CJK (3 bytes/char) encodes UTF-8 byte count in length field', () {
-      final (server, captured) = createTestServer(NoOpAdb());
+      final (server, captured) = createTestServer();
       const text = '你好';
       server.sendControlMessage(const ScrcpyInjectTextMessage(text));
       final bytes = Uint8List.fromList(captured.single);
@@ -39,7 +38,7 @@ void main() {
     });
 
     test('emoji (4 bytes/char) encodes UTF-8 byte count in length field', () {
-      final (server, captured) = createTestServer(NoOpAdb());
+      final (server, captured) = createTestServer();
       const text = '😀';
       server.sendControlMessage(const ScrcpyInjectTextMessage(text));
       final bytes = Uint8List.fromList(captured.single);
@@ -53,7 +52,7 @@ void main() {
     });
 
     test('mixed text encodes correct total UTF-8 length', () {
-      final (server, captured) = createTestServer(NoOpAdb());
+      final (server, captured) = createTestServer();
       const text = 'Hi你好😀';
       server.sendControlMessage(const ScrcpyInjectTextMessage(text));
       final bytes = Uint8List.fromList(captured.single);
@@ -66,7 +65,7 @@ void main() {
     });
 
     test('special ASCII characters pass through unmodified', () {
-      final (server, captured) = createTestServer(NoOpAdb());
+      final (server, captured) = createTestServer();
       const text = 'a\nb\tc';
       server.sendControlMessage(const ScrcpyInjectTextMessage(text));
       final bytes = Uint8List.fromList(captured.single);
@@ -81,7 +80,7 @@ void main() {
     });
 
     test('empty string writes 5-byte header only', () {
-      final (server, captured) = createTestServer(NoOpAdb());
+      final (server, captured) = createTestServer();
       server.sendControlMessage(const ScrcpyInjectTextMessage(''));
       final bytes = Uint8List.fromList(captured.single);
       final bd = ByteData.sublistView(bytes);
@@ -95,7 +94,7 @@ void main() {
     // paste true/false behavior is tested separately.
 
     test('ASCII encodes as 14-byte header + UTF-8 bytes', () {
-      final (server, captured) = createTestServer(NoOpAdb());
+      final (server, captured) = createTestServer();
       const text = 'hello';
       server.sendControlMessage(const ScrcpySetClipboardMessage(text: text));
       expect(captured.length, 1);
@@ -111,7 +110,7 @@ void main() {
     });
 
     test('CJK (3 bytes/char) writes correct UTF-8 byte count', () {
-      final (server, captured) = createTestServer(NoOpAdb());
+      final (server, captured) = createTestServer();
       const text = '你好世界';
       server.sendControlMessage(
           const ScrcpySetClipboardMessage(text: text, sequence: 42));
@@ -127,7 +126,7 @@ void main() {
     });
 
     test('emoji (4 bytes/char) encodes UTF-8 byte count in length field', () {
-      final (server, captured) = createTestServer(NoOpAdb());
+      final (server, captured) = createTestServer();
       const text = '🎉';
       server.sendControlMessage(const ScrcpySetClipboardMessage(text: text));
       final bytes = Uint8List.fromList(captured.single);
@@ -141,7 +140,7 @@ void main() {
     });
 
     test('mixed text encodes correct total UTF-8 length', () {
-      final (server, captured) = createTestServer(NoOpAdb());
+      final (server, captured) = createTestServer();
       const text = 'Hi你好🎉';
       server.sendControlMessage(const ScrcpySetClipboardMessage(text: text));
       final bytes = Uint8List.fromList(captured.single);
@@ -154,7 +153,7 @@ void main() {
     });
 
     test('special ASCII characters pass through unmodified', () {
-      final (server, captured) = createTestServer(NoOpAdb());
+      final (server, captured) = createTestServer();
       const text = 'line1\nline2';
       server.sendControlMessage(const ScrcpySetClipboardMessage(text: text));
       final bytes = Uint8List.fromList(captured.single);
@@ -167,7 +166,7 @@ void main() {
     });
 
     test('empty string writes 14-byte header only', () {
-      final (server, captured) = createTestServer(NoOpAdb());
+      final (server, captured) = createTestServer();
       server.sendControlMessage(const ScrcpySetClipboardMessage(text: ''));
       final bytes = Uint8List.fromList(captured.single);
       final bd = ByteData.sublistView(bytes);

@@ -180,7 +180,7 @@ class ScrcpyServer {
     ];
 
     _log.debug('[ScrcpyServer] Executing: adb ${args.join(' ')}');
-    _serverProcess = await Process.start(adb.adbPath, args);
+    _serverProcess = await adb.startProcess(args);
 
     _stdoutSubscription = _serverProcess!.stdout
         .transform(utf8.decoder)

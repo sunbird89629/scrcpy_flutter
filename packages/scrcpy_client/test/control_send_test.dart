@@ -3,13 +3,12 @@ import 'dart:typed_data';
 import 'package:scrcpy_client/src/control_message.dart';
 import 'package:test/test.dart';
 
-import 'utils/no_op_adb.dart';
 import 'utils/server_factory.dart';
 
 void main() {
   group('sendControlMessage via injected sink', () {
     test('touch message (type 2) writes 32 bytes', () {
-      final (server, captured) = createTestServer(NoOpAdb());
+      final (server, captured) = createTestServer();
       server.sendControlMessage(const ScrcpyInjectTouchMessage(
         action: ScrcpyAction.down,
         pointerId: 1,
@@ -27,7 +26,7 @@ void main() {
     });
 
     test('keycode message (type 0) writes 14 bytes', () {
-      final (server, captured) = createTestServer(NoOpAdb());
+      final (server, captured) = createTestServer();
       server.sendControlMessage(const ScrcpyInjectKeyMessage(
         action: ScrcpyAction.down,
         keycode: ScrcpyKeycode.home,
@@ -42,7 +41,7 @@ void main() {
     });
 
     test('scroll message (type 3) writes 21 bytes', () {
-      final (server, captured) = createTestServer(NoOpAdb());
+      final (server, captured) = createTestServer();
       server.sendControlMessage(const ScrcpyInjectScrollMessage(
         x: 100,
         y: 200,
@@ -61,7 +60,7 @@ void main() {
     });
 
     test('set-clipboard with paste=false sends 0 at paste offset', () {
-      final (server, captured) = createTestServer(NoOpAdb());
+      final (server, captured) = createTestServer();
       server.sendControlMessage(
           const ScrcpySetClipboardMessage(text: 'abc', paste: false));
       final bd = ByteData.sublistView(Uint8List.fromList(captured.single));
@@ -69,7 +68,7 @@ void main() {
     });
 
     test('back-or-screen-on message (type 4) writes 2 bytes', () {
-      final (server, captured) = createTestServer(NoOpAdb());
+      final (server, captured) = createTestServer();
       server.sendControlMessage(
           const ScrcpyBackOrScreenOnMessage(ScrcpyAction.down));
       expect(captured.length, 1);

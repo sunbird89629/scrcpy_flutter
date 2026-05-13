@@ -11,9 +11,6 @@ class SafeAdbClient implements ScrcpyAdb {
   final AdbClient _client;
 
   @override
-  String get adbPath => _client.adbPath;
-
-  @override
   Future<List<String>> getDevices() => _client.getDevices();
 
   @override
@@ -61,19 +58,24 @@ class SafeAdbClient implements ScrcpyAdb {
 
   @override
   Future<Uint8List> takeScreenshot(String deviceId) async {
+    final screencapArgs = ['-s', deviceId, 'exec-out', 'screencap', '-p'];
     final result = await Process.run(
-      adbPath,
-      ['-s', deviceId, 'exec-out', 'screencap', '-p'],
+      _client.adbPath,
+      screencapArgs,
       stdoutEncoding: null,
     );
     if (result.exitCode != 0) {
       throw ProcessException(
-        adbPath,
-        ['-s', deviceId, 'exec-out', 'screencap', '-p'],
+        _client.adbPath,
+        screencapArgs,
         result.stderr.toString(),
         result.exitCode,
       );
     }
     return Uint8List.fromList(result.stdout as List<int>);
   }
+
+  @override
+  Future<Process> startProcess(List<String> arguments) =>
+      Process.start(_client.adbPath, arguments);
 }

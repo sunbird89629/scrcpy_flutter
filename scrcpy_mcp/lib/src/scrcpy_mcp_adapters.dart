@@ -27,9 +27,6 @@ class ScrcpyAdbAdapter implements ScrcpyAdb {
   final AdbClient _client;
 
   @override
-  String get adbPath => _client.adbPath;
-
-  @override
   Future<List<String>> getDevices() => _client.getDevices();
 
   @override
@@ -70,6 +67,10 @@ class ScrcpyAdbAdapter implements ScrcpyAdb {
   Future<Uint8List> takeScreenshot(String deviceId) {
     return _client.takeScreenshot(deviceId);
   }
+
+  @override
+  Future<Process> startProcess(List<String> arguments) =>
+      Process.start(_client.adbPath, arguments);
 }
 
 /// Extends [ScrcpyAdbAdapter] with screen recording operations for MCP.
@@ -83,7 +84,7 @@ class ScrcpyMcpAdb extends ScrcpyAdbAdapter implements RecordingAdb {
     int bitrate = 4000000,
     int maxTime = 180,
   }) async {
-    final process = await Process.start(adbPath, [
+    final process = await startProcess([
       '-s',
       deviceId,
       'shell',
@@ -106,7 +107,7 @@ class ScrcpyMcpAdb extends ScrcpyAdbAdapter implements RecordingAdb {
     String localPath,
   ) async {
     final result = await Process.run(
-      adbPath,
+      _client.adbPath,
       ['-s', deviceId, 'pull', remotePath, localPath],
     );
     if (result.exitCode != 0) {
@@ -119,7 +120,7 @@ class ScrcpyMcpAdb extends ScrcpyAdbAdapter implements RecordingAdb {
   @override
   Future<void> removeFile(String deviceId, String remotePath) async {
     await Process.run(
-      adbPath,
+      _client.adbPath,
       ['-s', deviceId, 'shell', 'rm', '-f', remotePath],
     );
   }

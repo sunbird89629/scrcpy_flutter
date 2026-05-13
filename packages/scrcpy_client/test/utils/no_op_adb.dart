@@ -6,9 +6,6 @@ class NoOpAdb implements ScrcpyAdb {
   const NoOpAdb();
 
   @override
-  String get adbPath => 'adb';
-
-  @override
   Future<List<String>> getDevices() async => [];
 
   @override
@@ -32,4 +29,8 @@ class NoOpAdb implements ScrcpyAdb {
 
   @override
   Future<Uint8List> takeScreenshot(String deviceId) async => Uint8List(0);
+
+  @override
+  Future<Process> startProcess(List<String> arguments) =>
+      throw UnimplementedError('NoOpAdb.startProcess');
 }

@@ -3,20 +3,15 @@ import 'dart:typed_data';
 import 'package:scrcpy_client/scrcpy_client.dart';
 
 class MockScrcpyAdb implements ScrcpyAdb {
-  MockScrcpyAdb({this.testAdbPath = 'adb'});
-
-  final String testAdbPath;
-
-  @override
-  String get adbPath => testAdbPath;
-
   final List<List<String>> shellCalls = [];
   final List<(String, String)> forwardCalls = [];
   final List<(String, String)> pushCalls = [];
   final List<String> forwardRemoveCalls = [];
+  final List<List<String>> startProcessCalls = [];
 
   bool shouldPushFail = false;
   bool shouldForwardFail = false;
+  bool shouldStartProcessFail = false;
 
   @override
   Future<List<String>> getDevices() async => ['emulator-5554'];
@@ -55,4 +50,12 @@ class MockScrcpyAdb implements ScrcpyAdb {
 
   @override
   Future<Uint8List> takeScreenshot(String deviceId) async => Uint8List(0);
+
+  @override
+  Future<Process> startProcess(List<String> arguments) async {
+    startProcessCalls.add(arguments);
+    if (shouldStartProcessFail) throw Exception('startProcess failed');
+    // Spawn a no-op process so callers can subscribe to streams.
+    return Process.start('true', []);
+  }
 }

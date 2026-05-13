@@ -9,8 +9,6 @@ import 'package:scrcpy_view/scrcpy_view.dart';
 
 class _MockAdb implements ScrcpyAdb {
   @override
-  String get adbPath => 'adb';
-  @override
   Future<List<String>> getDevices() async => [];
   @override
   Future<ProcessResult> shell(List<String> a,
@@ -26,6 +24,9 @@ class _MockAdb implements ScrcpyAdb {
   Future<void> push(String lp, String rp, {String? deviceId}) async {}
   @override
   Future<Uint8List> takeScreenshot(String d) async => Uint8List(0);
+  @override
+  Future<Process> startProcess(List<String> arguments) =>
+      throw UnimplementedError();
 }
 
 class _MockViewController extends ScrcpyViewController {
