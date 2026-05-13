@@ -21,6 +21,7 @@ void main() {
         deviceId: 'device123',
         port: 12345,
         serverJarBytes: mockJarBytes,
+        options: const ScrcpyServerOptions(),
       );
 
       expect(server.deviceId, 'device123');
@@ -33,6 +34,7 @@ void main() {
         adb: mockAdb,
         deviceId: 'device123',
         serverJarBytes: mockJarBytes,
+        options: const ScrcpyServerOptions(),
       );
 
       expect(server.port, 27183);
@@ -44,6 +46,7 @@ void main() {
         adb: mockAdb,
         deviceId: 'device1',
         serverJarBytes: mockJarBytes,
+        options: const ScrcpyServerOptions(),
       );
 
       final server2 = ScrcpyServer(
@@ -51,6 +54,7 @@ void main() {
         deviceId: 'device2',
         port: 27184,
         serverJarBytes: mockJarBytes,
+        options: const ScrcpyServerOptions(),
       );
 
       expect(server1.port, 27183);
@@ -65,6 +69,7 @@ void main() {
         adb: mockAdb,
         deviceId: 'device123',
         serverJarBytes: mockJarBytes,
+        options: const ScrcpyServerOptions(),
       );
 
       expect(server.adb, mockAdb);
@@ -113,12 +118,14 @@ void main() {
         adb: mockAdb,
         deviceId: 'device1',
         serverJarBytes: mockJarBytes,
+        options: const ScrcpyServerOptions(),
       );
 
       final server2 = ScrcpyServer(
         adb: mockAdb,
         deviceId: 'device2',
         serverJarBytes: mockJarBytes,
+        options: const ScrcpyServerOptions(),
       );
 
       expect(server1.deviceId, 'device1');
@@ -126,6 +133,42 @@ void main() {
 
       server1.stop();
       server2.stop();
+    });
+  });
+
+  group('ScrcpyServer Configuration (options)', () {
+    late MockScrcpyAdb mockAdb;
+
+    setUp(() {
+      mockAdb = MockScrcpyAdb();
+    });
+
+    test('stores provided options', () {
+      const opts = ScrcpyServerOptions(maxSize: 720, maxFps: 30);
+      final server = ScrcpyServer(
+        adb: mockAdb,
+        deviceId: 'device123',
+        serverJarBytes: mockJarBytes,
+        options: opts,
+      );
+      expect(server.options.maxSize, 720);
+      expect(server.options.maxFps, 30);
+      server.stop();
+    });
+
+    test('options defaults match ScrcpyServerOptions defaults', () {
+      const opts = ScrcpyServerOptions();
+      final server = ScrcpyServer(
+        adb: mockAdb,
+        deviceId: 'device123',
+        serverJarBytes: mockJarBytes,
+        options: opts,
+      );
+      expect(server.options.maxSize, 1024);
+      expect(server.options.maxFps, 60);
+      expect(server.options.videoBitRate, 6000000);
+      expect(server.options.videoCodec, 'h264');
+      server.stop();
     });
   });
 

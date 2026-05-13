@@ -8,6 +8,7 @@ import 'package:scrcpy_client/src/control_message.dart';
 import 'package:scrcpy_client/src/scrcpy_adb.dart';
 import 'package:scrcpy_client/src/scrcpy_logger.dart';
 import 'package:scrcpy_client/src/scrcpy_packet.dart';
+import 'package:scrcpy_client/src/scrcpy_server_options.dart';
 import 'package:scrcpy_client/src/scrcpy_stream_parser.dart';
 
 /// Manages a scrcpy server instance on a device.
@@ -19,10 +20,12 @@ class ScrcpyServer {
     required this.adb,
     required this.deviceId,
     required Uint8List serverJarBytes,
+    required ScrcpyServerOptions options,
     this.port = 27183,
     ScrcpyLogger logger = const NoOpScrcpyLogger(),
     StreamSink<List<int>>? controlSink,
   })  : _serverJarBytes = serverJarBytes,
+        _options = options,
         _log = logger,
         _controlSink = controlSink,
         _parser = ScrcpyStreamParser(logger: logger);
@@ -32,8 +35,12 @@ class ScrcpyServer {
   final int port;
 
   final Uint8List _serverJarBytes;
+  final ScrcpyServerOptions _options;
   final ScrcpyLogger _log;
   final ScrcpyStreamParser _parser;
+
+  /// The video encoding options for this server instance.
+  ScrcpyServerOptions get options => _options;
   bool _isStarting = false;
 
   Process? _serverProcess;
@@ -158,13 +165,13 @@ class ScrcpyServer {
       version,
       'scid=$scidHex',
       'tunnel_forward=true',
-      'video_codec=h264',
+      'video_codec=${_options.videoCodec}',
       'audio=false',
       'control=true',
       'cleanup=true',
-      'max_size=1024',
-      'max_fps=60',
-      'video_bit_rate=6000000',
+      'max_size=${_options.maxSize}',
+      'max_fps=${_options.maxFps}',
+      'video_bit_rate=${_options.videoBitRate}',
       'list_encoders=false',
       'list_displays=false',
       'send_dummy_byte=true',
@@ -197,7 +204,7 @@ class ScrcpyServer {
     unawaited(
       _serverProcess!.exitCode.then((code) {
         _log.warn('[ScrcpyServer] server process exited with code $code');
-        _parser.close();
+        // _parser.close() intentionally omitted — stop() is the sole cleanup owner
       }),
     );
 

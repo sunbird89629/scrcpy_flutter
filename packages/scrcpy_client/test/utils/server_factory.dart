@@ -17,6 +17,7 @@ import 'package:test/test.dart';
     adb: adb,
     deviceId: deviceId,
     serverJarBytes: jarBytes ?? Uint8List(0),
+    options: const ScrcpyServerOptions(),
     controlSink: controller.sink,
   );
   return (server, captured);

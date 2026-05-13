@@ -7,6 +7,7 @@ import 'package:scrcpy_client/src/control_message.dart';
 import 'package:scrcpy_client/src/scrcpy_adb.dart';
 import 'package:scrcpy_client/src/scrcpy_logger.dart';
 import 'package:scrcpy_client/src/scrcpy_server.dart';
+import 'package:scrcpy_client/src/scrcpy_server_options.dart';
 import 'package:scrcpy_client/src/scrcpy_session.dart';
 
 /// Pure-Dart implementation of [ScrcpySession] wrapping [ScrcpyServer].
@@ -62,6 +63,7 @@ class ScrcpySessionImpl implements ScrcpySession {
       adb: _adb,
       deviceId: deviceId,
       serverJarBytes: _serverJarBytes,
+      options: const ScrcpyServerOptions(),
       logger: logger ?? const NoOpScrcpyLogger(),
     );
     try {
