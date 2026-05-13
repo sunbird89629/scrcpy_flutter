@@ -144,7 +144,12 @@ void main() {
     });
 
     test('stores provided options', () {
-      const opts = ScrcpyServerOptions(maxSize: 720, maxFps: 30);
+      const opts = ScrcpyServerOptions(
+        maxSize: 720,
+        maxFps: 30,
+        videoBitRate: 2000000,
+        videoCodec: 'h265',
+      );
       final server = ScrcpyServer(
         adb: mockAdb,
         deviceId: 'device123',
@@ -153,6 +158,8 @@ void main() {
       );
       expect(server.options.maxSize, 720);
       expect(server.options.maxFps, 30);
+      expect(server.options.videoBitRate, 2000000);
+      expect(server.options.videoCodec, 'h265');
       server.stop();
     });
 

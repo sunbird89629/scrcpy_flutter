@@ -63,6 +63,7 @@ class ScrcpySessionImpl implements ScrcpySession {
       adb: _adb,
       deviceId: deviceId,
       serverJarBytes: _serverJarBytes,
+      // TODO(Task 3): replace with options parameter threaded from start()
       options: const ScrcpyServerOptions(),
       logger: logger ?? const NoOpScrcpyLogger(),
     );
