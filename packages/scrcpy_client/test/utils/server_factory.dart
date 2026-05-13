@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:scrcpy_client/scrcpy_client.dart';
 import 'package:test/test.dart';
 
-import 'no_op_adb.dart';
+import 'mock_device_provisioner.dart';
 import 'real_adb.dart';
 
 (ScrcpyServer, List<List<int>>) createTestServer({
@@ -15,30 +15,27 @@ import 'real_adb.dart';
   final controller = StreamController<List<int>>(sync: true);
   addTearDown(controller.close);
   controller.stream.listen(captured.add);
+  final provisioner = MockDeviceProvisioner(deviceId: deviceId);
   final server = ScrcpyServer(
-    adb: NoOpAdb(),
-    deviceId: deviceId,
-    serverJarBytes: jarBytes ?? Uint8List(0),
-    options: const ScrcpyServerOptions(),
+    provisioner: provisioner,
     controlSink: controller.sink,
   );
   return (server, captured);
 }
 
-(ScrcpyServer, List<List<int>>) ceateRealServer({
+(ScrcpyServer, List<List<int>>) createRealServer({
   String deviceId = 'test-device',
   Uint8List? jarBytes,
 }) {
   final captured = <List<int>>[];
-  // final controller = StreamController<List<int>>(sync: true);
-  // addTearDown(controller.close);
-  // controller.stream.listen(captured.add);
-  final server = ScrcpyServer(
+  final provisioner = AdbScrcpyDeviceProvisioner(
     adb: RealAdb(),
     deviceId: deviceId,
     serverJarBytes: jarBytes ?? Uint8List(0),
     options: const ScrcpyServerOptions(),
-    // controlSink: controller.sink,
+  );
+  final server = ScrcpyServer(
+    provisioner: provisioner,
   );
   return (server, captured);
 }

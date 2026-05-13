@@ -1,9 +1,11 @@
 /// Pure-Dart client for the scrcpy Android screen-mirroring protocol.
 library;
 
+export 'src/adb_scrcpy_device_provisioner.dart';
 export 'src/android_metastate.dart';
 export 'src/control_message.dart';
 export 'src/scrcpy_adb.dart';
+export 'src/scrcpy_device_provisioner.dart';
 export 'src/scrcpy_logger.dart';
 export 'src/scrcpy_packet.dart';
 export 'src/scrcpy_server.dart';

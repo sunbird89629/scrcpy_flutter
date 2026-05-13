@@ -3,6 +3,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
+import 'package:scrcpy_client/src/adb_scrcpy_device_provisioner.dart';
 import 'package:scrcpy_client/src/control_message.dart';
 import 'package:scrcpy_client/src/scrcpy_adb.dart';
 import 'package:scrcpy_client/src/scrcpy_logger.dart';
@@ -60,11 +61,15 @@ class ScrcpySessionImpl implements ScrcpySession {
     _pending = true;
     _onStopped = onStopped;
 
-    final server = ScrcpyServer(
+    final provisioner = AdbScrcpyDeviceProvisioner(
       adb: _adb,
       deviceId: deviceId,
       serverJarBytes: _serverJarBytes,
       options: options,
+      logger: logger,
+    );
+    final server = ScrcpyServer(
+      provisioner: provisioner,
       logger: logger ?? const NoOpScrcpyLogger(),
     );
     try {

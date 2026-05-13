@@ -13,11 +13,12 @@ void main() {
   group('ScrcpyInjectTextMessage (type 1)', () {
     // Length field stores UTF-8 byte count, NOT Dart String.length.
 
+    late RealAdb adb;
     late String realDeviceId;
     late Uint8List realJarBytes;
 
     setUpAll(() async {
-      final adb = RealAdb();
+      adb = RealAdb();
       final devices = await adb.getDevices();
       if (devices.isEmpty) {
         throw StateError('No ADB devices connected — plug in a device first');
@@ -29,7 +30,7 @@ void main() {
     });
 
     test('ASCII encodes as 5-byte header + UTF-8 bytes', () async {
-      final (server, captured) = ceateRealServer(
+      final (server, captured) = createRealServer(
         deviceId: realDeviceId,
         jarBytes: realJarBytes,
       );
@@ -37,7 +38,7 @@ void main() {
       const text = 'hello';
       await server.start();
       server.sendControlMessage(const ScrcpyInjectTextMessage(text));
-      server.adb.takeScreenshot(realDeviceId);
+      adb.takeScreenshot(realDeviceId);
       expect(captured.length, 1);
       final bytes = Uint8List.fromList(captured.single);
       final bd = ByteData.sublistView(bytes);

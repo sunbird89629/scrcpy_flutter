@@ -1,11 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:path/path.dart' as p;
 import 'package:scrcpy_client/src/control_message.dart';
-import 'package:scrcpy_client/src/scrcpy_adb.dart';
+import 'package:scrcpy_client/src/scrcpy_device_provisioner.dart';
 import 'package:scrcpy_client/src/scrcpy_logger.dart';
 import 'package:scrcpy_client/src/scrcpy_packet.dart';
 import 'package:scrcpy_client/src/scrcpy_server_options.dart';
@@ -17,41 +15,32 @@ class ScrcpyServer {
   static const serverVersion = '3.3.4';
 
   ScrcpyServer({
-    required this.adb,
-    required this.deviceId,
-    required Uint8List serverJarBytes,
-    required ScrcpyServerOptions options,
-    this.port = 27183,
+    required ScrcpyDeviceProvisioner provisioner,
     ScrcpyLogger logger = const NoOpScrcpyLogger(),
     StreamSink<List<int>>? controlSink,
-  })  : _serverJarBytes = serverJarBytes,
-        _options = options,
+  })  : _provisioner = provisioner,
         _log = logger,
         _controlSink = controlSink,
         _parser = ScrcpyStreamParser(logger: logger);
 
-  final ScrcpyAdb adb;
-  final String deviceId;
-  final int port;
+  final ScrcpyDeviceProvisioner _provisioner;
 
-  final Uint8List _serverJarBytes;
-  final ScrcpyServerOptions _options;
+  String get deviceId => _provisioner.deviceId;
+
+  int get port => _provisioner.port;
+
+  ScrcpyServerOptions get options => _provisioner.options;
+
   final ScrcpyLogger _log;
   final ScrcpyStreamParser _parser;
+  final StreamSink<List<int>>? _controlSink;
 
-  /// The video encoding options for this server instance.
-  ScrcpyServerOptions get options => _options;
   bool _isStarting = false;
 
-  Process? _serverProcess;
-  StreamSubscription<String>? _stdoutSubscription;
-  StreamSubscription<String>? _stderrSubscription;
-  final StreamSink<List<int>>? _controlSink;
   Socket? _videoSocket;
   Socket? _controlSocket;
   StreamSubscription<Uint8List>? _videoSubscription;
-
-  int? _actualPort;
+  StreamSubscription<Uint8List>? _controlSubscription;
 
   /// Stream of parsed scrcpy packets (video frames).
   Stream<ScrcpyPacket> get packets => _parser.packets;
@@ -62,21 +51,15 @@ class ScrcpyServer {
   /// Last parsed metadata, or `null` if the header has not arrived yet.
   ScrcpyMetadata? get currentMetadata => _parser.currentMetadata;
 
-  /// Starts the scrcpy server: pushes JAR, sets up ADB forward,
-  /// launches the on-device process, and connects video + control sockets.
+  /// Starts the scrcpy server: provisions the device, then connects
+  /// video + control sockets.
   Future<void> start() async {
     if (_isStarting) return;
     _isStarting = true;
 
     try {
       _log.info('[ScrcpyServer] Starting for device: $deviceId');
-      await _pushServer();
-
-      const scid = '12345678';
-      const socketName = 'scrcpy_12345678';
-
-      await _setupForwardWithRetry(socketName);
-      await _runServer(scid);
+      await _provisioner.provision();
       await _connectAll();
     } finally {
       _isStarting = false;
@@ -91,124 +74,6 @@ class ScrcpyServer {
       return;
     }
     sink.add(message.toBinary());
-  }
-
-  Future<void> _pushServer() async {
-    const version = serverVersion;
-    const remotePath = '/data/local/tmp/scrcpy-server-v$version.jar';
-
-    try {
-      _log.debug('[ScrcpyServer] Writing server JAR to temp file');
-      final tempDir = Directory.systemTemp;
-      final localTempFile = File(
-        p.join(tempDir.path, 'scrcpy-server-v$version.jar'),
-      );
-      await localTempFile.writeAsBytes(_serverJarBytes, flush: true);
-      _log.debug('[ScrcpyServer] Pushing server to device: $remotePath');
-      await adb.push(localTempFile.path, remotePath, deviceId: deviceId);
-      await localTempFile.delete();
-    } on Exception catch (e, st) {
-      _log.error('[ScrcpyServer] Failed to prepare server on device', e, st);
-      rethrow;
-    }
-  }
-
-  Future<void> _setupForwardWithRetry(String socketName) async {
-    const maxRetries = 10;
-    var currentPort = port;
-
-    for (var i = 0; i < maxRetries; i++) {
-      try {
-        _log.debug(
-          '[ScrcpyServer] Setting up forward: tcp:$currentPort'
-          ' -> localabstract:$socketName',
-        );
-        try {
-          await adb.forwardRemove('tcp:$currentPort', deviceId: deviceId);
-        } catch (_) {}
-        await adb.forward(
-          'tcp:$currentPort',
-          'localabstract:$socketName',
-          deviceId: deviceId,
-        );
-        _actualPort = currentPort;
-        return;
-      } on Exception catch (e) {
-        _log.warn(
-          '[ScrcpyServer] Failed to forward on port $currentPort, retrying...',
-          e,
-        );
-        currentPort++;
-      }
-    }
-    throw Exception(
-      'Failed to setup port forwarding after $maxRetries attempts',
-    );
-  }
-
-  Future<void> _runServer(String scidHex) async {
-    const version = serverVersion;
-    const remotePath = '/data/local/tmp/scrcpy-server-v$version.jar';
-
-    try {
-      await adb.shell(['pkill', '-f', 'scrcpy-server-v'], deviceId: deviceId);
-    } catch (_) {}
-    await Future<void>.delayed(const Duration(milliseconds: 300));
-
-    final args = [
-      if (deviceId.isNotEmpty) ...['-s', deviceId],
-      'shell',
-      'CLASSPATH=$remotePath',
-      'app_process',
-      '/',
-      'com.genymobile.scrcpy.Server',
-      version,
-      'scid=$scidHex',
-      'tunnel_forward=true',
-      'video_codec=${_options.videoCodec}',
-      'audio=false',
-      'control=true',
-      'cleanup=true',
-      'max_size=${_options.maxSize}',
-      'max_fps=${_options.maxFps}',
-      'video_bit_rate=${_options.videoBitRate}',
-      'list_encoders=false',
-      'list_displays=false',
-      'send_dummy_byte=true',
-      'video_codec_options=i-frame-interval=1,latency=1',
-      'power_on=true',
-    ];
-
-    _log.debug('[ScrcpyServer] Executing: adb ${args.join(' ')}');
-    _serverProcess = await adb.startProcess(args);
-
-    _stdoutSubscription = _serverProcess!.stdout
-        .transform(utf8.decoder)
-        .listen((line) {
-      final trimmed = line.trim();
-      if (trimmed.isNotEmpty) _log.debug('[ScrcpyServer:stdout] $trimmed');
-    });
-
-    _stderrSubscription = _serverProcess!.stderr
-        .transform(utf8.decoder)
-        .listen((line) {
-      final trimmed = line.trim();
-      if (trimmed.isEmpty) return;
-      if (trimmed.contains('ERROR') || trimmed.contains('Exception')) {
-        _log.error('[ScrcpyServer:stderr] $trimmed');
-      } else {
-        _log.warn('[ScrcpyServer:stderr] $trimmed');
-      }
-    });
-
-    unawaited(
-      _serverProcess!.exitCode.then((code) {
-        _log.warn('[ScrcpyServer] server process exited with code $code');
-        // _parser.close() intentionally omitted — stop() is the sole cleanup owner
-      }),
-    );
-
-    await Future<void>.delayed(const Duration(seconds: 1));
   }
 
   Future<void> _connectAll() async {
@@ -230,11 +95,17 @@ class ScrcpyServer {
     );
 
     await Future<void>.delayed(const Duration(milliseconds: 300));
-    _controlSocket = await _connectSocket('Control');
-    // Without TCP_NODELAY, sub-MTU control messages (DOWN/MOVE/UP) are batched,
-    // collapsing gesture timing and breaking velocity-sensitive input handling.
+    try {
+      _controlSocket = await _connectSocket('Control');
+    } catch (_) {
+      await _videoSubscription?.cancel();
+      _videoSubscription = null;
+      await _videoSocket?.close();
+      _videoSocket = null;
+      rethrow;
+    }
     _controlSocket!.setOption(SocketOption.tcpNoDelay, true);
-    _controlSocket!.listen(
+    _controlSubscription = _controlSocket!.listen(
       (data) => _log.debug('[ScrcpyServer] Control data: ${data.length} bytes'),
       onDone: () => _log.warn('[ScrcpyServer] Control socket closed'),
     );
@@ -245,7 +116,7 @@ class ScrcpyServer {
   Future<Socket> _connectSocket(String name) async {
     const maxAttempts = 30;
     const retryDelay = Duration(milliseconds: 500);
-    final connectPort = _actualPort ?? port;
+    final connectPort = _provisioner.actualPort;
 
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
@@ -267,25 +138,16 @@ class ScrcpyServer {
   Future<void> stop() async {
     _log.info('[ScrcpyServer] Stopping for device: $deviceId');
 
-    await _stdoutSubscription?.cancel();
-    _stdoutSubscription = null;
-    await _stderrSubscription?.cancel();
-    _stderrSubscription = null;
-
     await _videoSubscription?.cancel();
     _videoSubscription = null;
+    await _controlSubscription?.cancel();
+    _controlSubscription = null;
     await _videoSocket?.close();
     _videoSocket = null;
     await _controlSocket?.close();
     _controlSocket = null;
 
-    _serverProcess?.kill();
-    _serverProcess = null;
-
-    final cleanupPort = _actualPort ?? port;
-    try {
-      await adb.forwardRemove('tcp:$cleanupPort', deviceId: deviceId);
-    } catch (_) {}
+    await _provisioner.depovision();
 
     _parser.close();
   }
