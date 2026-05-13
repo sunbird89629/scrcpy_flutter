@@ -205,11 +205,14 @@ void main() {
       final (server, captured) = createServer();
       const text = 'hello';
       server.sendControlMessage(const ScrcpySetClipboardMessage(text: text));
+      expect(captured.length, 1);
       final bytes = Uint8List.fromList(captured.single);
       final bd = ByteData.sublistView(bytes);
       final encoded = utf8.encode(text);
       expect(bytes.length, 14 + encoded.length);
       expect(bd.getUint8(0), 9);
+      expect(bd.getUint64(1), 0);  // default sequence
+      expect(bd.getUint8(9), 1);   // default paste = true
       expect(bd.getUint32(10), encoded.length);
       expect(utf8.decode(bytes.sublist(14)), text);
     });
