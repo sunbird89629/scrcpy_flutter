@@ -2,8 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:scrcpy_view/src/scrcpy_logger.dart';
-import 'package:scrcpy_view/src/scrcpy_packet.dart';
+import 'package:scrcpy_client/scrcpy_client.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as io;
 import 'package:shelf_static/shelf_static.dart';

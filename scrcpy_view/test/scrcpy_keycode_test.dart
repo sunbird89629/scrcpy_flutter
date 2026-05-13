@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:scrcpy_view/src/scrcpy_keycode.dart';
+import 'package:scrcpy_view/scrcpy_view.dart';
 
 void main() {
   group('androidKeycodeForPhysicalKey', () {

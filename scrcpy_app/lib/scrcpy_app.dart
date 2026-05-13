@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:scrcpy_app/home_page.dart';
+import 'package:scrcpy_app/theme/app_theme.dart';
 
 class ScrcpyApp extends StatelessWidget {
   const ScrcpyApp({super.key});
@@ -9,14 +10,9 @@ class ScrcpyApp extends StatelessWidget {
     return MaterialApp(
       title: 'ScrcpyApp',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: Colors.indigo,
-        brightness: Brightness.light,
-      ),
-      darkTheme: ThemeData(
-        colorSchemeSeed: Colors.indigo,
-        brightness: Brightness.dark,
-      ),
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.dark,
       home: const HomePage(),
     );
   }

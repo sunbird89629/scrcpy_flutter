@@ -10,6 +10,8 @@ class DeviceInfo {
     this.manufacturer,
     this.androidVersion,
     this.sdkVersion,
+    this.screenWidth = 0,
+    this.screenHeight = 0,
   });
 
   final String serial;
@@ -18,6 +20,8 @@ class DeviceInfo {
   final String? manufacturer; // ro.product.manufacturer
   final String? androidVersion; // ro.build.version.release
   final int? sdkVersion; // ro.build.version.sdk
+  final double screenWidth;
+  final double screenHeight;
 
   /// True when the serial contains ':' (wireless ADB address:port format).
   bool get isWifi => serial.contains(':');

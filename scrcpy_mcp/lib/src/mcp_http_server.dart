@@ -1,7 +1,7 @@
 import 'package:mcp_dart/mcp_dart.dart';
+import 'package:scrcpy_client/scrcpy_client.dart';
 import 'package:scrcpy_mcp/src/recording_adb.dart';
 import 'package:scrcpy_mcp/src/scrcpy_mcp_server.dart';
-import 'package:scrcpy_view/scrcpy_view.dart';
 
 class McpHttpServer {
   StreamableMcpServer? _server;

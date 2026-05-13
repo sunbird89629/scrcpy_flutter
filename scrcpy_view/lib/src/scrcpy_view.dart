@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:scrcpy_view/src/control_message.dart';
-import 'package:scrcpy_view/src/scrcpy_keycode.dart';
-import 'package:scrcpy_view/src/scrcpy_metastate.dart';
+import 'package:scrcpy_client/scrcpy_client.dart';
+import 'package:scrcpy_view/src/scrcpy_keycode_flutter.dart';
+import 'package:scrcpy_view/src/scrcpy_metastate_flutter.dart';
 import 'package:scrcpy_view/src/scrcpy_view_controller.dart';
 import 'package:scrcpy_view/webview_video_player.dart';
 
 class ScrcpyView extends StatefulWidget {
   const ScrcpyView({required this.controller, super.key});
 
-  /// Controller that owns the mirroring session and exposes input injection.
   final ScrcpyViewController controller;
 
   @override
@@ -56,9 +55,8 @@ class _ScrcpyViewState extends State<ScrcpyView> {
     return ListenableBuilder(
       listenable: widget.controller,
       builder: (context, _) {
-        final server = widget.controller.server;
-        debugPrint('ScrcpyView.playerUrl:${server?.playerUrl}');
-        if (server == null) {
+        final playerUrl = widget.controller.playerUrl;
+        if (playerUrl == null) {
           return const Center(child: Text('点击 Start 启动服务'));
         }
         return Focus(
@@ -68,7 +66,7 @@ class _ScrcpyViewState extends State<ScrcpyView> {
           child: GestureDetector(
             onTap: _focusNode.requestFocus,
             child: WebViewVideoPlayer(
-              playerUrl: server.playerUrl,
+              playerUrl: playerUrl,
               touchController: widget.controller.touchController,
               onControlMessage: widget.controller.sendControlMessage,
             ),

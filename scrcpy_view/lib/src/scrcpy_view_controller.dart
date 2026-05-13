@@ -1,13 +1,17 @@
-import 'package:flutter/foundation.dart';
-import 'package:scrcpy_view/src/backends/scrcpy_video_backend.dart';
-import 'package:scrcpy_view/src/control_message.dart';
-import 'package:scrcpy_view/src/scrcpy_adb.dart';
-import 'package:scrcpy_view/src/scrcpy_logger.dart';
-import 'package:scrcpy_view/src/scrcpy_server.dart';
-import 'package:scrcpy_view/src/scrcpy_session.dart';
+import 'dart:async';
+import 'dart:io';
 
-/// Controller for `ScrcpyView` that owns the device mirroring session
-/// and exposes input injection to external code.
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:path/path.dart' as p;
+import 'package:scrcpy_client/scrcpy_client.dart';
+import 'package:scrcpy_view/src/backends/scrcpy_video_backend.dart';
+import 'package:scrcpy_view/src/scrcpy_proxy_server.dart';
+import 'package:scrcpy_view/src/scrcpy_websocket_server.dart';
+
+/// Controller for `ScrcpyView` that owns the device mirroring session,
+/// manages the HTTP/WebSocket proxy servers, and exposes input injection.
 ///
 /// Create an instance, call [start] to begin mirroring, and pass the
 /// controller to `ScrcpyView`. Call [stop] to end the session. Dispose
@@ -16,70 +20,69 @@ import 'package:scrcpy_view/src/scrcpy_session.dart';
 /// Example:
 /// ```dart
 /// final controller = ScrcpyViewController(adb: myAdb);
-///
 /// await controller.start('11081FDD4004DY');
-///
 /// ScrcpyView(controller: controller)
-///
 /// // Later:
 /// controller.injectKey(ScrcpyKeycode.home);
 /// await controller.stop();
 /// controller.dispose();
 /// ```
 class ScrcpyViewController extends ChangeNotifier implements ScrcpySession {
-  /// Creates a controller backed by an injected ADB bridge.
-  ScrcpyViewController({
-    required ScrcpyAdb adb,
-    ScrcpyLogger logger = const NoOpScrcpyLogger(),
-  })  : _adb = adb,
-        _logger = logger;
-
-  final ScrcpyAdb _adb;
-  final ScrcpyLogger _logger;
-
-  ScrcpyServer? _server;
-  bool _running = false;
-  bool _pending = false;
-  VoidCallback? _onStopped;
-
-  /// Whether the UI should consider the current session running.
-  bool get running => _running;
-
-  /// Updates the running flag and notifies listeners.
-  set running(bool value) {
-    _running = value;
-    notifyListeners();
+  ScrcpyViewController({required ScrcpyAdb adb}) : _adb = adb {
+    PlatformInAppWebViewController.debugLoggingSettings.excludeFilter
+        .add(RegExp('statsHandler'));
   }
 
-  /// Touch event forwarder passed to the video backend.
-  late final ScrcpyTouchController touchController = ScrcpyTouchController(
-    (msg) => _server?.sendControlMessage(msg),
-  );
+  final ScrcpyAdb _adb;
 
-  /// Returns the current ADB device serials from the injected ADB bridge.
-  Future<List<String>> getDevices() => _adb.getDevices();
+  ScrcpySessionImpl? _impl;
+  ScrcpyProxyServer? _proxy;
+  ScrcpyWebsocketServer? _wsProxy;
+
+  String? _proxyUrl;
+  String? _playerUrl;
+
+  /// Touch event forwarder passed to the video backend.
+  // ignore: prefer_function_declarations_over_variables
+  late final ScrcpyTouchCallback touchController =
+      (msg) => _impl?.sendControlMessage(msg);
+
+  Future<List<String>> getDevices() =>
+      _impl?.getDevices() ?? _adb.getDevices();
 
   // ── Readable state ────────────────────────────────────────────────────────
 
-  /// Whether a mirroring session is currently active.
-  @override
-  bool get isConnected => _server != null;
+  bool get running => _impl?.running ?? false;
 
-  /// Whether a session is starting or active. Use to disable the Start button.
-  bool get isActive => _pending || _server != null;
-
-  /// The active `ScrcpyServer`, or `null` if no session is active.
-  ScrcpyServer? get server => _server;
+  set running(bool value) {
+    if (_impl != null) _impl!.running = value;
+    notifyListeners();
+  }
 
   @override
-  String? get proxyUrl => _server?.proxyUrl;
+  bool get isConnected => _impl != null;
+
+  bool get isActive => _impl?.isActive ?? false;
+
+  ScrcpyServer? get server => _impl?.server;
+
+  /// HTTP proxy URL for MPEG-TS stream (media_kit), or `null` if not started.
+  String? get proxyUrl => _proxyUrl;
+
+  /// WebSocket player URL (web-based player), or `null` if not started.
+  String? get playerUrl => _playerUrl;
+
+  /// Resolves after the proxy has buffered SPS/PPS + first keyframe.
+  Future<void> get proxyReady => _proxy?.ready ?? Future.value();
 
   @override
-  String? get playerUrl => _server?.playerUrl;
+  int? get videoWidth => _impl?.videoWidth;
 
-  /// Starts a mirroring session for [deviceId].
-  ///
-  /// No-ops if a session is already starting or active.
+  @override
+  int? get videoHeight => _impl?.videoHeight;
+
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
   @override
   Future<void> start(
     String deviceId, {
@@ -88,80 +91,113 @@ class ScrcpyViewController extends ChangeNotifier implements ScrcpySession {
     VoidCallback? onStopped,
     ValueChanged<String>? onError,
   }) async {
-    if (_pending || _server != null) return;
-    _pending = true;
-    _onStopped = onStopped;
+    if (_impl != null) return;
     notifyListeners();
 
-    final server = ScrcpyServer(
-      adb: _adb,
-      deviceId: deviceId,
-      logger: logger ?? _logger,
-    );
     try {
-      await server.start();
-      _server = server;
-      _pending = false;
+      const version = ScrcpyServer.serverVersion;
+
+      // JAR now lives in scrcpy_client assets.
+      final serverJarData = await rootBundle.load(
+        'packages/scrcpy_client/assets/scrcpy-server-v$version',
+      );
+      final serverJarBytes = serverJarData.buffer.asUint8List();
+
+      // Web player stays in scrcpy_view assets.
+      final webPlayerData = await rootBundle.load(
+        'packages/scrcpy_view/assets/web_player/index.html',
+      );
+      final webPlayerBytes = webPlayerData.buffer.asUint8List();
+
+      _impl = ScrcpySessionImpl(adb: _adb, serverJarBytes: serverJarBytes);
+
+      // ScrcpySessionImpl.start() blocks until sockets are connected.
+      await _impl!.start(deviceId,
+          logger: logger, onStopped: onStopped, onError: onError);
+
+      // Wire up proxy servers directly here (not inside an async onStarted
+      // callback) so we can safely await each step.
+      final srv = _impl!.server!;
+      final webPlayerPath = await _prepareWebPlayer(webPlayerBytes);
+      final effectiveLogger = logger ?? const NoOpScrcpyLogger();
+      _proxy = ScrcpyProxyServer(logger: effectiveLogger);
+      _wsProxy = ScrcpyWebsocketServer(logger: effectiveLogger);
+
+      await Future.wait([
+        _proxy!.start(srv.packets),
+        _wsProxy!.start(srv.packets, staticPath: webPlayerPath),
+      ]);
+
+      _proxyUrl = _proxy!.proxyUrl;
+      _playerUrl = _wsProxy!.playerUrl;
+
+      // Stop proxies automatically if the server process exits unexpectedly.
+      srv.packets.listen(null, onDone: _stopProxies);
+
       notifyListeners();
       onStarted?.call();
     } catch (e) {
+      _impl = null;
+      await _stopProxies();
+      notifyListeners();
       onError?.call(e.toString());
       rethrow;
-    } finally {
-      _pending = false;
-      _onStopped = null;
-      notifyListeners();
     }
   }
 
-  /// Stops the active mirroring session.
   @override
   Future<void> stop() async {
-    final server = _server;
-    final onStopped = _onStopped;
-    _server = null;
-    _pending = false;
-    _onStopped = null;
-    notifyListeners();
-    await server?.stop();
-    onStopped?.call();
+    final impl = _impl;
+    _impl = null;
+    if (!_disposed) notifyListeners();
+    await _stopProxies();
+    await impl?.stop();
   }
+
+  bool _disposed = false;
 
   @override
   void dispose() {
-    stop();
+    _disposed = true;
+    unawaited(stop());
     super.dispose();
   }
 
-  // ── Public control API ────────────────────────────────────────────────────
+  // ── Control API ───────────────────────────────────────────────────────────
 
-  /// Sends a raw control message to the device.
   @override
   void sendControlMessage(ScrcpyControlMessage message) {
-    _server?.sendControlMessage(message);
+    _impl?.sendControlMessage(message);
   }
 
-  /// Injects a key event (down + up) for the given Android keycode.
   void injectKey(int keycode, {int metastate = 0}) {
-    sendControlMessage(
-      ScrcpyInjectKeyMessage(
-        action: ScrcpyAction.down,
-        keycode: keycode,
-        metastate: metastate,
-      ),
-    );
-    sendControlMessage(
-      ScrcpyInjectKeyMessage(
-        action: ScrcpyAction.up,
-        keycode: keycode,
-        metastate: metastate,
-      ),
-    );
+    _impl?.injectKey(keycode, metastate: metastate);
   }
 
-  /// Injects text into the focused field on the device.
   @override
   void injectText(String text) {
-    sendControlMessage(ScrcpyInjectTextMessage(text));
+    _impl?.injectText(text);
+  }
+
+  // ── Private helpers ───────────────────────────────────────────────────────
+
+  Future<void> _stopProxies() async {
+    final proxy = _proxy;
+    final wsProxy = _wsProxy;
+    _proxy = null;
+    _wsProxy = null;
+    _proxyUrl = null;
+    _playerUrl = null;
+    await proxy?.stop();
+    await wsProxy?.stop();
+  }
+
+  Future<String> _prepareWebPlayer(Uint8List webPlayerBytes) async {
+    final tempDir = Directory.systemTemp;
+    final webDir = Directory(p.join(tempDir.path, 'autoglm_web_player'))
+      ..createSync(recursive: true);
+    await File(p.join(webDir.path, 'index.html'))
+        .writeAsBytes(webPlayerBytes, flush: true);
+    return webDir.path;
   }
 }

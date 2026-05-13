@@ -5,21 +5,16 @@ version: 0.1.0
 
 environment:
   sdk: ^3.5.0
-  flutter: ">=3.24.0"
 
 resolution: workspace
 
 dependencies:
   archive: ^3.6.1
-  autoglm_logger:
-    path: ../autoglm_logger
+  logger_utils:
+    path: ../logger_utils
   dio: ^5.7.0
-  flutter:
-    sdk: flutter
   path: ^1.9.0
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
   mockito: ^5.4.4
-  very_good_analysis: ^7.0.0
+  test: any

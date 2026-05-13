@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:adb_tools/src/adb_binary_manager.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('AdbBinaryManager', () {

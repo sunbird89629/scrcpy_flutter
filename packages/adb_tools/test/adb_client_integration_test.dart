@@ -1,13 +1,13 @@
 import 'package:adb_tools/src/adb_client.dart';
 import 'package:adb_tools/src/exceptions.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('AdbClient Integration Tests', () {
     late AdbClient client;
 
     setUpAll(() {
-      client = const AdbClientImpl();
+      client = const AdbClient();
     });
 
     test(
@@ -39,9 +39,12 @@ void main() {
     );
 
     test('getVersion fails with wrong adb path', () async {
-      const badClient = AdbClientImpl(adbPath: '/nonexistent/adb');
+      const badClient = AdbClient(adbPath: '/nonexistent/adb');
 
-      expect(() => badClient.getVersion(), throwsA(isA<AdbException>()));
+      await expectLater(
+        badClient.getVersion(),
+        throwsA(isA<AdbException>()),
+      );
     });
 
     test(
