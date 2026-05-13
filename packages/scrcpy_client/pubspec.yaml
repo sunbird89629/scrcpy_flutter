@@ -16,6 +16,8 @@ dependencies:
 
 dev_dependencies:
   test: any
+  adb_tools:
+    path: ../adb_tools
 
 # The flutter: section allows Flutter consumers to load the JAR via
 # rootBundle.load('packages/scrcpy_client/assets/...') even though this

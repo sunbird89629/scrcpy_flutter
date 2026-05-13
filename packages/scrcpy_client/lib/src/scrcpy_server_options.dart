@@ -1,4 +1,7 @@
+import 'package:meta/meta.dart';
+
 /// Configuration options for the scrcpy server.
+@immutable
 class ScrcpyServerOptions {
   /// Creates a new [ScrcpyServerOptions] instance.
   ///
