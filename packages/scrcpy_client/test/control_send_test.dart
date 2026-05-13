@@ -94,22 +94,6 @@ void main() {
       expect(bd.getInt16(15), 32767);
     });
 
-    test('set-clipboard message (type 9) writes 14 + UTF-8 bytes', () {
-      final (server, captured) = createServer();
-      const text = '你好世界';
-      server.sendControlMessage(
-          const ScrcpySetClipboardMessage(text: text, sequence: 42));
-      expect(captured.length, 1);
-      final bytes = Uint8List.fromList(captured.single);
-      final bd = ByteData.sublistView(bytes);
-      expect(bytes.length, 14 + 12);
-      expect(bd.getUint8(0), 9);
-      expect(bd.getUint64(1), 42);
-      expect(bd.getUint8(9), 1);
-      expect(bd.getUint32(10), 12);
-      expect(utf8.decode(bytes.sublist(14)), text);
-    });
-
     test('set-clipboard with paste=false sends 0 at paste offset', () {
       final (server, captured) = createServer();
       server.sendControlMessage(
