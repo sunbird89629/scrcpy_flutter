@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:scrcpy_client/src/control_message.dart';
+import 'package:scrcpy_client/src/messages/scrcpy_control_message.dart';
 import 'package:scrcpy_client/src/scrcpy_device_provisioner.dart';
 import 'package:scrcpy_client/src/scrcpy_logger.dart';
 import 'package:scrcpy_client/src/scrcpy_packet.dart';

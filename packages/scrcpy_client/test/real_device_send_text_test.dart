@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:scrcpy_client/src/control_message.dart';
+import 'package:scrcpy_client/src/messages/control_message.dart';
 import 'package:scrcpy_client/src/scrcpy_server.dart';
 import 'package:test/test.dart';
 
@@ -38,31 +38,34 @@ void main() {
         jarBytes: realJarBytes,
       );
       addTearDown(server.stop);
-      const text = 'hello';
+      const targetText = 'hello1234567890';
       await server.start();
-      server.sendControlMessage(const ScrcpyInjectTextMessage(text));
-      adb.takeScreenshot(realDeviceId);
-      expect(captured.length, 1);
-      final bytes = Uint8List.fromList(captured.single);
-      final bd = ByteData.sublistView(bytes);
-      final encoded = utf8.encode(text);
-      expect(bytes.length, 5 + encoded.length);
-      expect(bd.getUint8(0), 1);
-      expect(bd.getUint32(1), encoded.length);
-      // expect(utf8.decode(bytes.sublist(5)), text);
+      await adb.startContactPageForTest(realDeviceId);
+      server.sendControlMessage(const ScrcpyInjectTextMessage(targetText));
+
+      final result = await adb.shell(
+        ['sh', '-c', 'uiautomator dump /sdcard/ui.xml && cat /sdcard/ui.xml'],
+        deviceId: realDeviceId,
+      );
+      expect(result.stdout as String, contains(targetText));
     });
 
-    test('CJK (3 bytes/char) encodes UTF-8 byte count in length field', () {
-      final (server, captured) = createTestServer();
-      const text = '你好';
-      server.sendControlMessage(const ScrcpyInjectTextMessage(text));
-      final bytes = Uint8List.fromList(captured.single);
-      final bd = ByteData.sublistView(bytes);
-      final encoded = utf8.encode(text);
-      expect(bytes.length, 5 + encoded.length);
-      expect(bd.getUint8(0), 1);
-      expect(bd.getUint32(1), encoded.length);
-      expect(utf8.decode(bytes.sublist(5)), text);
+    test('CJK (3 bytes/char) encodes UTF-8 byte count in length field',
+        () async {
+      final (server, captured) = createRealServer(
+        deviceId: realDeviceId,
+        jarBytes: realJarBytes,
+      );
+      addTearDown(server.stop);
+      const targetText = '你好你好😀';
+      await server.start();
+      await adb.startContactPageForTest(realDeviceId);
+      server.sendControlMessage(ScrcpySetClipboardMessage(text: targetText));
+      final result = await adb.shell(
+        ['sh', '-c', 'uiautomator dump /sdcard/ui.xml && cat /sdcard/ui.xml'],
+        deviceId: realDeviceId,
+      );
+      expect(result.stdout as String, contains(targetText));
     });
 
     test('emoji (4 bytes/char) encodes UTF-8 byte count in length field', () {

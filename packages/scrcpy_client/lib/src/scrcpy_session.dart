@@ -1,4 +1,4 @@
-import 'package:scrcpy_client/src/control_message.dart';
+import 'package:scrcpy_client/src/messages/scrcpy_control_message.dart';
 
 /// Abstraction over a scrcpy mirroring session.
 ///

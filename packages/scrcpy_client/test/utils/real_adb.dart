@@ -34,9 +34,34 @@ class RealAdb implements ScrcpyAdb {
       adbTool.push(localPath, remotePath);
 
   @override
-  Future<Uint8List> takeScreenshot(String deviceId) async => Uint8List(0);
+  Future<Uint8List> takeScreenshot(String deviceId) async =>
+      adbTool.takeScreenshot(deviceId);
 
   @override
   Future<Process> startProcess(List<String> arguments) =>
       Process.start('adb', arguments);
+
+  // Coordinates 540,1594 target the 名字 field on 1080×2340 Pixel devices.
+  static const _contactNameFieldX = 540;
+  static const _contactNameFieldY = 1594;
+
+  Future<void> startContactPageForTest(String deviceId) async {
+    await shell(
+      [
+        'am',
+        'start',
+        '-a',
+        'android.intent.action.INSERT',
+        '-t',
+        'vnd.android.cursor.dir/contact'
+      ],
+      deviceId: deviceId,
+    );
+    await Future<void>.delayed(const Duration(seconds: 2));
+    await shell(
+      ['input', 'tap', '$_contactNameFieldX', '$_contactNameFieldY'],
+      deviceId: deviceId,
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+  }
 }

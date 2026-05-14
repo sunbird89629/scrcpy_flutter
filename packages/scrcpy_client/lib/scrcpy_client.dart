@@ -3,7 +3,8 @@ library;
 
 export 'src/adb_scrcpy_device_provisioner.dart';
 export 'src/android_metastate.dart';
-export 'src/control_message.dart';
+export 'src/messages/control_message.dart';
+export 'src/messages/scrcpy_control_message.dart';
 export 'src/scrcpy_adb.dart';
 export 'src/scrcpy_device_provisioner.dart';
 export 'src/scrcpy_logger.dart';

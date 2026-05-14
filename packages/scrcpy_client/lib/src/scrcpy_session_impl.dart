@@ -4,7 +4,8 @@ import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
 import 'package:scrcpy_client/src/adb_scrcpy_device_provisioner.dart';
-import 'package:scrcpy_client/src/control_message.dart';
+import 'package:scrcpy_client/src/messages/control_message.dart';
+import 'package:scrcpy_client/src/messages/scrcpy_control_message.dart';
 import 'package:scrcpy_client/src/scrcpy_adb.dart';
 import 'package:scrcpy_client/src/scrcpy_logger.dart';
 import 'package:scrcpy_client/src/scrcpy_server.dart';

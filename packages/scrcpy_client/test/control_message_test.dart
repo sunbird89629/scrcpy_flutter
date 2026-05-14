@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:scrcpy_client/src/control_message.dart';
+import 'package:scrcpy_client/src/messages/control_message.dart';
 import 'package:test/test.dart';
 
 void main() {

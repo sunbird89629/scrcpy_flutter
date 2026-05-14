@@ -58,6 +58,31 @@ void main() {
           arguments: {'device_id': realDevices.first},
         ),
       );
+      await adb.shell(
+        ['am', 'start', '-a', 'android.intent.action.INSERT',
+         '-t', 'vnd.android.cursor.dir/contact'],
+        deviceId: realDevices.first,
+      );
+      await Future<void>.delayed(const Duration(seconds: 2));
+      // Coordinates 540,1594 target the 名字 field on 1080×2340 Pixel devices.
+      await adb.shell(
+        ['input', 'tap', '540', '1594'],
+        deviceId: realDevices.first,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    });
+
+    setUp(() async {
+      if (realDevices.isEmpty) return;
+      await adb.shell(
+        ['input', 'keyevent', 'KEYCODE_CTRL_A'],
+        deviceId: realDevices.first,
+      );
+      await adb.shell(
+        ['input', 'keyevent', 'KEYCODE_DEL'],
+        deviceId: realDevices.first,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 200));
     });
 
     tearDownAll(() async {
@@ -71,38 +96,50 @@ void main() {
       }
     });
 
-    test('inject_text succeeds', () async {
+    Future<String> uiautomatorText() async {
+      final result = await adb.shell(
+        ['sh', '-c', 'uiautomator dump /sdcard/ui.xml && cat /sdcard/ui.xml'],
+        deviceId: realDevices.first,
+      );
+      return result.stdout as String;
+    }
+
+    test('inject_text — ASCII appears in focused input', () async {
       if (realDevices.isEmpty) {
         markTestSkipped('No Android device connected via ADB');
         return;
       }
 
-      // Weak assertion: inject_text requires a focused input field to produce
-      // visible output. Without a forced screen state, only success is checked.
+      const text = 'hello';
       final textResult = await e2eEnv.client.callTool(
         const CallToolRequest(
           name: 'inject_text',
-          arguments: {'text': 'hello'},
+          arguments: {'text': text},
         ),
       );
       expect(textResult.isError, isFalse, reason: textContent(textResult));
+
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      expect(await uiautomatorText(), contains(text));
     }, timeout: const Timeout(Duration(seconds: 60)));
 
-    test('inject_text-chinese_text', () async {
+    test('inject_text — Chinese text appears in focused input', () async {
       if (realDevices.isEmpty) {
         markTestSkipped('No Android device connected via ADB');
         return;
       }
 
-      // Weak assertion: inject_text requires a focused input field to produce
-      // visible output. Without a forced screen state, only success is checked.
+      const text = '你好，最近怎么样？';
       final textResult = await e2eEnv.client.callTool(
         const CallToolRequest(
           name: 'inject_text',
-          arguments: {'text': '你好，你好，最近怎么样？'},
+          arguments: {'text': text},
         ),
       );
       expect(textResult.isError, isFalse, reason: textContent(textResult));
+
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      expect(await uiautomatorText(), contains(text));
     }, timeout: const Timeout(Duration(seconds: 60)));
   });
 }
