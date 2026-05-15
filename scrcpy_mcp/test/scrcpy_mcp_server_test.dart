@@ -668,6 +668,72 @@ void main() {
       expect(msg.text, 'hello');
       expect(msg.paste, isTrue);
     });
+
+    test('expand_notification_panel without active session returns error', () async {
+      final env = _TestEnv();
+      await env.connect();
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'expand_notification_panel'),
+      );
+      expect(result.isError, isTrue);
+    });
+
+    test('expand_notification_panel sends ExpandNotificationPanelMessage', () async {
+      final env = _TestEnv();
+      await env.connect();
+      await env.client.callTool(
+        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+      );
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'expand_notification_panel'),
+      );
+      expect(result.isError, isFalse);
+      expect(env.session.sentMessages.single, isA<ScrcpyExpandNotificationPanelMessage>());
+    });
+
+    test('expand_settings_panel without active session returns error', () async {
+      final env = _TestEnv();
+      await env.connect();
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'expand_settings_panel'),
+      );
+      expect(result.isError, isTrue);
+    });
+
+    test('expand_settings_panel sends ExpandSettingsPanelMessage', () async {
+      final env = _TestEnv();
+      await env.connect();
+      await env.client.callTool(
+        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+      );
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'expand_settings_panel'),
+      );
+      expect(result.isError, isFalse);
+      expect(env.session.sentMessages.single, isA<ScrcpyExpandSettingsPanelMessage>());
+    });
+
+    test('collapse_panels without active session returns error', () async {
+      final env = _TestEnv();
+      await env.connect();
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'collapse_panels'),
+      );
+      expect(result.isError, isTrue);
+    });
+
+    test('collapse_panels sends CollapsePanelsMessage', () async {
+      final env = _TestEnv();
+      await env.connect();
+      await env.client.callTool(
+        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+      );
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'collapse_panels'),
+      );
+      expect(result.isError, isFalse);
+      expect(env.session.sentMessages.single, isA<ScrcpyCollapsePanelsMessage>());
+    });
   });
 
   group('ScrcpyMcpServer — resources', () {

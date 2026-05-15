@@ -6,6 +6,9 @@ import 'package:scrcpy_client/scrcpy_client.dart';
 import 'recording_adb.dart';
 import 'recording_controller.dart';
 import 'session_context.dart';
+import 'tools/collapse_panels.dart' show CollapsePanelsTool;
+import 'tools/expand_notification_panel.dart' show ExpandNotificationPanelTool;
+import 'tools/expand_settings_panel.dart' show ExpandSettingsPanelTool;
 import 'tools/inject_key.dart' show InjectKeyTool;
 import 'tools/inject_scroll.dart' show InjectScrollTool;
 import 'tools/inject_swipe.dart' show InjectSwipeTool;
@@ -78,6 +81,9 @@ class ScrcpyMcpServer {
       SetScreenPowerTool(_session),
       RotateDeviceTool(_session),
       SetClipboardTool(_session),
+      ExpandNotificationPanelTool(_session),
+      ExpandSettingsPanelTool(_session),
+      CollapsePanelsTool(_session),
       if (_recordingController != null) ...[
         StartRecordingTool(_recordingController!, _ctx, _session),
         StopRecordingTool(_recordingController!),
@@ -233,6 +239,7 @@ class ScrcpyMcpServer {
                 '- inject_touch, inject_text, inject_scroll, inject_swipe\n'
                 '- press_back, set_screen_power, rotate_device\n'
                 '- set_clipboard\n'
+                '- expand_notification_panel, expand_settings_panel, collapse_panels\n'
                 '- start_app (launch app by package name)\n'
                 '- take_screenshot\n'
                 '$recordingLine\n'
