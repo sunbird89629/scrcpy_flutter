@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:scrcpy_client/src/messages/control_message.dart';
@@ -227,6 +228,213 @@ void main() {
       expect(bytes.length, 2);
       expect(bytes[0], 4);
       expect(bytes[1], ScrcpyAction.down);
+    });
+  });
+
+  group('ScrcpyExpandNotificationPanelMessage', () {
+    test('binary layout is 1 byte containing only type 5', () {
+      final bytes =
+          const ScrcpyExpandNotificationPanelMessage().toBinary();
+      expect(bytes.length, 1);
+      expect(bytes[0], 5);
+    });
+  });
+
+  group('ScrcpyCollapsePanelsMessage', () {
+    test('binary layout is 1 byte containing only type 7', () {
+      final bytes = const ScrcpyCollapsePanelsMessage().toBinary();
+      expect(bytes.length, 1);
+      expect(bytes[0], 7);
+    });
+  });
+
+  group('ScrcpyStartAppMessage', () {
+    test('binary layout: type=16, name_len(1), utf8 name', () {
+      const msg = ScrcpyStartAppMessage('firefox');
+      final bytes = msg.toBinary();
+
+      expect(bytes.length, 9);
+      expect(bytes[0], 16);
+      expect(bytes[1], 7);
+      expect(bytes.sublist(2), 'firefox'.codeUnits);
+    });
+
+    test('handles empty app name', () {
+      final bytes = const ScrcpyStartAppMessage('').toBinary();
+      expect(bytes.length, 2);
+      expect(bytes[0], 16);
+      expect(bytes[1], 0);
+    });
+  });
+
+  group('ScrcpyExpandSettingsPanelMessage', () {
+    test('binary layout is 1 byte containing only type 6', () {
+      final bytes = const ScrcpyExpandSettingsPanelMessage().toBinary();
+      expect(bytes.length, 1);
+      expect(bytes[0], 6);
+    });
+  });
+
+  group('ScrcpyGetClipboardMessage', () {
+    test('default: type=8, copyKey=none(0)', () {
+      final bytes = const ScrcpyGetClipboardMessage().toBinary();
+      expect(bytes.length, 2);
+      expect(bytes[0], 8);
+      expect(bytes[1], ScrcpyClipboardCopyKey.none);
+    });
+
+    test('copyKey=copy encodes as 1', () {
+      final bytes =
+          const ScrcpyGetClipboardMessage(
+            copyKey: ScrcpyClipboardCopyKey.copy,
+          ).toBinary();
+      expect(bytes[1], 1);
+    });
+  });
+
+  group('ScrcpySetDisplayPowerMessage', () {
+    test('on=true encodes as type=10, byte=1', () {
+      final bytes =
+          const ScrcpySetDisplayPowerMessage(on: true).toBinary();
+      expect(bytes.length, 2);
+      expect(bytes[0], 10);
+      expect(bytes[1], 1);
+    });
+
+    test('on=false encodes as type=10, byte=0', () {
+      final bytes =
+          const ScrcpySetDisplayPowerMessage(on: false).toBinary();
+      expect(bytes[1], 0);
+    });
+  });
+
+  group('ScrcpyRotateDeviceMessage', () {
+    test('binary layout is 1 byte containing only type 11', () {
+      final bytes = const ScrcpyRotateDeviceMessage().toBinary();
+      expect(bytes.length, 1);
+      expect(bytes[0], 11);
+    });
+  });
+
+  group('ScrcpyUhidCreateMessage', () {
+    test('full binary layout matches C test serialization', () {
+      final msg = ScrcpyUhidCreateMessage(
+        id: 42,
+        vendorId: 0x1234,
+        productId: 0x5678,
+        name: 'test',
+        reportDescriptor: Uint8List.fromList([1, 2, 3]),
+      );
+      final bytes = msg.toBinary();
+      final bd = ByteData.sublistView(bytes);
+
+      // type(1) + id(2) + vendor_id(2) + product_id(2) + name_size(1)
+      //   = 8 byte header
+      expect(bytes.length, 8 + 4 + 2 + 3); // header + name + desc_size + desc
+      expect(bd.getUint8(0), 12);
+      expect(bd.getUint16(1), 42);
+      expect(bd.getUint16(3), 0x1234);
+      expect(bd.getUint16(5), 0x5678);
+      expect(bd.getUint8(7), 4); // name_size = utf8.encode('test').length
+      // name bytes
+      expect(utf8.decode(bytes.sublist(8, 12)), 'test');
+      // report_desc_size at offset 12
+      expect(bd.getUint16(12), 3);
+      // report_desc bytes
+      expect(bytes.sublist(14), [1, 2, 3]);
+    });
+
+    test('defaults: vendorId=0 productId=0 name="" reportDescriptor=[]', () {
+      final bytes =
+          ScrcpyUhidCreateMessage(id: 1).toBinary();
+      final bd = ByteData.sublistView(bytes);
+      expect(bytes.length, 10); // header(8) + desc_size(2) + empty desc
+      expect(bd.getUint16(3), 0);
+      expect(bd.getUint16(5), 0);
+      expect(bd.getUint8(7), 0);
+      expect(bd.getUint16(8), 0);
+    });
+  });
+
+  group('ScrcpyUhidInputMessage', () {
+    test('binary layout: type=13, id(2), size(2), data(var)', () {
+      final msg = ScrcpyUhidInputMessage(
+        id: 0x42,
+        data: Uint8List.fromList([1, 2, 3, 4, 5]),
+      );
+      final bytes = msg.toBinary();
+      final bd = ByteData.sublistView(bytes);
+      expect(bytes.length, 10);
+      expect(bd.getUint8(0), 13);
+      expect(bd.getUint16(1), 0x42);
+      expect(bd.getUint16(3), 5);
+      expect(bytes.sublist(5), [1, 2, 3, 4, 5]);
+    });
+  });
+
+  group('ScrcpyUhidDestroyMessage', () {
+    test('binary layout: type=14, id(2)', () {
+      const msg = ScrcpyUhidDestroyMessage(id: 0x42);
+      final bytes = msg.toBinary();
+      final bd = ByteData.sublistView(bytes);
+      expect(bytes.length, 3);
+      expect(bd.getUint8(0), 14);
+      expect(bd.getUint16(1), 0x42);
+    });
+  });
+
+  group('ScrcpyOpenHardKeyboardSettingsMessage', () {
+    test('binary layout is 1 byte containing only type 15', () {
+      final bytes =
+          const ScrcpyOpenHardKeyboardSettingsMessage().toBinary();
+      expect(bytes.length, 1);
+      expect(bytes[0], 15);
+    });
+  });
+
+  group('ScrcpyResetVideoMessage', () {
+    test('binary layout is 1 byte containing only type 17', () {
+      final bytes = const ScrcpyResetVideoMessage().toBinary();
+      expect(bytes.length, 1);
+      expect(bytes[0], 17);
+    });
+  });
+
+  group('ScrcpyCameraSetTorchMessage', () {
+    test('on=true encodes as type=18, byte=1', () {
+      final bytes =
+          const ScrcpyCameraSetTorchMessage(on: true).toBinary();
+      expect(bytes.length, 2);
+      expect(bytes[0], 18);
+      expect(bytes[1], 1);
+    });
+  });
+
+  group('ScrcpyCameraZoomInMessage', () {
+    test('binary layout is 1 byte containing only type 19', () {
+      final bytes = const ScrcpyCameraZoomInMessage().toBinary();
+      expect(bytes.length, 1);
+      expect(bytes[0], 19);
+    });
+  });
+
+  group('ScrcpyCameraZoomOutMessage', () {
+    test('binary layout is 1 byte containing only type 20', () {
+      final bytes = const ScrcpyCameraZoomOutMessage().toBinary();
+      expect(bytes.length, 1);
+      expect(bytes[0], 20);
+    });
+  });
+
+  group('ScrcpyResizeDisplayMessage', () {
+    test('binary layout: type=21, width(2), height(2)', () {
+      const msg = ScrcpyResizeDisplayMessage(width: 1920, height: 1080);
+      final bytes = msg.toBinary();
+      final bd = ByteData.sublistView(bytes);
+      expect(bytes.length, 5);
+      expect(bd.getUint8(0), 21);
+      expect(bd.getUint16(1), 1920);
+      expect(bd.getUint16(3), 1080);
     });
   });
 }

@@ -25,6 +25,37 @@ class ScrcpyKeycode {
   static const int appSwitch = 187;
 }
 
+// ---------------------------------------------------------------------------
+// Internal base classes for messages that share a binary layout.
+// ---------------------------------------------------------------------------
+
+/// A control message whose payload is only the single-byte type field.
+abstract class _ScrcpyEmptyMessage extends ScrcpyControlMessage {
+  const _ScrcpyEmptyMessage();
+
+  @override
+  Uint8List toBinary() => Uint8List(1)..[0] = type;
+}
+
+/// A control message whose payload is a single byte after the type field.
+abstract class _ScrcpyOneBytePayloadMessage extends ScrcpyControlMessage {
+  const _ScrcpyOneBytePayloadMessage();
+
+  int get payloadByte;
+
+  @override
+  Uint8List toBinary() {
+    final out = Uint8List(2);
+    out[0] = type;
+    out[1] = payloadByte;
+    return out;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Control message types (ordered by type number).
+// ---------------------------------------------------------------------------
+
 /// Type 0: Inject Keycode
 class ScrcpyInjectKeyMessage extends ScrcpyControlMessage {
   const ScrcpyInjectKeyMessage({
@@ -169,6 +200,77 @@ class ScrcpyInjectScrollMessage extends ScrcpyControlMessage {
   }
 }
 
+/// Type 4: Back or Screen On
+class ScrcpyBackOrScreenOnMessage extends ScrcpyControlMessage {
+  const ScrcpyBackOrScreenOnMessage(this.action);
+
+  final int action;
+
+  @override
+  int get type => 4;
+
+  @override
+  Uint8List toBinary() {
+    final buffer = ByteData(2);
+    buffer.setUint8(0, type);
+    buffer.setUint8(1, action);
+    return buffer.buffer.asUint8List();
+  }
+}
+
+/// Type 5: Expand Notification Panel
+///
+/// Equivalent to swiping down to reveal notifications.
+class ScrcpyExpandNotificationPanelMessage extends _ScrcpyEmptyMessage {
+  const ScrcpyExpandNotificationPanelMessage();
+
+  @override
+  int get type => 5;
+}
+
+/// Type 6: Expand Settings Panel
+///
+/// Opens the quick-settings panel (equivalent to a two-finger swipe down).
+class ScrcpyExpandSettingsPanelMessage extends _ScrcpyEmptyMessage {
+  const ScrcpyExpandSettingsPanelMessage();
+
+  @override
+  int get type => 6;
+}
+
+/// Type 7: Collapse Panels
+///
+/// Collapses any expanded notification or settings panel.
+class ScrcpyCollapsePanelsMessage extends _ScrcpyEmptyMessage {
+  const ScrcpyCollapsePanelsMessage();
+
+  @override
+  int get type => 7;
+}
+
+/// Copy-key actions for [ScrcpyGetClipboardMessage].
+class ScrcpyClipboardCopyKey {
+  static const int none = 0;
+  static const int copy = 1;
+  static const int cut = 2;
+}
+
+/// Type 8: Get Clipboard
+///
+/// Requests the device clipboard contents. Use [copyKey] to optionally
+/// trigger a copy or cut before reading.
+class ScrcpyGetClipboardMessage extends _ScrcpyOneBytePayloadMessage {
+  const ScrcpyGetClipboardMessage({this.copyKey = ScrcpyClipboardCopyKey.none});
+
+  final int copyKey;
+
+  @override
+  int get type => 8;
+
+  @override
+  int get payloadByte => copyKey;
+}
+
 /// Type 9: Set Clipboard
 ///
 /// Writes [text] to the device clipboard. When [paste] is true the scrcpy
@@ -202,20 +304,216 @@ class ScrcpySetClipboardMessage extends ScrcpyControlMessage {
   }
 }
 
-/// Type 4: Back or Screen On
-class ScrcpyBackOrScreenOnMessage extends ScrcpyControlMessage {
-  const ScrcpyBackOrScreenOnMessage(this.action);
+/// Type 10: Set Display Power
+///
+/// Turns the device display on or off without stopping mirroring.
+class ScrcpySetDisplayPowerMessage extends _ScrcpyOneBytePayloadMessage {
+  const ScrcpySetDisplayPowerMessage({required this.on});
 
-  final int action;
+  final bool on;
 
   @override
-  int get type => 4;
+  int get type => 10;
+
+  @override
+  int get payloadByte => on ? 1 : 0;
+}
+
+/// Type 11: Rotate Device
+///
+/// Rotates the device display by 90 degrees.
+class ScrcpyRotateDeviceMessage extends _ScrcpyEmptyMessage {
+  const ScrcpyRotateDeviceMessage();
+
+  @override
+  int get type => 11;
+}
+
+/// Type 12: UHID Create
+///
+/// Creates a virtual HID device on the Android device. [name] is the device
+/// name, [reportDescriptor] is the raw HID report descriptor bytes.
+class ScrcpyUhidCreateMessage extends ScrcpyControlMessage {
+  ScrcpyUhidCreateMessage({
+    required this.id,
+    this.vendorId = 0,
+    this.productId = 0,
+    this.name = '',
+    Uint8List? reportDescriptor,
+  }) : assert(name.length <= 255),
+       reportDescriptor = reportDescriptor ?? Uint8List(0);
+
+  final int id;
+  final int vendorId;
+  final int productId;
+  final String name;
+  final Uint8List reportDescriptor;
+
+  @override
+  int get type => 12;
 
   @override
   Uint8List toBinary() {
-    final buffer = ByteData(2);
-    buffer.setUint8(0, type);
-    buffer.setUint8(1, action);
-    return buffer.buffer.asUint8List();
+    final utf8Name = utf8.encode(name);
+    // layout: type(1) id(2) vendor(2) product(2) name_len(1) name(var)
+    //          desc_len(2) desc(var)
+    final out = ByteData(8 + utf8Name.length + 2 + reportDescriptor.length);
+    out.setUint8(0, type);
+    out.setUint16(1, id);
+    out.setUint16(3, vendorId);
+    out.setUint16(5, productId);
+    out.setUint8(7, utf8Name.length);
+    final buf = out.buffer.asUint8List();
+    buf.setAll(8, utf8Name);
+    final descOff = 8 + utf8Name.length;
+    out.setUint16(descOff, reportDescriptor.length);
+    buf.setAll(descOff + 2, reportDescriptor);
+    return buf;
+  }
+}
+
+/// Type 13: UHID Input
+///
+/// Sends an input report to a virtual HID device.
+class ScrcpyUhidInputMessage extends ScrcpyControlMessage {
+  const ScrcpyUhidInputMessage({required this.id, required this.data});
+
+  final int id;
+  final Uint8List data;
+
+  @override
+  int get type => 13;
+
+  @override
+  Uint8List toBinary() {
+    final out = ByteData(5 + data.length);
+    out.setUint8(0, type);
+    out.setUint16(1, id);
+    out.setUint16(3, data.length);
+    out.buffer.asUint8List().setAll(5, data);
+    return out.buffer.asUint8List();
+  }
+}
+
+/// Type 14: UHID Destroy
+///
+/// Destroys a previously created virtual HID device.
+class ScrcpyUhidDestroyMessage extends ScrcpyControlMessage {
+  const ScrcpyUhidDestroyMessage({required this.id});
+
+  final int id;
+
+  @override
+  int get type => 14;
+
+  @override
+  Uint8List toBinary() {
+    final out = ByteData(3);
+    out.setUint8(0, type);
+    out.setUint16(1, id);
+    return out.buffer.asUint8List();
+  }
+}
+
+/// Type 15: Open Hard Keyboard Settings
+///
+/// Opens the Android physical keyboard settings dialog.
+class ScrcpyOpenHardKeyboardSettingsMessage extends _ScrcpyEmptyMessage {
+  const ScrcpyOpenHardKeyboardSettingsMessage();
+
+  @override
+  int get type => 15;
+}
+
+/// Type 16: Start App
+///
+/// Launches the named app on the device. [name] is the Android package name
+/// (e.g. `com.android.settings`).
+class ScrcpyStartAppMessage extends ScrcpyControlMessage {
+  const ScrcpyStartAppMessage(this.name) : assert(name.length <= 255);
+
+  final String name;
+
+  @override
+  int get type => 16;
+
+  @override
+  Uint8List toBinary() {
+    final utf8Name = utf8.encode(name);
+    final out = Uint8List(2 + utf8Name.length);
+    out[0] = type;
+    out[1] = utf8Name.length;
+    out.setAll(2, utf8Name);
+    return out;
+  }
+}
+
+/// Type 17: Reset Video
+///
+/// Requests a video encoder reset (IDR frame) on the server.
+class ScrcpyResetVideoMessage extends _ScrcpyEmptyMessage {
+  const ScrcpyResetVideoMessage();
+
+  @override
+  int get type => 17;
+}
+
+/// Type 18: Camera Set Torch
+///
+/// Toggles the camera flashlight on or off.
+class ScrcpyCameraSetTorchMessage extends _ScrcpyOneBytePayloadMessage {
+  const ScrcpyCameraSetTorchMessage({required this.on});
+
+  final bool on;
+
+  @override
+  int get type => 18;
+
+  @override
+  int get payloadByte => on ? 1 : 0;
+}
+
+/// Type 19: Camera Zoom In
+///
+/// Zooms the camera in.
+class ScrcpyCameraZoomInMessage extends _ScrcpyEmptyMessage {
+  const ScrcpyCameraZoomInMessage();
+
+  @override
+  int get type => 19;
+}
+
+/// Type 20: Camera Zoom Out
+///
+/// Zooms the camera out.
+class ScrcpyCameraZoomOutMessage extends _ScrcpyEmptyMessage {
+  const ScrcpyCameraZoomOutMessage();
+
+  @override
+  int get type => 20;
+}
+
+/// Type 21: Resize Display
+///
+/// Changes the mirroring resolution to [width]×[height].
+class ScrcpyResizeDisplayMessage extends ScrcpyControlMessage {
+  const ScrcpyResizeDisplayMessage({
+    required this.width,
+    required this.height,
+  });
+
+  final int width;
+  final int height;
+
+  @override
+  int get type => 21;
+
+  @override
+  Uint8List toBinary() {
+    final out = ByteData(5);
+    out.setUint8(0, type);
+    out.setUint16(1, width);
+    out.setUint16(3, height);
+    return out.buffer.asUint8List();
   }
 }
