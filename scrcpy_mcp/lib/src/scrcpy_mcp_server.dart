@@ -6,12 +6,22 @@ import 'package:scrcpy_client/scrcpy_client.dart';
 import 'recording_adb.dart';
 import 'recording_controller.dart';
 import 'session_context.dart';
+import 'tools/camera_zoom.dart' show CameraZoomTool;
+import 'tools/collapse_panels.dart' show CollapsePanelsTool;
+import 'tools/expand_notification_panel.dart' show ExpandNotificationPanelTool;
+import 'tools/expand_settings_panel.dart' show ExpandSettingsPanelTool;
 import 'tools/inject_key.dart' show InjectKeyTool;
 import 'tools/inject_scroll.dart' show InjectScrollTool;
 import 'tools/inject_swipe.dart' show InjectSwipeTool;
 import 'tools/inject_text.dart' show InjectTextTool;
 import 'tools/inject_touch.dart' show InjectTouchTool;
 import 'tools/list_devices.dart' show ListDevicesTool;
+import 'tools/press_back.dart' show PressBackTool;
+import 'tools/rotate_device.dart' show RotateDeviceTool;
+import 'tools/set_clipboard.dart' show SetClipboardTool;
+import 'tools/set_screen_power.dart' show SetScreenPowerTool;
+import 'tools/set_torch.dart' show SetTorchTool;
+import 'tools/start_app.dart' show StartAppTool;
 import 'tools/start_mirroring.dart' show StartMirroringTool;
 import 'tools/start_recording.dart' show StartRecordingTool;
 import 'tools/stop_mirroring.dart' show StopMirroringTool;
@@ -68,6 +78,16 @@ class ScrcpyMcpServer {
       InjectTextTool(_session),
       InjectScrollTool(_session),
       InjectSwipeTool(_session),
+      StartAppTool(_session),
+      PressBackTool(_session),
+      SetScreenPowerTool(_session),
+      RotateDeviceTool(_session),
+      SetClipboardTool(_session),
+      ExpandNotificationPanelTool(_session),
+      ExpandSettingsPanelTool(_session),
+      CollapsePanelsTool(_session),
+      SetTorchTool(_session),
+      CameraZoomTool(_session),
       if (_recordingController != null) ...[
         StartRecordingTool(_recordingController!, _ctx, _session),
         StopRecordingTool(_recordingController!),
@@ -221,6 +241,11 @@ class ScrcpyMcpServer {
                 '- list_devices, start_mirroring, stop_mirroring\n'
                 '- inject_key (Home=3, Back=4, AppSwitch=187)\n'
                 '- inject_touch, inject_text, inject_scroll, inject_swipe\n'
+                '- press_back, set_screen_power, rotate_device\n'
+                '- set_clipboard\n'
+                '- expand_notification_panel, expand_settings_panel, collapse_panels\n'
+                '- set_torch, camera_zoom\n'
+                '- start_app (launch app by package name)\n'
                 '- take_screenshot\n'
                 '$recordingLine\n'
                 'Help the user control their Android device.',
