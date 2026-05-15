@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
@@ -5,6 +6,7 @@ import 'dart:typed_data';
 import 'package:path/path.dart' as p;
 import 'package:scrcpy_client/src/adb_scrcpy_device_provisioner.dart';
 import 'package:scrcpy_client/src/messages/control_message.dart';
+import 'package:scrcpy_client/src/messages/device_message.dart';
 import 'package:scrcpy_client/src/messages/scrcpy_control_message.dart';
 import 'package:scrcpy_client/src/scrcpy_adb.dart';
 import 'package:scrcpy_client/src/scrcpy_logger.dart';
@@ -118,6 +120,21 @@ class ScrcpySessionImpl implements ScrcpySession {
   @override
   void injectText(String text) {
     sendControlMessage(ScrcpyInjectTextMessage(text));
+  }
+
+  @override
+  Stream<ScrcpyDeviceMessage> get deviceMessages =>
+      _server?.deviceMessages ?? const Stream<ScrcpyDeviceMessage>.empty();
+
+  @override
+  Future<String> getClipboard({
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    sendControlMessage(const ScrcpyGetClipboardMessage());
+    return deviceMessages
+        .firstWhere((m) => m is ScrcpyClipboardDeviceMessage)
+        .timeout(timeout)
+        .then((m) => (m as ScrcpyClipboardDeviceMessage).text);
   }
 
   /// Creates a [ScrcpySessionImpl] by resolving the JAR asset from the
