@@ -179,6 +179,17 @@ class ScrcpyViewController extends ChangeNotifier implements ScrcpySession {
     _impl?.injectText(text);
   }
 
+  @override
+  Stream<ScrcpyDeviceMessage> get deviceMessages =>
+      _impl?.deviceMessages ?? const Stream<ScrcpyDeviceMessage>.empty();
+
+  @override
+  Future<String> getClipboard({
+    Duration timeout = const Duration(seconds: 5),
+  }) =>
+      _impl?.getClipboard(timeout: timeout) ??
+      Future.error(StateError('Not connected'));
+
   // ── Private helpers ───────────────────────────────────────────────────────
 
   Future<void> _stopProxies() async {
