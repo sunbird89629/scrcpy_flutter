@@ -229,6 +229,7 @@ class ScrcpyMcpServer {
                 '- list_devices, start_mirroring, stop_mirroring\n'
                 '- inject_key (Home=3, Back=4, AppSwitch=187)\n'
                 '- inject_touch, inject_text, inject_scroll, inject_swipe\n'
+                '- press_back, set_screen_power, rotate_device\n'
                 '- start_app (launch app by package name)\n'
                 '- take_screenshot\n'
                 '$recordingLine\n'
