@@ -2,9 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:scrcpy_client/scrcpy_client.dart';
 import 'package:scrcpy_view/src/mpeg_ts_muxer.dart';
-import 'package:scrcpy_view/src/scrcpy_logger.dart';
-import 'package:scrcpy_view/src/scrcpy_packet.dart';
 
 /// A proxy that serves scrcpy's Annex-B H.264 packets as MPEG-TS over HTTP.
 ///

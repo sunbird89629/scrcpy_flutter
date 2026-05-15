@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:mcp_dart/mcp_dart.dart';
-import 'package:scrcpy_view/scrcpy_core.dart';
+import 'package:scrcpy_client/scrcpy_client.dart';
 
 import '../mcp_tool.dart';
 import '../session_context.dart';
@@ -46,8 +46,8 @@ class StartMirroringTool extends McpTool {
           text: jsonEncode({
             'status': 'mirroring',
             'device_id': deviceId,
-            'proxy_url': _session.proxyUrl,
-            'player_url': _session.playerUrl,
+            'video_width': _session.videoWidth,
+            'video_height': _session.videoHeight,
           }),
         ),
       ]);

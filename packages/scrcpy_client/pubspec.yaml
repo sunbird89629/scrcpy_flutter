@@ -1,0 +1,28 @@
+name: scrcpy_client
+description: >-
+  Pure-Dart client for the scrcpy Android screen-mirroring protocol.
+  Handles ADB orchestration, socket communication, video stream parsing,
+  and control message injection.
+version: 0.1.0
+homepage: https://github.com/sunbird89629/autoglm_scrcpy_flutter
+
+environment:
+  sdk: ^3.5.0
+
+resolution: workspace
+
+dependencies:
+  meta: any
+  path: ^1.9.0
+
+dev_dependencies:
+  test: any
+  adb_tools:
+    path: ../adb_tools
+
+# The flutter: section allows Flutter consumers to load the JAR via
+# rootBundle.load('packages/scrcpy_client/assets/...') even though this
+# is a pure-Dart package. Do not remove — scrcpy_view depends on it.
+flutter:
+  assets:
+    - assets/scrcpy-server-v3.3.4

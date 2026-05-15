@@ -11,8 +11,8 @@ library;
 import 'package:adb_tools/adb_tools.dart';
 import 'package:logger_utils/app_logger.dart';
 import 'package:mcp_dart/mcp_dart.dart';
+import 'package:scrcpy_client/scrcpy_client.dart';
 import 'package:scrcpy_mcp/src/scrcpy_mcp_adapters.dart';
-import 'package:scrcpy_view/scrcpy_core.dart';
 import 'package:test/test.dart';
 
 import 'real_device_test_utils.dart';

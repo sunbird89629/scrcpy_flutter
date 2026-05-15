@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:scrcpy_view/src/scrcpy_logger.dart';
-import 'package:scrcpy_view/src/scrcpy_packet.dart';
+import 'package:scrcpy_client/src/scrcpy_logger.dart';
+import 'package:scrcpy_client/src/scrcpy_packet.dart';
 
 /// Metadata about the scrcpy video stream.
 class ScrcpyMetadata {

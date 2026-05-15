@@ -6,9 +6,6 @@ import 'dart:typed_data';
 /// Package consumers implement this using their own ADB client
 /// (e.g., `adb_tools`'s `AdbClient`).
 abstract class ScrcpyAdb {
-  /// Path to the ADB executable.
-  String get adbPath;
-
   /// List connected device serials.
   Future<List<String>> getDevices();
 
@@ -36,4 +33,9 @@ abstract class ScrcpyAdb {
   /// Capture a screenshot of the device as raw PNG bytes.
   /// Uses `adb exec-out screencap -p` for binary output.
   Future<Uint8List> takeScreenshot(String deviceId);
+
+  /// Start a long-running adb process and return its handle.
+  ///
+  /// [arguments] are the full adb argument list (e.g. `['-s', id, 'shell', ...]`).
+  Future<Process> startProcess(List<String> arguments);
 }

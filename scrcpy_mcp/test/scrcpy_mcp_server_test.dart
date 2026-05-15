@@ -4,10 +4,10 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:mcp_dart/mcp_dart.dart';
+import 'package:scrcpy_client/scrcpy_client.dart';
 import 'package:scrcpy_mcp/src/mcp_http_server.dart';
 import 'package:scrcpy_mcp/src/recording_adb.dart';
 import 'package:scrcpy_mcp/src/scrcpy_mcp_server.dart';
-import 'package:scrcpy_view/scrcpy_core.dart';
 import 'package:test/test.dart';
 
 import 'real_device_test_utils.dart' show connectMcpPair, textContent;
@@ -19,9 +19,6 @@ import 'real_device_test_utils.dart' show connectMcpPair, textContent;
 class MockAdb implements ScrcpyAdb {
   MockAdb({List<String>? devices}) : _devices = devices ?? ['device1'];
   final List<String> _devices;
-
-  @override
-  String get adbPath => 'adb';
 
   @override
   Future<List<String>> getDevices() async => List.unmodifiable(_devices);
@@ -51,6 +48,10 @@ class MockAdb implements ScrcpyAdb {
     String remotePath, {
     String? deviceId,
   }) async {}
+
+  @override
+  Future<Process> startProcess(List<String> arguments) =>
+      throw UnimplementedError();
 
   @override
   Future<Uint8List> takeScreenshot(String deviceId) async =>
@@ -142,15 +143,6 @@ class MockScrcpySession implements ScrcpySession {
 
   @override
   bool get isConnected => _fakeConnected;
-
-  @override
-  String? get proxyUrl =>
-      _fakeConnected ? 'http://127.0.0.1:27183/live' : null;
-
-  @override
-  String? get playerUrl => _fakeConnected
-      ? 'http://127.0.0.1:27184/index.html?ws=ws://127.0.0.1:27184/ws'
-      : null;
 
   @override
   Future<void> start(String deviceId) async {

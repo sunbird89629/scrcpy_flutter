@@ -3,8 +3,8 @@
 import 'package:adb_tools/adb_tools.dart';
 import 'package:logger_utils/logger_utils.dart';
 import 'package:mcp_dart/mcp_dart.dart';
+import 'package:scrcpy_client/scrcpy_client.dart';
 import 'package:scrcpy_mcp/scrcpy_mcp.dart';
-import 'package:scrcpy_view/scrcpy_core.dart';
 
 void main(List<String> args) async {
   initLogging();

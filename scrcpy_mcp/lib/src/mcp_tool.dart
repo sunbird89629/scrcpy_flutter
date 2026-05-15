@@ -1,6 +1,6 @@
 import 'package:logger_utils/logger_utils.dart';
 import 'package:mcp_dart/mcp_dart.dart' hide Logger;
-import 'package:scrcpy_view/scrcpy_core.dart';
+import 'package:scrcpy_client/scrcpy_client.dart';
 
 final _logger = Logger('scrcpy.mcp');
 

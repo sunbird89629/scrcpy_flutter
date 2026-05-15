@@ -7,9 +7,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:mcp_dart/mcp_dart.dart';
+import 'package:scrcpy_client/scrcpy_client.dart';
 import 'package:scrcpy_mcp/src/scrcpy_mcp_adapters.dart';
 import 'package:scrcpy_mcp/src/scrcpy_mcp_server.dart';
-import 'package:scrcpy_view/scrcpy_core.dart';
 
 // ---------------------------------------------------------------------------
 // Mock session — keeps session "alive" without real scrcpy
@@ -26,14 +26,6 @@ class MockScrcpySession implements ScrcpySession {
 
   @override
   bool get isConnected => _connected;
-
-  @override
-  String? get proxyUrl => _connected ? 'http://127.0.0.1:27183/live' : null;
-
-  @override
-  String? get playerUrl => _connected
-      ? 'http://127.0.0.1:27184/index.html?ws=ws://127.0.0.1:27184/ws'
-      : null;
 
   @override
   Future<void> start(String deviceId) async => _connected = true;
@@ -102,7 +94,9 @@ class RealDeviceE2eEnv {
 
 /// Wires an in-memory MCP transport between [server] and a new [McpClient].
 ///
-/// Returns the connected client. Call [close] to tear down the stream pair.
+/// Returns the connected client. Call the returned `close` function to tear
+/// down the stream pair.
+// ignore: comment_references
 Future<(McpClient client, Future<void> Function() close)> connectMcpPair(
   ScrcpyMcpServer server,
 ) async {

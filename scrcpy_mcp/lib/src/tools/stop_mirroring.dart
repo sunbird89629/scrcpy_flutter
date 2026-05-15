@@ -1,5 +1,5 @@
 import 'package:mcp_dart/mcp_dart.dart';
-import 'package:scrcpy_view/scrcpy_core.dart';
+import 'package:scrcpy_client/scrcpy_client.dart';
 
 import '../mcp_tool.dart';
 import '../session_context.dart';

@@ -5,8 +5,9 @@ environment:
   sdk: ^3.5.0
 
 workspace:
-  - packages/logger_utils
   - packages/adb_tools
+  - packages/logger_utils
+  - packages/scrcpy_client
   - scrcpy_app
   - scrcpy_flutter
   - scrcpy_mcp

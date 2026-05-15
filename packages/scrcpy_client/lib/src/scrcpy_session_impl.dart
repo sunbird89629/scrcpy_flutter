@@ -3,38 +3,34 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
-import 'package:scrcpy_view/src/control_message.dart';
-import 'package:scrcpy_view/src/scrcpy_adb.dart';
-import 'package:scrcpy_view/src/scrcpy_logger.dart';
-import 'package:scrcpy_view/src/scrcpy_server.dart';
-import 'package:scrcpy_view/src/scrcpy_session.dart';
+import 'package:scrcpy_client/src/adb_scrcpy_device_provisioner.dart';
+import 'package:scrcpy_client/src/messages/control_message.dart';
+import 'package:scrcpy_client/src/messages/scrcpy_control_message.dart';
+import 'package:scrcpy_client/src/scrcpy_adb.dart';
+import 'package:scrcpy_client/src/scrcpy_logger.dart';
+import 'package:scrcpy_client/src/scrcpy_server.dart';
+import 'package:scrcpy_client/src/scrcpy_server_options.dart';
+import 'package:scrcpy_client/src/scrcpy_session.dart';
 
 /// Pure-Dart implementation of [ScrcpySession] wrapping [ScrcpyServer].
 ///
 /// No Flutter dependency — safe for use in CLI tools and MCP servers.
-/// For Flutter consumers, use [ScrcpyViewController] which extends
-/// `ChangeNotifier` and delegates to this class.
+/// For Flutter consumers, use a separate ScrcpyViewController which extends
+/// `ChangeNotifier` and manages proxy/WebSocket server lifecycle.
 class ScrcpySessionImpl implements ScrcpySession {
   ScrcpySessionImpl({
     required ScrcpyAdb adb,
     required Uint8List serverJarBytes,
-    required Uint8List webPlayerBytes,
   })  : _adb = adb,
-        _serverJarBytes = serverJarBytes,
-        _webPlayerBytes = webPlayerBytes;
+        _serverJarBytes = serverJarBytes;
 
   final ScrcpyAdb _adb;
   final Uint8List _serverJarBytes;
-  final Uint8List _webPlayerBytes;
 
   ScrcpyServer? _server;
-  bool _running = false;
+  bool running = false;
   bool _pending = false;
   void Function()? _onStopped;
-
-  /// Whether the UI should consider the current session running.
-  bool get running => _running;
-  set running(bool value) => _running = value;
 
   @override
   bool get isConnected => _server != null;
@@ -44,12 +40,6 @@ class ScrcpySessionImpl implements ScrcpySession {
 
   /// The active [ScrcpyServer], or `null` if no session is active.
   ScrcpyServer? get server => _server;
-
-  @override
-  String? get proxyUrl => _server?.proxyUrl;
-
-  @override
-  String? get playerUrl => _server?.playerUrl;
 
   @override
   int? get videoWidth => _server?.currentMetadata?.width;
@@ -62,6 +52,7 @@ class ScrcpySessionImpl implements ScrcpySession {
   @override
   Future<void> start(
     String deviceId, {
+    ScrcpyServerOptions options = const ScrcpyServerOptions(),
     ScrcpyLogger? logger,
     void Function()? onStarted,
     void Function()? onStopped,
@@ -71,11 +62,15 @@ class ScrcpySessionImpl implements ScrcpySession {
     _pending = true;
     _onStopped = onStopped;
 
-    final server = ScrcpyServer(
+    final provisioner = AdbScrcpyDeviceProvisioner(
       adb: _adb,
       deviceId: deviceId,
       serverJarBytes: _serverJarBytes,
-      webPlayerBytes: _webPlayerBytes,
+      options: options,
+      logger: logger,
+    );
+    final server = ScrcpyServer(
+      provisioner: provisioner,
       logger: logger ?? const NoOpScrcpyLogger(),
     );
     try {
@@ -84,11 +79,10 @@ class ScrcpySessionImpl implements ScrcpySession {
       _pending = false;
       onStarted?.call();
     } on Exception catch (e) {
-      onError?.call(e.toString());
-      rethrow;
-    } finally {
       _pending = false;
       _onStopped = null;
+      onError?.call(e.toString());
+      rethrow;
     }
   }
 
@@ -126,49 +120,40 @@ class ScrcpySessionImpl implements ScrcpySession {
     sendControlMessage(ScrcpyInjectTextMessage(text));
   }
 
-  /// Creates a [ScrcpySessionImpl] by resolving assets from the filesystem.
+  /// Creates a [ScrcpySessionImpl] by resolving the JAR asset from the
+  /// filesystem.
   ///
-  /// If [assetsPath] is provided, assets are loaded from that directory.
-  /// Otherwise, assets are located relative to this package's source via
+  /// If [assetsPath] is provided, the JAR is loaded from that directory.
+  /// Otherwise, the JAR is located relative to this package's source via
   /// [Isolate.resolvePackageUri].
   static Future<ScrcpySessionImpl> create({
     required ScrcpyAdb adb,
     String? assetsPath,
   }) async {
     Uint8List serverJar;
-    Uint8List webPlayer;
 
     if (assetsPath != null) {
-      final dir = Directory(assetsPath);
       serverJar = await File(
-        p.join(dir.path, 'scrcpy-server-v${ScrcpyServer.serverVersion}'),
-      ).readAsBytes();
-      webPlayer = await File(
-        p.join(dir.path, 'web_player', 'index.html'),
+        p.join(assetsPath, 'scrcpy-server-v${ScrcpyServer.serverVersion}'),
       ).readAsBytes();
     } else {
       final libUri = await Isolate.resolvePackageUri(
-        Uri.parse('package:scrcpy_view/scrcpy_core.dart'),
+        Uri.parse('package:scrcpy_client/scrcpy_client.dart'),
       );
       if (libUri == null) {
         throw StateError(
-          'Cannot resolve scrcpy_view package path. '
+          'Cannot resolve scrcpy_client package path. '
           'Use the --assets-path argument to specify the assets directory.',
         );
       }
       final packageRoot = libUri.resolve('../');
       serverJar = await File.fromUri(
-        packageRoot.resolve('assets/scrcpy-server-v${ScrcpyServer.serverVersion}'),
-      ).readAsBytes();
-      webPlayer = await File.fromUri(
-        packageRoot.resolve('assets/web_player/index.html'),
+        packageRoot.resolve(
+          'assets/scrcpy-server-v${ScrcpyServer.serverVersion}',
+        ),
       ).readAsBytes();
     }
 
-    return ScrcpySessionImpl(
-      adb: adb,
-      serverJarBytes: serverJar,
-      webPlayerBytes: webPlayer,
-    );
+    return ScrcpySessionImpl(adb: adb, serverJarBytes: serverJar);
   }
 }

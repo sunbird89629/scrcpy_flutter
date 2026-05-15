@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import 'control_message.dart';
+import 'package:scrcpy_client/scrcpy_client.dart';
 
 /// Default navigation buttons: Back, Home, App Switch.
 const defaultNavButtons = [
