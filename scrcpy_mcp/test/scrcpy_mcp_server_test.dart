@@ -266,7 +266,7 @@ String _resourceText(ReadResourceResult r) =>
 
 void main() {
   group('ScrcpyMcpServer — initialization', () {
-    test('advertises 18 tools after connect', () async {
+    test('advertises 19 tools after connect', () async {
       final env = _TestEnv();
       await env.connect();
 
@@ -294,6 +294,7 @@ void main() {
           'collapse_panels',
           'set_torch',
           'camera_zoom',
+          'start_app',
         ]),
       );
     });
@@ -398,6 +399,35 @@ void main() {
       );
 
       expect(result.isError, isTrue);
+    });
+
+    test('start_app without active session returns error', () async {
+      final env = _TestEnv();
+      await env.connect();
+      final result = await env.client.callTool(
+        const CallToolRequest(
+          name: 'start_app',
+          arguments: {'package': 'com.android.settings'},
+        ),
+      );
+      expect(result.isError, isTrue);
+    });
+
+    test('start_app sends StartAppMessage with package name', () async {
+      final env = _TestEnv();
+      await env.connect();
+      await env.client.callTool(
+        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+      );
+      final result = await env.client.callTool(
+        const CallToolRequest(
+          name: 'start_app',
+          arguments: {'package': 'com.android.chrome'},
+        ),
+      );
+      expect(result.isError, isFalse);
+      final msg = env.session.sentMessages.single as ScrcpyStartAppMessage;
+      expect(msg.name, 'com.android.chrome');
     });
 
     test('inject_scroll without active session returns error', () async {
