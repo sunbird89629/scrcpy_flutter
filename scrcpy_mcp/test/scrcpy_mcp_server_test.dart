@@ -542,6 +542,90 @@ void main() {
 
       expect(result.isError, isTrue);
     });
+
+    test('press_back without active session returns error', () async {
+      final env = _TestEnv();
+      await env.connect();
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'press_back'),
+      );
+      expect(result.isError, isTrue);
+    });
+
+    test('press_back sends down then up BackOrScreenOn messages', () async {
+      final env = _TestEnv();
+      await env.connect();
+      await env.client.callTool(
+        const CallToolRequest(
+            name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+      );
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'press_back'),
+      );
+      expect(result.isError, isFalse);
+      expect(env.session.sentMessages, hasLength(2));
+      expect(
+          env.session.sentMessages[0], isA<ScrcpyBackOrScreenOnMessage>());
+      expect(
+          (env.session.sentMessages[0] as ScrcpyBackOrScreenOnMessage).action,
+          ScrcpyAction.down);
+      expect(
+          env.session.sentMessages[1], isA<ScrcpyBackOrScreenOnMessage>());
+      expect(
+          (env.session.sentMessages[1] as ScrcpyBackOrScreenOnMessage).action,
+          ScrcpyAction.up);
+    });
+
+    test('set_screen_power without active session returns error', () async {
+      final env = _TestEnv();
+      await env.connect();
+      final result = await env.client.callTool(
+        const CallToolRequest(
+            name: 'set_screen_power', arguments: {'on': true}),
+      );
+      expect(result.isError, isTrue);
+    });
+
+    test('set_screen_power sends SetDisplayPowerMessage', () async {
+      final env = _TestEnv();
+      await env.connect();
+      await env.client.callTool(
+        const CallToolRequest(
+            name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+      );
+      final result = await env.client.callTool(
+        const CallToolRequest(
+            name: 'set_screen_power', arguments: {'on': false}),
+      );
+      expect(result.isError, isFalse);
+      expect(env.session.sentMessages, hasLength(1));
+      final msg =
+          env.session.sentMessages.single as ScrcpySetDisplayPowerMessage;
+      expect(msg.on, isFalse);
+    });
+
+    test('rotate_device without active session returns error', () async {
+      final env = _TestEnv();
+      await env.connect();
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'rotate_device'),
+      );
+      expect(result.isError, isTrue);
+    });
+
+    test('rotate_device sends RotateDeviceMessage', () async {
+      final env = _TestEnv();
+      await env.connect();
+      await env.client.callTool(
+        const CallToolRequest(
+            name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+      );
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'rotate_device'),
+      );
+      expect(result.isError, isFalse);
+      expect(env.session.sentMessages.single, isA<ScrcpyRotateDeviceMessage>());
+    });
   });
 
   group('ScrcpyMcpServer — resources', () {

@@ -10,6 +10,10 @@ import 'tools/inject_key.dart' show InjectKeyTool;
 import 'tools/inject_scroll.dart' show InjectScrollTool;
 import 'tools/inject_swipe.dart' show InjectSwipeTool;
 import 'tools/inject_text.dart' show InjectTextTool;
+import 'tools/press_back.dart' show PressBackTool;
+import 'tools/rotate_device.dart' show RotateDeviceTool;
+import 'tools/set_screen_power.dart' show SetScreenPowerTool;
+import 'tools/start_app.dart' show StartAppTool;
 import 'tools/inject_touch.dart' show InjectTouchTool;
 import 'tools/list_devices.dart' show ListDevicesTool;
 import 'tools/start_mirroring.dart' show StartMirroringTool;
@@ -68,6 +72,10 @@ class ScrcpyMcpServer {
       InjectTextTool(_session),
       InjectScrollTool(_session),
       InjectSwipeTool(_session),
+      StartAppTool(_session),
+      PressBackTool(_session),
+      SetScreenPowerTool(_session),
+      RotateDeviceTool(_session),
       if (_recordingController != null) ...[
         StartRecordingTool(_recordingController!, _ctx, _session),
         StopRecordingTool(_recordingController!),
@@ -221,6 +229,7 @@ class ScrcpyMcpServer {
                 '- list_devices, start_mirroring, stop_mirroring\n'
                 '- inject_key (Home=3, Back=4, AppSwitch=187)\n'
                 '- inject_touch, inject_text, inject_scroll, inject_swipe\n'
+                '- start_app (launch app by package name)\n'
                 '- take_screenshot\n'
                 '$recordingLine\n'
                 'Help the user control their Android device.',
