@@ -734,6 +734,76 @@ void main() {
       expect(result.isError, isFalse);
       expect(env.session.sentMessages.single, isA<ScrcpyCollapsePanelsMessage>());
     });
+
+    test('set_torch without active session returns error', () async {
+      final env = _TestEnv();
+      await env.connect();
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'set_torch', arguments: {'on': true}),
+      );
+      expect(result.isError, isTrue);
+    });
+
+    test('set_torch sends CameraSetTorchMessage', () async {
+      final env = _TestEnv();
+      await env.connect();
+      await env.client.callTool(
+        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+      );
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'set_torch', arguments: {'on': true}),
+      );
+      expect(result.isError, isFalse);
+      final msg = env.session.sentMessages.single as ScrcpyCameraSetTorchMessage;
+      expect(msg.on, isTrue);
+    });
+
+    test('camera_zoom without active session returns error', () async {
+      final env = _TestEnv();
+      await env.connect();
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'camera_zoom', arguments: {'direction': 'in'}),
+      );
+      expect(result.isError, isTrue);
+    });
+
+    test('camera_zoom in sends CameraZoomInMessage', () async {
+      final env = _TestEnv();
+      await env.connect();
+      await env.client.callTool(
+        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+      );
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'camera_zoom', arguments: {'direction': 'in'}),
+      );
+      expect(result.isError, isFalse);
+      expect(env.session.sentMessages.single, isA<ScrcpyCameraZoomInMessage>());
+    });
+
+    test('camera_zoom out sends CameraZoomOutMessage', () async {
+      final env = _TestEnv();
+      await env.connect();
+      await env.client.callTool(
+        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+      );
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'camera_zoom', arguments: {'direction': 'out'}),
+      );
+      expect(result.isError, isFalse);
+      expect(env.session.sentMessages.single, isA<ScrcpyCameraZoomOutMessage>());
+    });
+
+    test('camera_zoom invalid direction returns error', () async {
+      final env = _TestEnv();
+      await env.connect();
+      await env.client.callTool(
+        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+      );
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'camera_zoom', arguments: {'direction': 'sideways'}),
+      );
+      expect(result.isError, isTrue);
+    });
   });
 
   group('ScrcpyMcpServer — resources', () {

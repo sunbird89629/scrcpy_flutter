@@ -6,6 +6,7 @@ import 'package:scrcpy_client/scrcpy_client.dart';
 import 'recording_adb.dart';
 import 'recording_controller.dart';
 import 'session_context.dart';
+import 'tools/camera_zoom.dart' show CameraZoomTool;
 import 'tools/collapse_panels.dart' show CollapsePanelsTool;
 import 'tools/expand_notification_panel.dart' show ExpandNotificationPanelTool;
 import 'tools/expand_settings_panel.dart' show ExpandSettingsPanelTool;
@@ -23,6 +24,7 @@ import 'tools/list_devices.dart' show ListDevicesTool;
 import 'tools/start_mirroring.dart' show StartMirroringTool;
 import 'tools/start_recording.dart' show StartRecordingTool;
 import 'tools/stop_mirroring.dart' show StopMirroringTool;
+import 'tools/set_torch.dart' show SetTorchTool;
 import 'tools/stop_recording.dart' show StopRecordingTool;
 import 'tools/take_screenshot.dart' show TakeScreenshotTool;
 
@@ -84,6 +86,8 @@ class ScrcpyMcpServer {
       ExpandNotificationPanelTool(_session),
       ExpandSettingsPanelTool(_session),
       CollapsePanelsTool(_session),
+      SetTorchTool(_session),
+      CameraZoomTool(_session),
       if (_recordingController != null) ...[
         StartRecordingTool(_recordingController!, _ctx, _session),
         StopRecordingTool(_recordingController!),
@@ -240,6 +244,7 @@ class ScrcpyMcpServer {
                 '- press_back, set_screen_power, rotate_device\n'
                 '- set_clipboard\n'
                 '- expand_notification_panel, expand_settings_panel, collapse_panels\n'
+                '- set_torch, camera_zoom\n'
                 '- start_app (launch app by package name)\n'
                 '- take_screenshot\n'
                 '$recordingLine\n'
