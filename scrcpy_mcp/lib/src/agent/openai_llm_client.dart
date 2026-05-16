@@ -59,9 +59,10 @@ class OpenAiLlmClient implements LlmClient {
     final finishReason = choice['finish_reason'] as String?;
 
     if (finishReason == 'tool_calls') {
-      final rawCalls = message['tool_calls'] as List;
+      final rawCalls = message['tool_calls'] as List<dynamic>;
       return LlmResponse(
-        toolCalls: rawCalls.map((c) {
+        toolCalls: rawCalls.map((raw) {
+          final c = raw as Map<String, dynamic>;
           final fn = c['function'] as Map<String, dynamic>;
           return ToolCall(
             id: c['id'] as String,

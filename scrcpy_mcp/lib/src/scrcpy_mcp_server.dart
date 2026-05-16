@@ -109,8 +109,8 @@ class ScrcpyMcpServer {
     // Built after all other tools so it can reference their schemas.
     if (_agentConfig != null && _llmClient != null) {
       tools.add(RunTaskTool(
-        config: _agentConfig!,
-        llmClient: _llmClient!,
+        config: _agentConfig,
+        llmClient: _llmClient,
         tools: List.unmodifiable(tools),
         session: _session,
         ctx: _ctx,
