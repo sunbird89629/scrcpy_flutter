@@ -3,9 +3,12 @@ import 'dart:convert';
 import 'package:mcp_dart/mcp_dart.dart';
 import 'package:scrcpy_client/scrcpy_client.dart';
 
+import 'agent/agent_config.dart';
+import 'agent/llm_client.dart';
 import 'recording_adb.dart';
 import 'recording_controller.dart';
 import 'session_context.dart';
+import 'tools/run_task.dart' show RunTaskTool;
 import 'tools/camera_zoom.dart' show CameraZoomTool;
 import 'tools/collapse_panels.dart' show CollapsePanelsTool;
 import 'tools/expand_notification_panel.dart' show ExpandNotificationPanelTool;
@@ -35,8 +38,12 @@ class ScrcpyMcpServer {
     required ScrcpySession session,
     required ScrcpyAdb adb,
     RecordingAdb? recordingAdb,
+    AgentConfig? agentConfig,
+    LlmClient? llmClient,
   })  : _session = session,
         _adb = adb,
+        _agentConfig = agentConfig,
+        _llmClient = llmClient,
         _ctx = SessionContext() {
     if (recordingAdb != null) {
       _recordingController = RecordingController(recordingAdb);
@@ -57,6 +64,8 @@ class ScrcpyMcpServer {
   final ScrcpySession _session;
   final ScrcpyAdb _adb;
   final SessionContext _ctx;
+  final AgentConfig? _agentConfig;
+  final LlmClient? _llmClient;
   late final McpServer _mcpServer;
   RecordingController? _recordingController;
 
@@ -95,6 +104,19 @@ class ScrcpyMcpServer {
         StopRecordingTool(_recordingController!),
       ],
     ];
+
+    // Agent tool — only when both config and client are provided.
+    // Built after all other tools so it can reference their schemas.
+    if (_agentConfig != null && _llmClient != null) {
+      tools.add(RunTaskTool(
+        config: _agentConfig!,
+        llmClient: _llmClient!,
+        tools: List.unmodifiable(tools),
+        session: _session,
+        ctx: _ctx,
+      ));
+    }
+
     for (final tool in tools) {
       _mcpServer.registerTool(
         tool.name,
