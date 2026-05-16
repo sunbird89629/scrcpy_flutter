@@ -13,6 +13,7 @@ dependencies:
     path: ../packages/adb_tools
   logger_utils:
     path: ../packages/logger_utils
+  http: ^1.2.0
   mcp_dart: ^2.1.1
   scrcpy_client:
     path: ../packages/scrcpy_client
