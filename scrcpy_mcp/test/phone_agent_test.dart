@@ -19,7 +19,7 @@ class _FakeLlmClient implements LlmClient {
 
 void main() {
   group('PhoneAgent', () {
-    PhoneAgent _agent(
+    PhoneAgent makeAgent(
       List<LlmResponse> responses, {
       ToolExecutor? executor,
       int maxSteps = 10,
@@ -34,7 +34,7 @@ void main() {
         );
 
     test('returns success when LLM stops without tool calls', () async {
-      final result = await _agent([
+      final result = await makeAgent([
         const LlmResponse(text: 'Task complete'),
       ]).run('open settings');
 
@@ -45,7 +45,7 @@ void main() {
 
     test('executes tool calls before receiving final answer', () async {
       final executed = <String>[];
-      final result = await _agent(
+      final result = await makeAgent(
         [
           LlmResponse(toolCalls: [
             const ToolCall(id: 'c1', name: 'take_screenshot', arguments: '{}'),
@@ -94,7 +94,7 @@ void main() {
     });
 
     test('returns failure when max steps reached', () async {
-      final result = await _agent(
+      final result = await makeAgent(
         List.generate(
           3,
           (_) => LlmResponse(toolCalls: [
@@ -110,7 +110,7 @@ void main() {
     });
 
     test('continues loop when tool execution throws', () async {
-      final result = await _agent(
+      final result = await makeAgent(
         [
           LlmResponse(toolCalls: [
             const ToolCall(id: 'c1', name: 'bad_tool', arguments: '{}'),

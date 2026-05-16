@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('OpenAiLlmClient', () {
-    OpenAiLlmClient _client(http.Client mockHttp) => OpenAiLlmClient(
+    OpenAiLlmClient makeClient(http.Client mockHttp) => OpenAiLlmClient(
           baseUrl: 'https://api.openai.com/v1',
           apiKey: 'sk-test',
           model: 'gpt-4o',
@@ -17,7 +17,7 @@ void main() {
 
     test('sends correct Authorization header and model', () async {
       late http.Request captured;
-      final client = _client(MockClient((req) async {
+      final client = makeClient(MockClient((req) async {
         captured = req;
         return http.Response(
           jsonEncode({
@@ -40,7 +40,7 @@ void main() {
     });
 
     test('parses stop response as text', () async {
-      final client = _client(MockClient((_) async => http.Response(
+      final client = makeClient(MockClient((_) async => http.Response(
             jsonEncode({
               'choices': [
                 {
@@ -59,7 +59,7 @@ void main() {
     });
 
     test('parses tool_calls response', () async {
-      final client = _client(MockClient((_) async => http.Response(
+      final client = makeClient(MockClient((_) async => http.Response(
             jsonEncode({
               'choices': [
                 {
@@ -92,7 +92,7 @@ void main() {
 
     test('includes image in tool result message', () async {
       late http.Request captured;
-      final client = _client(MockClient((req) async {
+      final client = makeClient(MockClient((req) async {
         captured = req;
         return http.Response(
           jsonEncode({
@@ -121,16 +121,17 @@ void main() {
       );
 
       final body = jsonDecode(captured.body) as Map<String, dynamic>;
+      final msgs = body['messages'] as List<dynamic>;
       final content =
-          (body['messages'] as List).first['content'] as List<dynamic>;
+          (msgs.first as Map<String, dynamic>)['content'] as List<dynamic>;
       expect(content, hasLength(2));
-      expect(content[0]['type'], 'text');
-      expect(content[1]['type'], 'image_url');
+      expect((content[0] as Map<String, dynamic>)['type'], 'text');
+      expect((content[1] as Map<String, dynamic>)['type'], 'image_url');
     });
 
     test('throws LlmException on HTTP error', () async {
       final client =
-          _client(MockClient((_) async => http.Response('Unauthorized', 401)));
+          makeClient(MockClient((_) async => http.Response('Unauthorized', 401)));
 
       await expectLater(
         client.chat(messages: [], tools: []),
