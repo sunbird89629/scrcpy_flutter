@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:adb_tools/adb_tools.dart';
 import 'package:scrcpy_plus/device/pairing_service.dart';
 
 void main() {

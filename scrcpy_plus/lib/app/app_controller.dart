@@ -7,7 +7,6 @@ import 'package:scrcpy_plus/app/menu_builder.dart';
 import 'package:scrcpy_plus/device/device_manager.dart';
 import 'package:scrcpy_plus/device/pair_dialog.dart' show PairDialog;
 import 'package:scrcpy_plus/device/pairing_service.dart';
-import 'package:scrcpy_plus/scrcpy/scrcpy_config.dart';
 import 'package:scrcpy_plus/scrcpy/scrcpy_launcher.dart';
 import 'package:scrcpy_plus/settings/settings_manager.dart';
 
