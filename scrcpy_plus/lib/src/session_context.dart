@@ -1,3 +1,0 @@
-class SessionContext {
-  String? connectedDeviceId;
-}
