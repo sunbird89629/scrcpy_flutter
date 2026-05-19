@@ -1,0 +1,29 @@
+name: scrcpy_plus
+description: macOS menu-bar app for Android device management and scrcpy launcher.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+
+resolution: workspace
+
+dependencies:
+  adb_tools:
+    path: ../packages/adb_tools
+  logger_utils:
+    path: ../packages/logger_utils
+  flutter:
+    sdk: flutter
+  tray_manager: ^0.4.0
+  path: ^1.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  assets:
+    - assets/
+  uses-material-design: true

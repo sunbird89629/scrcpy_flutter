@@ -11,6 +11,7 @@ workspace:
   - scrcpy_app
   - scrcpy_flutter
   - scrcpy_mcp
+  - scrcpy_plus
   - scrcpy_view
 
 dev_dependencies:
