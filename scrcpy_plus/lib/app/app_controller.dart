@@ -5,6 +5,7 @@ import 'package:logger_utils/logger_utils.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:scrcpy_plus/app/menu_builder.dart';
 import 'package:scrcpy_plus/device/device_manager.dart';
+import 'package:scrcpy_plus/device/pair_dialog.dart' show PairDialog;
 import 'package:scrcpy_plus/device/pairing_service.dart';
 import 'package:scrcpy_plus/scrcpy/scrcpy_config.dart';
 import 'package:scrcpy_plus/scrcpy/scrcpy_launcher.dart';
@@ -114,9 +115,45 @@ class AppController implements TrayListener {
     }
   }
 
-  void _showPairDialog() {
-    // TODO: Implement native dialog for IP+code input
-    appLogger.info('Pair dialog not yet implemented');
+  Future<void> _showPairDialog() async {
+    final address = await PairDialog.showAddressDialog();
+    if (address == null) return;
+
+    final error = PairingService.validateAddress(address);
+    if (error != null) {
+      appLogger.warning('Invalid address: $error');
+      return;
+    }
+
+    final parts = address.split(':');
+    final ip = parts[0];
+    final port = int.parse(parts[1]);
+
+    // Try direct connect first (for already-paired devices)
+    try {
+      await pairingService.connect(ip, port);
+      await deviceManager.refresh();
+      return;
+    } catch (_) {
+      // Need pairing code
+    }
+
+    final code = await PairDialog.showCodeDialog();
+    if (code == null) return;
+
+    final codeError = PairingService.validatePairingCode(code);
+    if (codeError != null) {
+      appLogger.warning('Invalid code: $codeError');
+      return;
+    }
+
+    try {
+      await pairingService.pair(ip, port, code);
+      await pairingService.connect(ip, port);
+      await deviceManager.refresh();
+    } catch (e) {
+      appLogger.severe('Pairing failed: $e');
+    }
   }
 
   void _showSettingsDialog() {
