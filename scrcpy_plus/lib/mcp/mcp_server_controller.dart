@@ -28,6 +28,7 @@ class McpServerController {
 
   /// Start the MCP server on [port]. Captures failures into [errorMessage].
   Future<void> start(int port) async {
+    if (_running) return;
     _errorMessage = null;
     try {
       final session =

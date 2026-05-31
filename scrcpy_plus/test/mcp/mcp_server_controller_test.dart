@@ -44,6 +44,7 @@ void main() {
         adb: const AdbClient(),
         session: _MockSession(),
       );
+      addTearDown(() => controller.stop());
       await controller.start(7099);
       expect(controller.errorMessage, isNull);
       expect(controller.isRunning, true);
@@ -59,6 +60,7 @@ void main() {
         adb: const AdbClient(),
         session: _MockSession(),
       );
+      addTearDown(() => first.stop());
       await first.start(7098);
       final second = McpServerController(
         adb: const AdbClient(),
@@ -67,7 +69,19 @@ void main() {
       await second.start(7098); // same port — should fail gracefully
       expect(second.isRunning, false);
       expect(second.errorMessage, isNotNull);
-      await first.stop();
+    });
+
+    test('start is a no-op when already running', () async {
+      final controller = McpServerController(
+        adb: const AdbClient(),
+        session: _MockSession(),
+      );
+      addTearDown(() => controller.stop());
+      await controller.start(7097);
+      expect(controller.serverUrl, 'http://localhost:7097/mcp');
+      await controller.start(7096); // ignored
+      expect(controller.serverUrl, 'http://localhost:7097/mcp');
+      expect(controller.errorMessage, isNull);
     });
   });
 }
