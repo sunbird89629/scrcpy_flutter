@@ -1,4 +1,5 @@
 import 'package:adb_tools/adb_tools.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:scrcpy_client/scrcpy_client.dart';
 import 'package:scrcpy_mcp/scrcpy_mcp.dart';
 
@@ -31,8 +32,7 @@ class McpServerController {
     if (_running) return;
     _errorMessage = null;
     try {
-      final session =
-          _injectedSession ?? await ScrcpySessionImpl.create(adb: _adb);
+      final session = _injectedSession ?? await _createSession();
       await _server.start(
         port: port,
         session: session,
@@ -44,6 +44,24 @@ class McpServerController {
       _errorMessage = e.toString();
       _running = false;
     }
+  }
+
+  /// Builds a real session by loading the scrcpy-server JAR from the bundled
+  /// Flutter assets.
+  ///
+  /// We deliberately avoid [ScrcpySessionImpl.create], whose default path uses
+  /// `Isolate.resolvePackageUri` — that only works under `dart run` (JIT) and
+  /// throws "Unsupported operation" in an AOT-compiled Flutter app. Loading via
+  /// [rootBundle] is the approach used by scrcpy_view.
+  Future<ScrcpySession> _createSession() async {
+    const version = ScrcpyServer.serverVersion;
+    final jarData = await rootBundle.load(
+      'packages/scrcpy_client/assets/scrcpy-server-v$version',
+    );
+    return ScrcpySessionImpl(
+      adb: _adb,
+      serverJarBytes: jarData.buffer.asUint8List(),
+    );
   }
 
   Future<void> stop() async {

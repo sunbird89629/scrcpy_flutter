@@ -71,6 +71,17 @@ void main() {
       expect(second.errorMessage, isNotNull);
     });
 
+    test('start() builds a session from bundled assets (no injected session)',
+        () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      final controller = McpServerController(adb: const AdbClient());
+      addTearDown(controller.stop);
+      await controller.start(7095);
+      expect(controller.errorMessage, isNull);
+      expect(controller.isRunning, true);
+      expect(controller.serverUrl, 'http://localhost:7095/mcp');
+    });
+
     test('start is a no-op when already running', () async {
       final controller = McpServerController(
         adb: const AdbClient(),
