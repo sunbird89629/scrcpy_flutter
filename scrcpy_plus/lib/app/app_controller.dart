@@ -190,6 +190,8 @@ class AppController implements TrayListener {
   void _quit() {
     launcher.dispose();
     deviceManager.dispose();
+    // Fire-and-forget: the process exits immediately below, so the OS reclaims
+    // the MCP server's port; we don't await a graceful socket shutdown.
     mcpController.stop();
     trayManager.destroy();
     exit(0);
