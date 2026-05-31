@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:adb_tools/adb_tools.dart';
 import 'package:logger_utils/logger_utils.dart';
 import 'package:tray_manager/tray_manager.dart';
@@ -7,6 +8,7 @@ import 'package:scrcpy_plus/app/menu_builder.dart';
 import 'package:scrcpy_plus/device/device_manager.dart';
 import 'package:scrcpy_plus/device/pair_dialog.dart' show PairDialog;
 import 'package:scrcpy_plus/device/pairing_service.dart';
+import 'package:scrcpy_plus/mcp/mcp_server_controller.dart';
 import 'package:scrcpy_plus/scrcpy/scrcpy_launcher.dart';
 import 'package:scrcpy_plus/settings/settings_manager.dart';
 
@@ -22,6 +24,7 @@ class AppController implements TrayListener {
         pairingService = PairingService(adb: adb ?? const AdbClient()) {
     deviceManager = DeviceManager(adb: this.adb);
     launcher = ScrcpyLauncher();
+    mcpController = McpServerController(adb: this.adb);
   }
 
   final SettingsManager settingsManager;
@@ -29,6 +32,7 @@ class AppController implements TrayListener {
   final PairingService pairingService;
   late final DeviceManager deviceManager;
   late final ScrcpyLauncher launcher;
+  late final McpServerController mcpController;
 
   /// Static helpers for menu key parsing.
   static bool isLaunchAction(String key) =>
@@ -50,6 +54,9 @@ class AppController implements TrayListener {
     deviceManager.startPolling();
 
     await _initTray();
+
+    await mcpController.start(config.mcpPort);
+    await _updateTrayMenu();
   }
 
   Future<void> _initTray() async {
@@ -60,7 +67,11 @@ class AppController implements TrayListener {
   }
 
   Future<void> _updateTrayMenu() async {
-    final menu = MenuBuilder.buildMenu(devices: deviceManager.devices);
+    final menu = MenuBuilder.buildMenu(
+      devices: deviceManager.devices,
+      mcpUrl: mcpController.serverUrl,
+      mcpError: mcpController.errorMessage,
+    );
     await trayManager.setContextMenu(menu);
 
     // Update icon based on connection state
@@ -88,6 +99,8 @@ class AppController implements TrayListener {
       _showPairDialog();
     } else if (key == 'settings') {
       _showSettingsDialog();
+    } else if (key == MenuBuilder.copyMcpKey) {
+      _copyMcpUrl();
     } else if (isLaunchAction(key)) {
       final serial = serialFromAction(key, MenuBuilder.launchPrefix);
       if (serial != null) _launchScrcpy(serial);
@@ -160,9 +173,24 @@ class AppController implements TrayListener {
     appLogger.info('Settings dialog not yet implemented');
   }
 
+  Future<void> _copyMcpUrl() async {
+    final url = mcpController.serverUrl;
+    if (url == null) return;
+    await Clipboard.setData(ClipboardData(text: url));
+    try {
+      await Process.run('osascript', [
+        '-e',
+        'display notification "MCP address copied" with title "scrcpy_plus"',
+      ]);
+    } catch (e) {
+      appLogger.warning('Failed to show copy notification: $e');
+    }
+  }
+
   void _quit() {
     launcher.dispose();
     deviceManager.dispose();
+    mcpController.stop();
     trayManager.destroy();
     exit(0);
   }
@@ -170,6 +198,7 @@ class AppController implements TrayListener {
   void dispose() {
     launcher.dispose();
     deviceManager.dispose();
+    mcpController.stop();
     trayManager.removeListener(this);
   }
 
