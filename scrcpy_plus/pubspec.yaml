@@ -14,6 +14,8 @@ dependencies:
     path: ../packages/adb_tools
   logger_utils:
     path: ../packages/logger_utils
+  scrcpy_mcp:
+    path: ../scrcpy_mcp
   flutter:
     sdk: flutter
   tray_manager: ^0.4.0
