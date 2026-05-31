@@ -8,8 +8,29 @@ class MenuBuilder {
   static const String disconnectPrefix = 'disconnect_';
   static const String infoPrefix = 'info_';
 
-  static Menu buildMenu({required List<DeviceEntry> devices}) {
+  /// Key for the "copy MCP address" menu item.
+  static const String copyMcpKey = 'mcp_copy';
+
+  static Menu buildMenu({
+    required List<DeviceEntry> devices,
+    String? mcpUrl,
+    String? mcpError,
+  }) {
     final items = <MenuItem>[];
+
+    // MCP server status section (top).
+    if (mcpUrl != null) {
+      items.add(MenuItem(key: 'mcp_header', label: 'MCP server', disabled: true));
+      items.add(MenuItem(key: copyMcpKey, label: '  $mcpUrl'));
+      items.add(MenuItem.separator());
+    } else if (mcpError != null) {
+      items.add(MenuItem(
+        key: 'mcp_error',
+        label: 'MCP server: $mcpError',
+        disabled: true,
+      ));
+      items.add(MenuItem.separator());
+    }
 
     if (devices.isEmpty) {
       items.add(MenuItem(
