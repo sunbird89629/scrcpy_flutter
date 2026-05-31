@@ -44,7 +44,7 @@ void main() {
         adb: const AdbClient(),
         session: _MockSession(),
       );
-      addTearDown(() => controller.stop());
+      addTearDown(controller.stop);
       await controller.start(7099);
       expect(controller.errorMessage, isNull);
       expect(controller.isRunning, true);
@@ -60,7 +60,7 @@ void main() {
         adb: const AdbClient(),
         session: _MockSession(),
       );
-      addTearDown(() => first.stop());
+      addTearDown(first.stop);
       await first.start(7098);
       final second = McpServerController(
         adb: const AdbClient(),
@@ -76,7 +76,7 @@ void main() {
         adb: const AdbClient(),
         session: _MockSession(),
       );
-      addTearDown(() => controller.stop());
+      addTearDown(controller.stop);
       await controller.start(7097);
       expect(controller.serverUrl, 'http://localhost:7097/mcp');
       await controller.start(7096); // ignored
