@@ -40,5 +40,21 @@ void main() {
       expect(restored.videoBitRate, config.videoBitRate);
       expect(restored.videoCodec, config.videoCodec);
     });
+
+    test('mcpPort defaults to 7070', () {
+      const config = ScrcpyConfig();
+      expect(config.mcpPort, 7070);
+    });
+
+    test('mcpPort survives toJson/fromJson round-trip', () {
+      const config = ScrcpyConfig(mcpPort: 8123);
+      final restored = ScrcpyConfig.fromJson(config.toJson());
+      expect(restored.mcpPort, 8123);
+    });
+
+    test('fromJson falls back to 7070 when mcpPort absent', () {
+      final restored = ScrcpyConfig.fromJson({'scrcpyPath': 'scrcpy'});
+      expect(restored.mcpPort, 7070);
+    });
   });
 }
