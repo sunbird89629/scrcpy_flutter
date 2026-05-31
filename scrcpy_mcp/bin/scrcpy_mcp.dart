@@ -18,11 +18,11 @@ void main(List<String> args) async {
 
   final agentConfig =
       OpenAiLlmClient.isConfigured ? AgentConfig.fromEnv() : null;
-  final llmClient =
-      OpenAiLlmClient.isConfigured ? OpenAiLlmClient.fromEnv() : null;
+  final llmClient = OpenAiLlmClient.fromTest();
+  // OpenAiLlmClient.isConfigured ? OpenAiLlmClient.fromEnv() : null;
 
   if (agentConfig != null) {
-    _log.info('Agent enabled: model=${llmClient!.model}, '
+    _log.info('Agent enabled: model=${llmClient.model}, '
         'maxSteps=${agentConfig.maxSteps}');
   }
 

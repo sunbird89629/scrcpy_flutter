@@ -20,6 +20,12 @@ class OpenAiLlmClient implements LlmClient {
         model: Platform.environment['OPENAI_MODEL'] ?? 'gpt-4o',
       );
 
+  factory OpenAiLlmClient.fromTest() => OpenAiLlmClient(
+        baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+        apiKey: 'dc45fcec2e1743f1ae732cf3b6e6ad17.tMejaXqUvJbJ5zZO',
+        model: 'autoglm-phone',
+      );
+
   static bool get isConfigured =>
       Platform.environment.containsKey('OPENAI_API_KEY');
 

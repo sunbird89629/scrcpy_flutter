@@ -43,9 +43,11 @@ class StopRecordingTool extends McpTool {
       );
     }
     final savePath = args['save_path'] as String?;
+    logger.fine('stop_recording: savePath=${savePath ?? "(default)"}');
     try {
       final localPath = await _controller.stop(savePath: savePath);
       final sizeBytes = await File(localPath).length();
+      logger.fine('stop_recording: saved to $localPath (${sizeBytes}B)');
       return CallToolResult.fromContent([
         TextContent(
           text: jsonEncode({

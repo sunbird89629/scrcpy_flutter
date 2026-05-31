@@ -57,9 +57,11 @@ class RunTaskTool extends McpTool {
     final message = args['message'] as String;
 
     if (!_session.isConnected) {
+      logger.fine('run_task: auto-connecting device=$deviceId');
       await _session.start(deviceId);
       _ctx.connectedDeviceId = deviceId;
     }
+    logger.fine('run_task: message="$message", tools=${_tools.length}');
 
     final toolMap = {for (final t in _tools) t.name: t};
     final toolSchemas = _tools
@@ -118,6 +120,7 @@ class RunTaskTool extends McpTool {
 
     try {
       final result = await agent.run(message);
+      logger.fine('run_task: completed, steps=${result.steps}, success=${result.success}');
       return CallToolResult.fromStructuredContent({
         'result': result.result,
         'steps': result.steps,

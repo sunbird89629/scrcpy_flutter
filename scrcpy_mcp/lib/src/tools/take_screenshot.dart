@@ -55,8 +55,10 @@ class TakeScreenshotTool extends McpTool {
   }
 
   Future<CallToolResult> _doScreenshot(String deviceId) async {
+    logger.fine('take_screenshot: capturing device=$deviceId');
     try {
       final pngBytes = await _adb.takeScreenshot(deviceId);
+      logger.fine('take_screenshot: captured ${pngBytes.length} bytes PNG');
       return CallToolResult.fromContent([
         ImageContent(data: base64Encode(pngBytes), mimeType: 'image/png'),
       ]);

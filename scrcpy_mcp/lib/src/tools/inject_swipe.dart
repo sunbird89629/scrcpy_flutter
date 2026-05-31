@@ -66,6 +66,8 @@ class InjectSwipeTool extends McpTool {
 
     final (vw, vh) = _session.videoSize(width, height);
     final stepDelay = Duration(microseconds: durationMs * 1000 ~/ steps);
+    logger.fine('inject_swipe: ($x1,$y1)→($x2,$y2), video=${vw}x$vh, '
+        '${durationMs}ms, $steps steps, stepDelay=${stepDelay.inMicroseconds}µs');
 
     void sendTouch(int action, int x, int y) {
       final (rx, ry) = _session.rescale(x, y, width, height);
@@ -80,15 +82,16 @@ class InjectSwipeTool extends McpTool {
     }
 
     sendTouch(ScrcpyAction.down, x1, y1);
+    logger.fine('inject_swipe: DOWN ($x1,$y1)');
     for (var i = 1; i <= steps; i++) {
       await Future<void>.delayed(stepDelay);
-      sendTouch(
-        ScrcpyAction.move,
-        x1 + ((x2 - x1) * i) ~/ steps,
-        y1 + ((y2 - y1) * i) ~/ steps,
-      );
+      final mx = x1 + ((x2 - x1) * i) ~/ steps;
+      final my = y1 + ((y2 - y1) * i) ~/ steps;
+      sendTouch(ScrcpyAction.move, mx, my);
     }
+    logger.fine('inject_swipe: sent $steps MOVE events');
     sendTouch(ScrcpyAction.up, x2, y2);
+    logger.fine('inject_swipe: UP ($x2,$y2)');
 
     return CallToolResult.fromContent([
       TextContent(

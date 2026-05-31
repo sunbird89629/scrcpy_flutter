@@ -31,6 +31,8 @@ class StopMirroringTool extends McpTool {
         [const TextContent(text: 'No active mirroring session.')],
       );
     }
+    final prevDevice = _ctx.connectedDeviceId;
+    logger.fine('stop_mirroring: stopping session for device=$prevDevice');
     await _session.stop();
     _ctx.connectedDeviceId = null;
     return CallToolResult.fromContent(

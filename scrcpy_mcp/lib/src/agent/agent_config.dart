@@ -17,9 +17,10 @@ class AgentConfig {
   });
 
   factory AgentConfig.fromEnv() => AgentConfig(
-        maxSteps:
-            int.tryParse(Platform.environment['SCRCPY_AGENT_MAX_STEPS'] ?? '') ??
-                15,
+        maxSteps: int.tryParse(
+              Platform.environment['SCRCPY_AGENT_MAX_STEPS'] ?? '',
+            ) ??
+            15,
       );
 
   final int maxSteps;

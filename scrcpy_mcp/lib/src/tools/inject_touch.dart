@@ -46,6 +46,7 @@ class InjectTouchTool extends McpTool {
     final action = args['action'] as int? ?? ScrcpyAction.down;
     final (vw, vh) = _session.videoSize(width, height);
     final (rx, ry) = _session.rescale(x, y, width, height);
+    logger.fine('inject_touch: ($x,$y) → rescaled ($rx,$ry), video=${vw}x$vh, action=$action');
     _session.sendControlMessage(
       ScrcpyInjectTouchMessage(
         action: action,

@@ -38,9 +38,11 @@ class StartMirroringTool extends McpTool {
     RequestHandlerExtra extra,
   ) async {
     final deviceId = args['device_id'] as String;
+    logger.fine('start_mirroring: starting session for device=$deviceId');
     try {
       await _session.start(deviceId);
       _ctx.connectedDeviceId = deviceId;
+      logger.fine('start_mirroring: connected, video=${_session.videoWidth}x${_session.videoHeight}');
       return CallToolResult.fromContent([
         TextContent(
           text: jsonEncode({

@@ -32,6 +32,7 @@ class InjectTextTool extends McpTool {
   ) async {
     if (!_session.isConnected) return McpTool.notConnectedResult;
     final text = args['text'] as String;
+    logger.fine('inject_text: len=${text.length}, text="${text.length > 60 ? '${text.substring(0, 60)}…' : text}"');
     _session.injectText(text);
     return CallToolResult.fromContent(
       [TextContent(text: 'Text sent: "$text"')],

@@ -31,6 +31,8 @@ class GetClipboardTool extends McpTool {
     if (!_session.isConnected) return McpTool.notConnectedResult;
     try {
       final text = await _session.getClipboard();
+      final preview = text.length > 100 ? '${text.substring(0, 100)}…' : text;
+      logger.fine('get_clipboard: "$preview"');
       return CallToolResult.fromContent([TextContent(text: text)]);
     } on TimeoutException {
       return CallToolResult(
