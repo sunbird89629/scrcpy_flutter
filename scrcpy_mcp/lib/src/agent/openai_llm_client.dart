@@ -43,7 +43,7 @@ class OpenAiLlmClient implements LlmClient {
     };
     final body = jsonEncode(rawBody);
 
-    _log.info('→ POST $uri\n${_summarizeBody(rawBody)}');
+    _log.infoJson('→ POST $uri', _summarizeBody(rawBody));
 
     final response = await _http.post(
       uri,
@@ -54,11 +54,7 @@ class OpenAiLlmClient implements LlmClient {
       body: body,
     );
 
-    _log.info(
-      '← HTTP ${response.statusCode} '
-      '\n',
-      response.body,
-    );
+    _log.infoJson('← HTTP ${response.statusCode}', response.body);
 
     if (response.statusCode != 200) {
       throw LlmException('HTTP ${response.statusCode}: ${response.body}');
