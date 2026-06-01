@@ -29,9 +29,6 @@ class OpenAiLlmClient implements LlmClient {
     model: 'autoglm-phone',
   );
 
-  static bool get isConfigured =>
-      Platform.environment.containsKey('OPENAI_API_KEY');
-
   final String baseUrl;
   final String apiKey;
   final String model;
@@ -61,8 +58,11 @@ class OpenAiLlmClient implements LlmClient {
       body: body,
     );
 
-    _log.info('← HTTP ${response.statusCode} '
-        '${response.statusCode == 200 ? "" : response.body}');
+    _log.info(
+      '← HTTP ${response.statusCode} '
+      '\n',
+      response.body,
+    );
 
     if (response.statusCode != 200) {
       throw LlmException('HTTP ${response.statusCode}: ${response.body}');
@@ -137,8 +137,7 @@ class OpenAiLlmClient implements LlmClient {
           ...m,
           'content': content.map((part) {
             if (part is Map && part['type'] == 'image_url') {
-              final url =
-                  (part['image_url'] as Map)['url'] as String? ?? '';
+              final url = (part['image_url'] as Map)['url'] as String? ?? '';
               return {
                 ...part,
                 'image_url': {

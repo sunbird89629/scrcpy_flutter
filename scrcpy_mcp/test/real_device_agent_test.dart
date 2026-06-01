@@ -21,43 +21,37 @@ import 'real_device_test_utils.dart';
 void main() {
   const deviceId = String.fromEnvironment('SCRCPY_MCP_TEST_DEVICE');
 
-  group(
-    'run_task real device',
-    () {
-      late McpClient client;
-      late Future<void> Function() close;
+  group('run_task real device', () {
+    late McpClient client;
+    late Future<void> Function() close;
 
-      setUpAll(() async {
-        final scrcpyAdb = ScrcpyMcpAdb(AdbClient());
-        final session = await ScrcpySessionImpl.create(adb: scrcpyAdb);
+    setUpAll(() async {
+      final scrcpyAdb = ScrcpyMcpAdb(AdbClient());
+      final session = await ScrcpySessionImpl.create(adb: scrcpyAdb);
 
-        final server = ScrcpyMcpServer(
-          session: session,
-          adb: scrcpyAdb,
-          agentConfig: AgentConfig.fromEnv(),
-          llmClient: OpenAiLlmClient.fromEnv(),
-        );
-        (client, close) = await connectMcpPair(server);
-      });
-
-      tearDownAll(() => close());
-
-      test(
-        'run_task completes a simple task',
-        () async {
-          final result = await client.callTool(
-            CallToolRequest(
-              name: 'run_task',
-              arguments: {'device_id': deviceId, 'message': '截一张屏幕截图并描述当前界面'},
-            ),
-          );
-          expect(result.isError, isFalse);
-        },
-        timeout: const Timeout(Duration(minutes: 2)),
+      final server = ScrcpyMcpServer(
+        session: session,
+        adb: scrcpyAdb,
+        agentConfig: AgentConfig.fromEnv(),
+        llmClient: OpenAiLlmClient.fromEnv(),
       );
-    },
-    skip: (!OpenAiLlmClient.isConfigured || deviceId.isEmpty)
-        ? 'Set OPENAI_API_KEY and SCRCPY_MCP_TEST_DEVICE to run'
-        : null,
-  );
+      (client, close) = await connectMcpPair(server);
+    });
+
+    tearDownAll(() => close());
+
+    test(
+      'run_task completes a simple task',
+      () async {
+        final result = await client.callTool(
+          CallToolRequest(
+            name: 'run_task',
+            arguments: {'device_id': deviceId, 'message': '截一张屏幕截图并描述当前界面'},
+          ),
+        );
+        expect(result.isError, isFalse);
+      },
+      timeout: const Timeout(Duration(minutes: 2)),
+    );
+  });
 }

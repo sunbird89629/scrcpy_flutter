@@ -6,7 +6,7 @@ import 'package:mcp_dart/mcp_dart.dart' hide Logger;
 import 'package:scrcpy_client/scrcpy_client.dart';
 import 'package:scrcpy_mcp/scrcpy_mcp.dart';
 
-final _log = Logger('scrcpy.mcp.bin');
+final moduleLogger = Logger('scrcpy_mcp');
 
 void main(List<String> args) async {
   initLogging();
@@ -16,17 +16,8 @@ void main(List<String> args) async {
 
   final session = await ScrcpySessionImpl.create(adb: scrcpyAdb);
 
-  final agentConfig = OpenAiLlmClient.isConfigured
-      ? AgentConfig.fromEnv()
-      : null;
+  final agentConfig = AgentConfig.fromEnv();
   final llmClient = OpenAiLlmClient.fromTest();
-
-  if (agentConfig != null) {
-    _log.info(
-      'Agent enabled: model=${llmClient.model}, '
-      'maxSteps=${agentConfig.maxSteps}',
-    );
-  }
 
   final server = ScrcpyMcpServer(
     session: session,

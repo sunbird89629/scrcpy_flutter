@@ -151,20 +151,5 @@ void main() {
       expect(result.success, isTrue);
       expect(result.result, 'Recovered after error');
     });
-
-    test('real phone agent model test', () async {
-      final phoneAgent = PhoneAgent(
-        config: const AgentConfig(maxSteps: 5),
-        llmClient: OpenAiLlmClient.fromTest(),
-        tools: const [],
-        executeToolCall: (_, __) async => (
-          text: 'res: 1264x2800',
-          imageBase64: 'base64png',
-          imageMimeType: 'image/png',
-        ),
-      );
-      final agentResult = await phoneAgent.run('获取当前的屏幕内容');
-      expect(agentResult, isNotNull);
-    });
   });
 }
