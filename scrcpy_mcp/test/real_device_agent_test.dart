@@ -2,7 +2,7 @@
 ///
 /// Requires:
 ///   - A connected Android device
-///   - OPENAI_API_KEY env var set
+///   - AUTOGLM_API_KEY env var set
 ///   - SCRCPY_MCP_TEST_DEVICE env var set to the device serial
 ///
 /// Run with:
@@ -33,7 +33,7 @@ void main() {
         session: session,
         adb: scrcpyAdb,
         agentConfig: AgentConfig.fromEnv(),
-        llmClient: OpenAiLlmClient.fromEnv(),
+        llmClient: AutoglmLlmClient.fromEnv(),
       );
       (client, close) = await connectMcpPair(server);
     });

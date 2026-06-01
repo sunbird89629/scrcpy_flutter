@@ -1,7 +1,7 @@
 export 'src/agent/action_parser.dart';
 export 'src/agent/agent_config.dart';
 export 'src/agent/llm_client.dart';
-export 'src/agent/openai_llm_client.dart';
+export 'src/agent/autoglm_llm_client.dart';
 export 'src/agent/phone_agent.dart';
 export 'src/mcp_http_server.dart';
 export 'src/recording_adb.dart';

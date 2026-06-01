@@ -17,7 +17,7 @@ void main(List<String> args) async {
   final session = await ScrcpySessionImpl.create(adb: scrcpyAdb);
 
   final agentConfig = AgentConfig.fromEnv();
-  final llmClient = OpenAiLlmClient.fromTest();
+  final llmClient = AutoglmLlmClient.fromTest();
 
   final server = ScrcpyMcpServer(
     session: session,

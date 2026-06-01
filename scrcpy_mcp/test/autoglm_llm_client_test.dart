@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:scrcpy_mcp/src/agent/llm_client.dart';
-import 'package:scrcpy_mcp/src/agent/openai_llm_client.dart';
+import 'package:scrcpy_mcp/src/agent/autoglm_llm_client.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('OpenAiLlmClient', () {
-    OpenAiLlmClient makeClient(http.Client mockHttp) => OpenAiLlmClient(
+  group('AutoglmLlmClient', () {
+    AutoglmLlmClient makeClient(http.Client mockHttp) => AutoglmLlmClient(
       baseUrl: 'https://api.openai.com/v1',
       apiKey: 'sk-test',
       model: 'gpt-4o',

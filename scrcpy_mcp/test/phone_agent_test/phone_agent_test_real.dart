@@ -61,7 +61,7 @@ void main() {
 
         final phoneAgent = PhoneAgent(
           config: const AgentConfig(maxSteps: 10),
-          llmClient: OpenAiLlmClient.fromTest(),
+          llmClient: AutoglmLlmClient.fromTest(),
           takeScreenshot: () async {
             final bytes = await adb.takeScreenshot(_deviceId);
             return (base64: base64Encode(bytes), mimeType: 'image/png');

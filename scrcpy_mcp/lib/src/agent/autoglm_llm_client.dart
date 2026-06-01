@@ -8,22 +8,22 @@ import 'llm_client.dart';
 
 final _log = Logger('scrcpy.mcp.llm');
 
-class OpenAiLlmClient implements LlmClient {
-  OpenAiLlmClient({
+class AutoglmLlmClient implements LlmClient {
+  AutoglmLlmClient({
     required this.baseUrl,
     required this.apiKey,
     required this.model,
     http.Client? httpClient,
   }) : _http = httpClient ?? http.Client();
 
-  factory OpenAiLlmClient.fromEnv() => OpenAiLlmClient(
+  factory AutoglmLlmClient.fromEnv() => AutoglmLlmClient(
     baseUrl:
-        Platform.environment['OPENAI_BASE_URL'] ?? 'https://api.openai.com/v1',
-    apiKey: Platform.environment['OPENAI_API_KEY']!,
-    model: Platform.environment['OPENAI_MODEL'] ?? 'gpt-4o',
+        Platform.environment['AUTOGLM_BASE_URL'] ?? 'https://open.bigmodel.cn/api/paas/v4',
+    apiKey: Platform.environment['AUTOGLM_API_KEY']!,
+    model: Platform.environment['AUTOGLM_MODEL'] ?? 'autoglm-phone',
   );
 
-  factory OpenAiLlmClient.fromTest() => OpenAiLlmClient(
+  factory AutoglmLlmClient.fromTest() => AutoglmLlmClient(
     baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
     apiKey: 'dc45fcec2e1743f1ae732cf3b6e6ad17.tMejaXqUvJbJ5zZO',
     model: 'autoglm-phone',

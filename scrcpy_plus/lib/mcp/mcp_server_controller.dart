@@ -35,7 +35,7 @@ class McpServerController {
       final session = _injectedSession ?? await _createSession();
 
       final agentConfig = AgentConfig();
-      final llmClient = OpenAiLlmClient.fromTest();
+      final llmClient = AutoglmLlmClient.fromTest();
       _log.info(
         'Agent enabled: model=${llmClient.model}, '
         'maxSteps=${agentConfig.maxSteps}',
