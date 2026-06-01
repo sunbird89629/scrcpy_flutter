@@ -1,7 +1,10 @@
 import 'package:adb_tools/adb_tools.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:logger_utils/logger_utils.dart';
 import 'package:scrcpy_client/scrcpy_client.dart';
 import 'package:scrcpy_mcp/scrcpy_mcp.dart';
+
+final _log = Logger('mcp.controller');
 
 /// Owns the embedded MCP HTTP server lifecycle for scrcpy_plus.
 ///
@@ -30,11 +33,25 @@ class McpServerController {
     _errorMessage = null;
     try {
       final session = _injectedSession ?? await _createSession();
+
+      final agentConfig = OpenAiLlmClient.isConfigured
+          ? AgentConfig.fromEnv()
+          : null;
+      final llmClient = agentConfig != null ? OpenAiLlmClient.fromTest() : null;
+      if (agentConfig != null) {
+        _log.info(
+          'Agent enabled: model=${llmClient!.model}, '
+          'maxSteps=${agentConfig.maxSteps}',
+        );
+      }
+
       await _server.start(
         port: port,
         session: session,
         adb: _adb,
         recordingAdb: _adb,
+        agentConfig: agentConfig,
+        llmClient: llmClient,
       );
     } catch (e) {
       _errorMessage = e.toString();
