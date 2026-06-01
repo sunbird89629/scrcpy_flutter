@@ -35,15 +35,11 @@ class OpenAiLlmClient implements LlmClient {
   final http.Client _http;
 
   @override
-  Future<LlmResponse> chat({
-    required List<LlmMessage> messages,
-    required List<ToolSchema> tools,
-  }) async {
+  Future<LlmResponse> chat({required List<LlmMessage> messages}) async {
     final uri = Uri.parse('$baseUrl/chat/completions');
     final rawBody = {
       'model': model,
       'messages': messages.map(_messageToJson).toList(),
-      if (tools.isNotEmpty) 'tools': tools.map(_toolToJson).toList(),
     };
     final body = jsonEncode(rawBody);
 
@@ -71,42 +67,12 @@ class OpenAiLlmClient implements LlmClient {
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     final choice = (json['choices'] as List).first as Map<String, dynamic>;
     final message = choice['message'] as Map<String, dynamic>;
-    final finishReason = choice['finish_reason'] as String?;
-
-    if (finishReason == 'tool_calls') {
-      final rawCalls = message['tool_calls'] as List<dynamic>;
-      return LlmResponse(
-        toolCalls: rawCalls.map((raw) {
-          final c = raw as Map<String, dynamic>;
-          final fn = c['function'] as Map<String, dynamic>;
-          return ToolCall(
-            id: c['id'] as String,
-            name: fn['name'] as String,
-            arguments: fn['arguments'] as String,
-          );
-        }).toList(),
-      );
-    }
 
     return LlmResponse(text: message['content'] as String?);
   }
 
   Map<String, dynamic> _messageToJson(LlmMessage m) {
     final map = <String, dynamic>{'role': m.role};
-
-    if (m.toolCallId != null) map['tool_call_id'] = m.toolCallId;
-
-    if (m.toolCalls != null) {
-      map['tool_calls'] = m.toolCalls!
-          .map(
-            (tc) => {
-              'id': tc.id,
-              'type': 'function',
-              'function': {'name': tc.name, 'arguments': tc.arguments},
-            },
-          )
-          .toList();
-    }
 
     if (m.imageBase64 != null) {
       final parts = <Map<String, dynamic>>[];
@@ -155,13 +121,4 @@ class OpenAiLlmClient implements LlmClient {
     }).toList();
     return copy;
   }
-
-  Map<String, dynamic> _toolToJson(ToolSchema t) => {
-    'type': 'function',
-    'function': {
-      'name': t.name,
-      'description': t.description,
-      'parameters': t.parameters,
-    },
-  };
 }

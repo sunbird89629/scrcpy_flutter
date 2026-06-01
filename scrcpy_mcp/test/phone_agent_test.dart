@@ -10,8 +10,8 @@ class _FakeLlmClient implements LlmClient {
   @override
   Future<LlmResponse> chat({
     required List<LlmMessage> messages,
-    required List<ToolSchema> tools,
-  }) async => _responses[_i++];
+  }) async =>
+      _responses[_i++];
 }
 
 class _CapturingLlmClient implements LlmClient {
@@ -23,169 +23,35 @@ class _CapturingLlmClient implements LlmClient {
   @override
   Future<LlmResponse> chat({
     required List<LlmMessage> messages,
-    required List<ToolSchema> tools,
   }) async {
     capturedMessages.add(List.from(messages));
     return _responses[_i++];
   }
 }
 
-/// Subset of real MCP tool schemas that the agent can call.
-/// Mirrors the schemas defined in lib/src/tools/ so the LLM receives accurate
-/// tool definitions during testing.
-const _agentTools = [
-  ToolSchema(
-    name: 'list_devices',
-    description: 'List connected Android devices',
-    parameters: {},
-  ),
-  ToolSchema(
-    name: 'start_mirroring',
-    description: 'Start screen mirroring on a device',
-    parameters: {
-      'type': 'object',
-      'properties': {
-        'device_id': {
-          'type': 'string',
-          'description': 'The Android device serial',
-        },
-      },
-      'required': ['device_id'],
-    },
-  ),
-  ToolSchema(
-    name: 'take_screenshot',
-    description: 'Take a screenshot of the device screen',
-    parameters: {
-      'type': 'object',
-      'properties': {
-        'device_id': {
-          'type': 'string',
-          'description':
-              'Device serial (optional, uses connected device if omitted)',
-        },
-      },
-    },
-  ),
-  ToolSchema(
-    name: 'inject_touch',
-    description: 'Inject a touch event (tap/swipe segment)',
-    parameters: {
-      'type': 'object',
-      'properties': {
-        'x': {'type': 'integer', 'description': 'X coordinate'},
-        'y': {'type': 'integer', 'description': 'Y coordinate'},
-        'width': {'type': 'integer', 'description': 'Screen width'},
-        'height': {'type': 'integer', 'description': 'Screen height'},
-        'action': {
-          'type': 'integer',
-          'description': 'Touch action: 0=down, 1=up, 2=move (default: 0)',
-        },
-      },
-      'required': ['x', 'y', 'width', 'height'],
-    },
-  ),
-  ToolSchema(
-    name: 'inject_swipe',
-    description: 'Swipe between two points',
-    parameters: {
-      'type': 'object',
-      'properties': {
-        'x1': {'type': 'integer', 'description': 'Start X coordinate'},
-        'y1': {'type': 'integer', 'description': 'Start Y coordinate'},
-        'x2': {'type': 'integer', 'description': 'End X coordinate'},
-        'y2': {'type': 'integer', 'description': 'End Y coordinate'},
-        'width': {'type': 'integer', 'description': 'Screen width'},
-        'height': {'type': 'integer', 'description': 'Screen height'},
-        'durationMs': {
-          'type': 'integer',
-          'description':
-              'Total swipe duration in ms (default 300). Shorter = fling.',
-        },
-      },
-      'required': ['x1', 'y1', 'x2', 'y2', 'width', 'height'],
-    },
-  ),
-  ToolSchema(
-    name: 'inject_text',
-    description: 'Input text on the device',
-    parameters: {
-      'type': 'object',
-      'properties': {
-        'text': {'type': 'string', 'description': 'Text to input'},
-      },
-      'required': ['text'],
-    },
-  ),
-  ToolSchema(
-    name: 'inject_key',
-    description: 'Inject a key event (e.g. Home=3, Back=4)',
-    parameters: {
-      'type': 'object',
-      'properties': {
-        'keycode': {
-          'type': 'integer',
-          'description': 'Android KeyEvent keycode',
-        },
-        'action': {
-          'type': 'integer',
-          'description': 'Key action: 0=down, 1=up (default: 0)',
-        },
-      },
-      'required': ['keycode'],
-    },
-  ),
-  ToolSchema(
-    name: 'press_back',
-    description: 'Press the Back button',
-    parameters: {},
-  ),
-  ToolSchema(
-    name: 'start_app',
-    description: 'Launch an app by package name',
-    parameters: {
-      'type': 'object',
-      'properties': {
-        'package': {
-          'type': 'string',
-          'description': 'Android package name of the app to launch',
-        },
-      },
-      'required': ['package'],
-    },
-  ),
-  ToolSchema(
-    name: 'set_screen_power',
-    description: 'Turn the screen on/off',
-    parameters: {
-      'type': 'object',
-      'properties': {
-        'mode': {
-          'type': 'string',
-          'description': 'Power mode: on | off',
-        },
-      },
-      'required': ['mode'],
-    },
-  ),
-];
+/// Fake screenshot provider — returns a dummy 1x1 PNG.
+Future<({String base64, String mimeType})> _fakeScreenshot() async => (
+  base64:
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk'
+      '+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+  mimeType: 'image/png',
+);
 
 void main() {
   group('PhoneAgent', () {
     PhoneAgent makeAgent(
       List<LlmResponse> responses, {
-      ToolExecutor? executor,
+      ActionRunner? actionRunner,
       int maxSteps = 10,
-    }) => PhoneAgent(
-      config: AgentConfig(maxSteps: maxSteps),
-      llmClient: _FakeLlmClient(responses),
-      tools: _agentTools,
-      executeToolCall:
-          executor ??
-          (_, __) async => (text: 'ok', imageBase64: null, imageMimeType: null),
-    );
+    }) =>
+        PhoneAgent(
+          config: AgentConfig(maxSteps: maxSteps),
+          llmClient: _FakeLlmClient(responses),
+          takeScreenshot: _fakeScreenshot,
+          actionRunner: actionRunner ?? (_) async => 'ok',
+        );
 
-    test('returns success when LLM stops without tool calls', () async {
+    test('returns success when LLM returns plain text (no action)', () async {
       final result = await makeAgent([
         const LlmResponse(text: 'Task complete'),
       ]).run('open settings');
@@ -195,76 +61,61 @@ void main() {
       expect(result.steps, 1);
     });
 
-    test('executes tool calls before receiving final answer', () async {
+    test('executes action before receiving final answer', () async {
       final executed = <String>[];
       final result = await makeAgent(
         [
-          LlmResponse(
-            toolCalls: [
-              const ToolCall(
-                id: 'c1',
-                name: 'take_screenshot',
-                arguments: '{}',
-              ),
-            ],
-          ),
-          const LlmResponse(text: 'Done'),
+          const LlmResponse(text: 'do(action="Tap", element=[500,300])'),
+          const LlmResponse(text: 'finish(message="Task done")'),
         ],
-        executor: (name, _) async {
-          executed.add(name);
-          return (
-            text: 'screenshot taken',
-            imageBase64: null,
-            imageMimeType: null,
-          );
+        actionRunner: (action) async {
+          executed.add('$action');
+          return 'ok';
         },
-      ).run('check screen');
+      ).run('tap something');
 
       expect(result.success, isTrue);
-      expect(executed, ['take_screenshot']);
+      expect(result.result, 'Task done');
+      expect(executed.length, 1);
+      expect(executed.first, contains('Tap'));
       expect(result.steps, 2);
     });
 
-    test('feeds tool result back into message history', () async {
+    test('feeds screenshot into message history', () async {
       final capturingFake = _CapturingLlmClient([
-        LlmResponse(
-          toolCalls: [
-            const ToolCall(id: 'c1', name: 'take_screenshot', arguments: '{}'),
-          ],
-        ),
-        const LlmResponse(text: 'Done'),
+        const LlmResponse(text: 'do(action="Tap", element=[500,300])'),
+        const LlmResponse(text: 'finish(message="Done")'),
       ]);
 
       final capturingAgent = PhoneAgent(
         config: const AgentConfig(maxSteps: 5),
         llmClient: capturingFake,
-        tools: _agentTools,
-        executeToolCall: (_, __) async =>
-            (text: 'res: 1264x2800', imageBase64: null, imageMimeType: null),
+        takeScreenshot: _fakeScreenshot,
+        actionRunner: (_) async => 'ok',
       );
 
-      await capturingAgent.run('check screen');
+      await capturingAgent.run('tap something');
 
-      // Second call should include tool result in history
+      // First call: system + user (with screenshot)
+      final firstCallMessages = capturingFake.capturedMessages[0];
+      expect(firstCallMessages.any((m) => m.role == 'user'), isTrue);
+      final userMsg = firstCallMessages.firstWhere((m) => m.role == 'user');
+      expect(userMsg.imageBase64, isNotNull);
+      expect(userMsg.textContent, 'tap something');
+
+      // Second call: system + user + assistant + user (with new screenshot)
       final secondCallMessages = capturingFake.capturedMessages[1];
-      expect(secondCallMessages.any((m) => m.role == 'tool'), isTrue);
-      final toolMsg = secondCallMessages.firstWhere((m) => m.role == 'tool');
-      expect(toolMsg.textContent, 'res: 1264x2800');
-      expect(toolMsg.toolCallId, 'c1');
+      expect(secondCallMessages.any((m) => m.role == 'assistant'), isTrue);
+      final lastMsg = secondCallMessages.last;
+      expect(lastMsg.imageBase64, isNotNull);
     });
 
     test('returns failure when max steps reached', () async {
       final result = await makeAgent(
         List.generate(
           3,
-          (_) => LlmResponse(
-            toolCalls: [
-              const ToolCall(
-                id: 'c1',
-                name: 'take_screenshot',
-                arguments: '{}',
-              ),
-            ],
+          (_) => const LlmResponse(
+            text: 'do(action="Tap", element=[500,300])',
           ),
         ),
         maxSteps: 3,
@@ -275,21 +126,27 @@ void main() {
       expect(result.result, contains('Max steps'));
     });
 
-    test('continues loop when tool execution throws', () async {
+    test('continues loop when action runner throws', () async {
       final result = await makeAgent(
         [
-          LlmResponse(
-            toolCalls: [
-              const ToolCall(id: 'c1', name: 'bad_tool', arguments: '{}'),
-            ],
-          ),
-          const LlmResponse(text: 'Recovered after error'),
+          const LlmResponse(text: 'do(action="Tap", element=[500,300])'),
+          const LlmResponse(text: 'finish(message="Recovered after error")'),
         ],
-        executor: (_, __) async => throw Exception('network fail'),
+        actionRunner: (_) async => throw Exception('network fail'),
       ).run('test recovery');
 
       expect(result.success, isTrue);
       expect(result.result, 'Recovered after error');
+    });
+
+    test('parses finish action from model output', () async {
+      final result = await makeAgent([
+        const LlmResponse(text: 'finish(message="All done successfully")'),
+      ]).run('simple task');
+
+      expect(result.success, isTrue);
+      expect(result.result, 'All done successfully');
+      expect(result.steps, 1);
     });
   });
 }

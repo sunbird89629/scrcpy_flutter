@@ -1,3 +1,4 @@
+export 'src/agent/action_parser.dart';
 export 'src/agent/agent_config.dart';
 export 'src/agent/llm_client.dart';
 export 'src/agent/openai_llm_client.dart';

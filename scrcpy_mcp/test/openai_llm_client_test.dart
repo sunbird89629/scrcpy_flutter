@@ -34,14 +34,14 @@ void main() {
         }),
       );
 
-      await client.chat(messages: [], tools: []);
+      await client.chat(messages: []);
 
       expect(captured.headers['Authorization'], 'Bearer sk-test');
       final body = jsonDecode(captured.body) as Map<String, dynamic>;
       expect(body['model'], 'gpt-4o');
     });
 
-    test('parses stop response as text', () async {
+    test('parses text response', () async {
       final client = makeClient(
         MockClient(
           (_) async => http.Response(
@@ -58,49 +58,12 @@ void main() {
         ),
       );
 
-      final response = await client.chat(messages: [], tools: []);
+      final response = await client.chat(messages: []);
 
-      expect(response.isToolCall, isFalse);
       expect(response.text, 'Task complete');
     });
 
-    test('parses tool_calls response', () async {
-      final client = makeClient(
-        MockClient(
-          (_) async => http.Response(
-            jsonEncode({
-              'choices': [
-                {
-                  'finish_reason': 'tool_calls',
-                  'message': {
-                    'role': 'assistant',
-                    'tool_calls': [
-                      {
-                        'id': 'call_abc',
-                        'type': 'function',
-                        'function': {
-                          'name': 'take_screenshot',
-                          'arguments': '{}',
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            }),
-            200,
-          ),
-        ),
-      );
-
-      final response = await client.chat(messages: [], tools: []);
-
-      expect(response.isToolCall, isTrue);
-      expect(response.toolCalls!.first.name, 'take_screenshot');
-      expect(response.toolCalls!.first.id, 'call_abc');
-    });
-
-    test('includes image in tool result message', () async {
+    test('includes image in user message', () async {
       late http.Request captured;
       final client = makeClient(
         MockClient((req) async {
@@ -122,14 +85,12 @@ void main() {
       await client.chat(
         messages: [
           const LlmMessage(
-            role: 'tool',
-            textContent: 'res: 1264x2800',
+            role: 'user',
+            textContent: 'check the screen',
             imageBase64: 'abc123',
             imageMimeType: 'image/png',
-            toolCallId: 'c1',
           ),
         ],
-        tools: [],
       );
 
       final body = jsonDecode(captured.body) as Map<String, dynamic>;
@@ -147,7 +108,7 @@ void main() {
       );
 
       await expectLater(
-        client.chat(messages: [], tools: []),
+        client.chat(messages: []),
         throwsA(isA<LlmException>()),
       );
     });

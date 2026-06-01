@@ -8,13 +8,13 @@ import 'package:test/test.dart';
 
 import 'real_device_test_utils.dart';
 
-// Fake LLM that immediately returns "Done" with no tool calls.
+// Fake LLM that immediately returns "Done".
 class _DoneLlmClient implements LlmClient {
   @override
   Future<LlmResponse> chat({
     required List<LlmMessage> messages,
-    required List<ToolSchema> tools,
-  }) async => const LlmResponse(text: 'Task done');
+  }) async =>
+      const LlmResponse(text: 'Task done');
 }
 
 void main() {
