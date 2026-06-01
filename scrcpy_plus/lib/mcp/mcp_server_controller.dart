@@ -34,16 +34,12 @@ class McpServerController {
     try {
       final session = _injectedSession ?? await _createSession();
 
-      final agentConfig = OpenAiLlmClient.isConfigured
-          ? AgentConfig.fromEnv()
-          : null;
-      final llmClient = agentConfig != null ? OpenAiLlmClient.fromTest() : null;
-      if (agentConfig != null) {
-        _log.info(
-          'Agent enabled: model=${llmClient!.model}, '
-          'maxSteps=${agentConfig.maxSteps}',
-        );
-      }
+      final agentConfig = AgentConfig();
+      final llmClient = OpenAiLlmClient.fromTest();
+      _log.info(
+        'Agent enabled: model=${llmClient.model}, '
+        'maxSteps=${agentConfig.maxSteps}',
+      );
 
       await _server.start(
         port: port,
