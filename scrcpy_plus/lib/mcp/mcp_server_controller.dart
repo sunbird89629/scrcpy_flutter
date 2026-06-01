@@ -20,16 +20,15 @@ class McpServerController {
   final McpHttpServer _server = McpHttpServer();
   final ScrcpySession? _injectedSession;
 
-  bool _running = false;
   String? _errorMessage;
 
-  bool get isRunning => _running;
+  bool get isRunning => _server.serverUrl != null;
   String? get serverUrl => _server.serverUrl;
   String? get errorMessage => _errorMessage;
 
   /// Start the MCP server on [port]. Captures failures into [errorMessage].
   Future<void> start(int port) async {
-    if (_running) return;
+    if (_server.serverUrl != null) return;
     _errorMessage = null;
     try {
       final session = _injectedSession ?? await _createSession();
@@ -39,10 +38,8 @@ class McpServerController {
         adb: _adb,
         recordingAdb: _adb,
       );
-      _running = true;
     } catch (e) {
       _errorMessage = e.toString();
-      _running = false;
     }
   }
 
@@ -66,6 +63,5 @@ class McpServerController {
 
   Future<void> stop() async {
     await _server.stop();
-    _running = false;
   }
 }

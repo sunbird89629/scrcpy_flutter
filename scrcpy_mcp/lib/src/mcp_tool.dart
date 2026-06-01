@@ -43,14 +43,16 @@ abstract class McpTool {
     return result;
   }
 
+  /// Clip [s] to at most [maxLen] characters, appending `…` when truncated.
+  static String truncate(String s, int maxLen) =>
+      s.length > maxLen ? '${s.substring(0, maxLen)}…' : s;
+
   /// Extract a short human-readable summary of a [CallToolResult].
   static String _summarizeResult(CallToolResult result) {
     final parts = <String>[];
     for (final c in result.content) {
       if (c is TextContent) {
-        final text = c.text;
-        final preview = text.length > 120 ? '${text.substring(0, 120)}…' : text;
-        parts.add('text: $preview');
+        parts.add('text: ${truncate(c.text, 120)}');
       } else if (c is ImageContent) {
         final len = c.data.length;
         parts.add('${c.mimeType}, base64 len=$len');
