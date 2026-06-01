@@ -148,5 +148,111 @@ void main() {
       expect(result.result, 'All done successfully');
       expect(result.steps, 1);
     });
+
+    test('parses Launch shorthand from model output', () async {
+      final executed = <String>[];
+      final result = await makeAgent(
+        [
+          const LlmResponse(text: 'Launch("Chrome")'),
+          const LlmResponse(text: 'finish(message="Done")'),
+        ],
+        actionRunner: (action) async {
+          executed.add('$action');
+          return 'ok';
+        },
+      ).run('open chrome');
+
+      expect(result.success, isTrue);
+      expect(executed.length, 1);
+      expect(executed.first, contains('Launch'));
+    });
+
+    test('parses Tap shorthand with coordinates', () async {
+      final executed = <String>[];
+      final result = await makeAgent(
+        [
+          const LlmResponse(text: 'Tap([500, 300])'),
+          const LlmResponse(text: 'finish(message="Done")'),
+        ],
+        actionRunner: (action) async {
+          executed.add('$action');
+          return 'ok';
+        },
+      ).run('tap screen');
+
+      expect(result.success, isTrue);
+      expect(executed.length, 1);
+      expect(executed.first, contains('Tap'));
+    });
+
+    test('parses screenshot shorthand as FinishAction', () async {
+      final result = await makeAgent([
+        const LlmResponse(text: 'screenshot(message="Screen captured")'),
+      ]).run('capture');
+
+      expect(result.success, isTrue);
+      expect(result.result, 'Screen captured');
+      expect(result.steps, 1);
+    });
+  });
+
+  // ── ActionParser unit tests ─────────────────────────────────────────────
+
+  group('ActionParser', () {
+    test('parses do() with keywords', () {
+      final action = ActionParser.parse(
+        'do(action="Tap", element=[500, 300])',
+      );
+      expect(action, isA<DoAction>());
+      final doAction = action! as DoAction;
+      expect(doAction.action, 'Tap');
+      expect(doAction.element, [500, 300]);
+    });
+
+    test('parses Launch shorthand', () {
+      final action = ActionParser.parse('Launch("Chrome")');
+      expect(action, isA<DoAction>());
+      final doAction = action! as DoAction;
+      expect(doAction.action, 'Launch');
+      expect(doAction.app, 'Chrome');
+    });
+
+    test('parses Tap shorthand', () {
+      final action = ActionParser.parse('Tap([500, 300])');
+      expect(action, isA<DoAction>());
+      final doAction = action! as DoAction;
+      expect(doAction.action, 'Tap');
+      expect(doAction.element, [500, 300]);
+    });
+
+    test('parses Back shorthand', () {
+      final action = ActionParser.parse('Back()');
+      expect(action, isA<DoAction>());
+      final doAction = action! as DoAction;
+      expect(doAction.action, 'Back');
+    });
+
+    test('parses Swipe shorthand with two coordinate pairs', () {
+      final action = ActionParser.parse('Swipe([500, 1500], [500, 500])');
+      expect(action, isA<DoAction>());
+      final doAction = action! as DoAction;
+      expect(doAction.action, 'Swipe');
+      expect(doAction.start, [500, 1500]);
+      expect(doAction.end, [500, 500]);
+    });
+
+    test('parses inside <answer> tags', () {
+      final action = ActionParser.parse(
+        '<answer>do(action="Tap", element=[100, 200])</answer>',
+      );
+      expect(action, isA<DoAction>());
+    });
+
+    test('parses model output with thinking prefix', () {
+      final action = ActionParser.parse(
+        'Let me launch the browser.\nLaunch("Chrome")',
+      );
+      expect(action, isA<DoAction>());
+    });
   });
 }
