@@ -92,14 +92,15 @@ void _fileSink(LogRecord record, Directory? dir) {
 void _pruneOldFiles(Directory? dir) {
   if (dir == null || !dir.existsSync()) return;
   try {
-    final files = dir
-        .listSync()
-        .whereType<File>()
-        .where((f) => basename(f.path).startsWith('autoglm-'))
-        .toList()
-      ..sort(
-        (a, b) => b.statSync().modified.compareTo(a.statSync().modified),
-      );
+    final files =
+        dir
+            .listSync()
+            .whereType<File>()
+            .where((f) => basename(f.path).startsWith('autoglm-'))
+            .toList()
+          ..sort(
+            (a, b) => b.statSync().modified.compareTo(a.statSync().modified),
+          );
     for (final f in files.skip(5)) {
       try {
         f.deleteSync();

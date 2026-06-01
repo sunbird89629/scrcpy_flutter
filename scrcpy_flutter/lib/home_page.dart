@@ -31,13 +31,15 @@ class _HomePageState extends State<HomePage> with TrayListener {
   Future<void> _initTray() async {
     await trayManager.setIcon('assets/tray_icon.png');
     await trayManager.setToolTip('ScrcpyApp');
-    await trayManager.setContextMenu(Menu(
-      items: [
-        MenuItem(key: 'show_window', label: '显示窗口'),
-        MenuItem.separator(),
-        MenuItem(key: 'quit', label: '退出'),
-      ],
-    ));
+    await trayManager.setContextMenu(
+      Menu(
+        items: [
+          MenuItem(key: 'show_window', label: '显示窗口'),
+          MenuItem.separator(),
+          MenuItem(key: 'quit', label: '退出'),
+        ],
+      ),
+    );
   }
 
   Future<void> _initWindow() async {
@@ -64,14 +66,7 @@ class _HomePageState extends State<HomePage> with TrayListener {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Row(
-        children: const [
-          PhoneView(),
-          ControlView(),
-        ],
-      ),
-    );
+    return Scaffold(body: Row(children: const [PhoneView(), ControlView()]));
   }
 }
 

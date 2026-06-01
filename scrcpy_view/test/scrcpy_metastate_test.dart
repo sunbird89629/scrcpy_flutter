@@ -37,8 +37,10 @@ void main() {
     test('combined modifiers OR correctly', () {
       metastate.handleKey(LogicalKeyboardKey.shiftLeft, isDown: true);
       metastate.handleKey(LogicalKeyboardKey.controlLeft, isDown: true);
-      expect(metastate.bitmask,
-          AndroidMetastate.shiftOn | AndroidMetastate.ctrlOn);
+      expect(
+        metastate.bitmask,
+        AndroidMetastate.shiftOn | AndroidMetastate.ctrlOn,
+      );
     });
 
     test('releasing modifier clears the bit', () {
@@ -49,16 +51,37 @@ void main() {
     });
 
     test('handleKey returns true for modifier keys', () {
-      expect(metastate.handleKey(LogicalKeyboardKey.shift, isDown: true), isTrue);
-      expect(metastate.handleKey(LogicalKeyboardKey.altRight, isDown: true), isTrue);
-      expect(metastate.handleKey(LogicalKeyboardKey.control, isDown: true), isTrue);
-      expect(metastate.handleKey(LogicalKeyboardKey.metaRight, isDown: true), isTrue);
+      expect(
+        metastate.handleKey(LogicalKeyboardKey.shift, isDown: true),
+        isTrue,
+      );
+      expect(
+        metastate.handleKey(LogicalKeyboardKey.altRight, isDown: true),
+        isTrue,
+      );
+      expect(
+        metastate.handleKey(LogicalKeyboardKey.control, isDown: true),
+        isTrue,
+      );
+      expect(
+        metastate.handleKey(LogicalKeyboardKey.metaRight, isDown: true),
+        isTrue,
+      );
     });
 
     test('handleKey returns false for non-modifier keys', () {
-      expect(metastate.handleKey(LogicalKeyboardKey.keyA, isDown: true), isFalse);
-      expect(metastate.handleKey(LogicalKeyboardKey.enter, isDown: true), isFalse);
-      expect(metastate.handleKey(LogicalKeyboardKey.arrowUp, isDown: true), isFalse);
+      expect(
+        metastate.handleKey(LogicalKeyboardKey.keyA, isDown: true),
+        isFalse,
+      );
+      expect(
+        metastate.handleKey(LogicalKeyboardKey.enter, isDown: true),
+        isFalse,
+      );
+      expect(
+        metastate.handleKey(LogicalKeyboardKey.arrowUp, isDown: true),
+        isFalse,
+      );
     });
 
     test('releasing one modifier preserves others', () {

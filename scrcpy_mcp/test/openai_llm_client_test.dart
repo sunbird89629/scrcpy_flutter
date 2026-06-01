@@ -9,28 +9,30 @@ import 'package:test/test.dart';
 void main() {
   group('OpenAiLlmClient', () {
     OpenAiLlmClient makeClient(http.Client mockHttp) => OpenAiLlmClient(
-          baseUrl: 'https://api.openai.com/v1',
-          apiKey: 'sk-test',
-          model: 'gpt-4o',
-          httpClient: mockHttp,
-        );
+      baseUrl: 'https://api.openai.com/v1',
+      apiKey: 'sk-test',
+      model: 'gpt-4o',
+      httpClient: mockHttp,
+    );
 
     test('sends correct Authorization header and model', () async {
       late http.Request captured;
-      final client = makeClient(MockClient((req) async {
-        captured = req;
-        return http.Response(
-          jsonEncode({
-            'choices': [
-              {
-                'finish_reason': 'stop',
-                'message': {'role': 'assistant', 'content': 'ok'},
-              }
-            ],
-          }),
-          200,
-        );
-      }));
+      final client = makeClient(
+        MockClient((req) async {
+          captured = req;
+          return http.Response(
+            jsonEncode({
+              'choices': [
+                {
+                  'finish_reason': 'stop',
+                  'message': {'role': 'assistant', 'content': 'ok'},
+                },
+              ],
+            }),
+            200,
+          );
+        }),
+      );
 
       await client.chat(messages: [], tools: []);
 
@@ -40,17 +42,21 @@ void main() {
     });
 
     test('parses stop response as text', () async {
-      final client = makeClient(MockClient((_) async => http.Response(
+      final client = makeClient(
+        MockClient(
+          (_) async => http.Response(
             jsonEncode({
               'choices': [
                 {
                   'finish_reason': 'stop',
                   'message': {'role': 'assistant', 'content': 'Task complete'},
-                }
+                },
               ],
             }),
             200,
-          )));
+          ),
+        ),
+      );
 
       final response = await client.chat(messages: [], tools: []);
 
@@ -59,7 +65,9 @@ void main() {
     });
 
     test('parses tool_calls response', () async {
-      final client = makeClient(MockClient((_) async => http.Response(
+      final client = makeClient(
+        MockClient(
+          (_) async => http.Response(
             jsonEncode({
               'choices': [
                 {
@@ -74,14 +82,16 @@ void main() {
                           'name': 'take_screenshot',
                           'arguments': '{}',
                         },
-                      }
+                      },
                     ],
                   },
-                }
+                },
               ],
             }),
             200,
-          )));
+          ),
+        ),
+      );
 
       final response = await client.chat(messages: [], tools: []);
 
@@ -92,20 +102,22 @@ void main() {
 
     test('includes image in tool result message', () async {
       late http.Request captured;
-      final client = makeClient(MockClient((req) async {
-        captured = req;
-        return http.Response(
-          jsonEncode({
-            'choices': [
-              {
-                'finish_reason': 'stop',
-                'message': {'role': 'assistant', 'content': 'done'},
-              }
-            ],
-          }),
-          200,
-        );
-      }));
+      final client = makeClient(
+        MockClient((req) async {
+          captured = req;
+          return http.Response(
+            jsonEncode({
+              'choices': [
+                {
+                  'finish_reason': 'stop',
+                  'message': {'role': 'assistant', 'content': 'done'},
+                },
+              ],
+            }),
+            200,
+          );
+        }),
+      );
 
       await client.chat(
         messages: [
@@ -115,7 +127,7 @@ void main() {
             imageBase64: 'abc123',
             imageMimeType: 'image/png',
             toolCallId: 'c1',
-          )
+          ),
         ],
         tools: [],
       );
@@ -130,8 +142,9 @@ void main() {
     });
 
     test('throws LlmException on HTTP error', () async {
-      final client =
-          makeClient(MockClient((_) async => http.Response('Unauthorized', 401)));
+      final client = makeClient(
+        MockClient((_) async => http.Response('Unauthorized', 401)),
+      );
 
       await expectLater(
         client.chat(messages: [], tools: []),

@@ -17,7 +17,8 @@ class SetScreenPowerTool extends McpTool {
   final ToolInputSchema inputSchema = JsonSchema.object(
     properties: {
       'on': JsonSchema.boolean(
-          description: 'true to turn on, false to turn off'),
+        description: 'true to turn on, false to turn off',
+      ),
     },
     required: ['on'],
   );

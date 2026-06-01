@@ -52,7 +52,9 @@ class InjectScrollTool extends McpTool {
     final vScroll = args['vScroll'] as int;
     final (vw, vh) = _session.videoSize(width, height);
     final (rx, ry) = _session.rescale(x, y, width, height);
-    logger.fine('inject_scroll: ($x,$y) → rescaled ($rx,$ry), video=${vw}x$vh, h=$hScroll v=$vScroll');
+    logger.fine(
+      'inject_scroll: ($x,$y) → rescaled ($rx,$ry), video=${vw}x$vh, h=$hScroll v=$vScroll',
+    );
     _session.sendControlMessage(
       ScrcpyInjectScrollMessage(
         x: rx,

@@ -17,20 +17,24 @@ class ScrcpyConfig {
   /// Build CLI argument list for a given device serial.
   List<String> toArgs(String serial) {
     return [
-      '--serial', serial,
-      '--max-size', '$maxSize',
-      '--video-bit-rate', videoBitRate,
-      '--video-codec', videoCodec,
+      '--serial',
+      serial,
+      '--max-size',
+      '$maxSize',
+      '--video-bit-rate',
+      videoBitRate,
+      '--video-codec',
+      videoCodec,
     ];
   }
 
   Map<String, dynamic> toJson() => {
-        'scrcpyPath': scrcpyPath,
-        'maxSize': maxSize,
-        'videoBitRate': videoBitRate,
-        'videoCodec': videoCodec,
-        'mcpPort': mcpPort,
-      };
+    'scrcpyPath': scrcpyPath,
+    'maxSize': maxSize,
+    'videoBitRate': videoBitRate,
+    'videoCodec': videoCodec,
+    'mcpPort': mcpPort,
+  };
 
   factory ScrcpyConfig.fromJson(Map<String, dynamic> json) {
     return ScrcpyConfig(

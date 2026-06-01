@@ -2,10 +2,7 @@ import 'package:adb_tools/adb_tools.dart';
 
 /// Extended device model with battery and display info for menu display.
 class DeviceEntry {
-  DeviceEntry({
-    required this.info,
-    this.battery,
-  });
+  DeviceEntry({required this.info, this.battery});
 
   final DeviceInfo info;
   final int? battery; // percentage, null if unknown
@@ -26,7 +23,8 @@ class DeviceEntry {
   String? get detailLine {
     final parts = <String>[];
     if (battery != null) parts.add('Battery: $battery%');
-    if (info.androidVersion != null) parts.add('Android ${info.androidVersion}');
+    if (info.androidVersion != null)
+      parts.add('Android ${info.androidVersion}');
     if (info.screenWidth > 0) {
       parts.add('${info.screenWidth.toInt()}x${info.screenHeight.toInt()}');
     }

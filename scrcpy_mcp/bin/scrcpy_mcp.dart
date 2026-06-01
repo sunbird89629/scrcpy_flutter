@@ -16,13 +16,16 @@ void main(List<String> args) async {
 
   final session = await ScrcpySessionImpl.create(adb: scrcpyAdb);
 
-  final agentConfig =
-      OpenAiLlmClient.isConfigured ? AgentConfig.fromEnv() : null;
+  final agentConfig = OpenAiLlmClient.isConfigured
+      ? AgentConfig.fromEnv()
+      : null;
   final llmClient = OpenAiLlmClient.fromTest();
 
   if (agentConfig != null) {
-    _log.info('Agent enabled: model=${llmClient.model}, '
-        'maxSteps=${agentConfig.maxSteps}');
+    _log.info(
+      'Agent enabled: model=${llmClient.model}, '
+      'maxSteps=${agentConfig.maxSteps}',
+    );
   }
 
   final server = ScrcpyMcpServer(

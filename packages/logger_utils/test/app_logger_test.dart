@@ -38,9 +38,7 @@ void main() {
       for (var i = 0; i < 7; i++) {
         final file = File('${tempDir.path}/autoglm-2026-01-0$i.log');
         file.writeAsStringSync('log $i');
-        file.setLastModifiedSync(
-          DateTime(2026).add(Duration(days: i)),
-        );
+        file.setLastModifiedSync(DateTime(2026).add(Duration(days: i)));
       }
       initLogging(logsDir: tempDir.path);
       final remaining = tempDir

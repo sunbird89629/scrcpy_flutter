@@ -40,11 +40,11 @@ class ScrcpyMcpServer {
     RecordingAdb? recordingAdb,
     AgentConfig? agentConfig,
     LlmClient? llmClient,
-  })  : _session = session,
-        _adb = adb,
-        _agentConfig = agentConfig,
-        _llmClient = llmClient,
-        _ctx = SessionContext() {
+  }) : _session = session,
+       _adb = adb,
+       _agentConfig = agentConfig,
+       _llmClient = llmClient,
+       _ctx = SessionContext() {
     if (recordingAdb != null) {
       _recordingController = RecordingController(recordingAdb);
     }
@@ -108,13 +108,15 @@ class ScrcpyMcpServer {
     // Agent tool — only when both config and client are provided.
     // Built after all other tools so it can reference their schemas.
     if (_agentConfig != null && _llmClient != null) {
-      tools.add(RunTaskTool(
-        config: _agentConfig,
-        llmClient: _llmClient,
-        tools: List.unmodifiable(tools),
-        session: _session,
-        ctx: _ctx,
-      ));
+      tools.add(
+        RunTaskTool(
+          config: _agentConfig,
+          llmClient: _llmClient,
+          tools: List.unmodifiable(tools),
+          session: _session,
+          ctx: _ctx,
+        ),
+      );
     }
 
     for (final tool in tools) {
@@ -129,35 +131,20 @@ class ScrcpyMcpServer {
 
   void _registerResources() {
     _mcpServer
-      ..registerResource(
-        'Connected Devices',
-        'device://list',
-        (
-          description: 'List of currently connected Android devices.',
-          mimeType: 'application/json',
-        ),
-        _readDeviceList,
-      )
-      ..registerResource(
-        'Mirroring Status',
-        'mirroring://status',
-        (
-          description: 'Current mirroring session status.',
-          mimeType: 'application/json',
-        ),
-        _readMirroringStatus,
-      );
+      ..registerResource('Connected Devices', 'device://list', (
+        description: 'List of currently connected Android devices.',
+        mimeType: 'application/json',
+      ), _readDeviceList)
+      ..registerResource('Mirroring Status', 'mirroring://status', (
+        description: 'Current mirroring session status.',
+        mimeType: 'application/json',
+      ), _readMirroringStatus);
 
     if (_recordingController != null) {
-      _mcpServer.registerResource(
-        'Recording Status',
-        'recording://status',
-        (
-          description: 'Current screen recording state.',
-          mimeType: 'application/json',
-        ),
-        _readRecordingStatus,
-      );
+      _mcpServer.registerResource('Recording Status', 'recording://status', (
+        description: 'Current screen recording state.',
+        mimeType: 'application/json',
+      ), _readRecordingStatus);
     }
   }
 
@@ -250,7 +237,7 @@ class ScrcpyMcpServer {
         : 'Available devices: ${devices.join(", ")}';
     final recordingLine = _recordingController != null
         ? '- start_recording, stop_recording '
-            '(max 180 s; requires active mirroring)\n'
+              '(max 180 s; requires active mirroring)\n'
         : '';
 
     return GetPromptResult(
@@ -259,7 +246,8 @@ class ScrcpyMcpServer {
         PromptMessage(
           role: PromptMessageRole.user,
           content: TextContent(
-            text: 'You are an Android device control assistant.\n\n'
+            text:
+                'You are an Android device control assistant.\n\n'
                 '$deviceInfo\n\n'
                 'Available tools:\n'
                 '- list_devices, start_mirroring, stop_mirroring\n'
@@ -292,7 +280,8 @@ class ScrcpyMcpServer {
         PromptMessage(
           role: PromptMessageRole.user,
           content: TextContent(
-            text: 'You are an Android device troubleshooting assistant.\n\n'
+            text:
+                'You are an Android device troubleshooting assistant.\n\n'
                 'Connected devices: '
                 '${devices.isEmpty ? "none" : devices.join(", ")}\n'
                 '${issue != null ? "Reported issue: $issue\n" : ""}\n'

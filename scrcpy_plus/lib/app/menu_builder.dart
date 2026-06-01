@@ -20,40 +20,52 @@ class MenuBuilder {
 
     // MCP server status section (top).
     if (mcpUrl != null) {
-      items.add(MenuItem(key: 'mcp_header', label: 'MCP server', disabled: true));
+      items.add(
+        MenuItem(key: 'mcp_header', label: 'MCP server', disabled: true),
+      );
       items.add(MenuItem(key: copyMcpKey, label: '  $mcpUrl'));
       items.add(MenuItem.separator());
     } else if (mcpError != null) {
-      items.add(MenuItem(
-        key: 'mcp_error',
-        label: 'MCP server: $mcpError',
-        disabled: true,
-      ));
+      items.add(
+        MenuItem(
+          key: 'mcp_error',
+          label: 'MCP server: $mcpError',
+          disabled: true,
+        ),
+      );
       items.add(MenuItem.separator());
     }
 
     if (devices.isEmpty) {
-      items.add(MenuItem(
-        key: 'no_devices',
-        label: 'No devices connected',
-        disabled: true,
-      ));
+      items.add(
+        MenuItem(
+          key: 'no_devices',
+          label: 'No devices connected',
+          disabled: true,
+        ),
+      );
     } else {
       for (final device in devices) {
-        items.add(MenuItem(
-          key: '$launchPrefix${device.serial}',
-          label: 'Launch scrcpy: ${device.menuLabel}',
-        ));
-        items.add(MenuItem(
-          key: '$disconnectPrefix${device.serial}',
-          label: '  Disconnect ${device.displayName}',
-        ));
+        items.add(
+          MenuItem(
+            key: '$launchPrefix${device.serial}',
+            label: 'Launch scrcpy: ${device.menuLabel}',
+          ),
+        );
+        items.add(
+          MenuItem(
+            key: '$disconnectPrefix${device.serial}',
+            label: '  Disconnect ${device.displayName}',
+          ),
+        );
         if (device.detailLine != null) {
-          items.add(MenuItem(
-            key: '$infoPrefix${device.serial}',
-            label: '  ${device.detailLine}',
-            disabled: true,
-          ));
+          items.add(
+            MenuItem(
+              key: '$infoPrefix${device.serial}',
+              label: '  ${device.detailLine}',
+              disabled: true,
+            ),
+          );
         }
       }
     }

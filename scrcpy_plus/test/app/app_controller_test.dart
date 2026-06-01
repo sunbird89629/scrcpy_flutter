@@ -11,8 +11,9 @@ void main() {
       expect(AppController.isDisconnectAction('quit'), false);
       expect(AppController.serialFromAction('launch_ABCD', 'launch_'), 'ABCD');
       expect(
-          AppController.serialFromAction('disconnect_ABCD', 'disconnect_'),
-          'ABCD');
+        AppController.serialFromAction('disconnect_ABCD', 'disconnect_'),
+        'ABCD',
+      );
     });
   });
 }

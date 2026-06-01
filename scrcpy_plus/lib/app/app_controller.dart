@@ -1,9 +1,8 @@
 import 'dart:io';
 
-import 'package:flutter/services.dart';
 import 'package:adb_tools/adb_tools.dart';
+import 'package:flutter/services.dart';
 import 'package:logger_utils/logger_utils.dart';
-import 'package:tray_manager/tray_manager.dart';
 import 'package:scrcpy_plus/app/menu_builder.dart';
 import 'package:scrcpy_plus/device/device_manager.dart';
 import 'package:scrcpy_plus/device/pair_dialog.dart' show PairDialog;
@@ -11,17 +10,16 @@ import 'package:scrcpy_plus/device/pairing_service.dart';
 import 'package:scrcpy_plus/mcp/mcp_server_controller.dart';
 import 'package:scrcpy_plus/scrcpy/scrcpy_launcher.dart';
 import 'package:scrcpy_plus/settings/settings_manager.dart';
+import 'package:tray_manager/tray_manager.dart';
 
 /// Application-wide logger instance.
 final appLogger = Logger('scrcpy_plus');
 
 /// Central controller orchestrating tray, devices, scrcpy, and settings.
 class AppController implements TrayListener {
-  AppController({
-    required this.settingsManager,
-    AdbClient? adb,
-  })  : adb = adb ?? const AdbClient(),
-        pairingService = PairingService(adb: adb ?? const AdbClient()) {
+  AppController({required this.settingsManager, AdbClient? adb})
+    : adb = adb ?? const AdbClient(),
+      pairingService = PairingService(adb: adb ?? const AdbClient()) {
     deviceManager = DeviceManager(adb: this.adb);
     launcher = ScrcpyLauncher();
     mcpController = McpServerController(adb: this.adb);
@@ -169,7 +167,7 @@ class AppController implements TrayListener {
   }
 
   void _showSettingsDialog() {
-    // TODO: Implement settings dialog
+    // TODO(howard): Implement settings dialog
     appLogger.info('Settings dialog not yet implemented');
   }
 

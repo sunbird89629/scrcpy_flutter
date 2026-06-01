@@ -42,18 +42,19 @@ void main() {
 
       tearDownAll(() => close());
 
-      test('run_task completes a simple task', () async {
-        final result = await client.callTool(
-          CallToolRequest(
-            name: 'run_task',
-            arguments: {
-              'device_id': deviceId,
-              'message': '截一张屏幕截图并描述当前界面',
-            },
-          ),
-        );
-        expect(result.isError, isFalse);
-      }, timeout: const Timeout(Duration(minutes: 2)));
+      test(
+        'run_task completes a simple task',
+        () async {
+          final result = await client.callTool(
+            CallToolRequest(
+              name: 'run_task',
+              arguments: {'device_id': deviceId, 'message': '截一张屏幕截图并描述当前界面'},
+            ),
+          );
+          expect(result.isError, isFalse);
+        },
+        timeout: const Timeout(Duration(minutes: 2)),
+      );
     },
     skip: (!OpenAiLlmClient.isConfigured || deviceId.isEmpty)
         ? 'Set OPENAI_API_KEY and SCRCPY_MCP_TEST_DEVICE to run'

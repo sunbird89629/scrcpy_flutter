@@ -20,9 +20,7 @@ class InjectKeyTool extends McpTool {
   @override
   final ToolInputSchema inputSchema = JsonSchema.object(
     properties: {
-      'keycode': JsonSchema.integer(
-        description: 'Android KeyEvent keycode',
-      ),
+      'keycode': JsonSchema.integer(description: 'Android KeyEvent keycode'),
       'action': JsonSchema.integer(
         description: 'Key action: 0=down, 1=up (default: 0)',
       ),

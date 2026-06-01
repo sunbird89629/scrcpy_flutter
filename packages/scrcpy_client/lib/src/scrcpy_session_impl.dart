@@ -20,11 +20,9 @@ import 'package:scrcpy_client/src/scrcpy_session.dart';
 /// For Flutter consumers, use a separate ScrcpyViewController which extends
 /// `ChangeNotifier` and manages proxy/WebSocket server lifecycle.
 class ScrcpySessionImpl implements ScrcpySession {
-  ScrcpySessionImpl({
-    required ScrcpyAdb adb,
-    required Uint8List serverJarBytes,
-  })  : _adb = adb,
-        _serverJarBytes = serverJarBytes;
+  ScrcpySessionImpl({required ScrcpyAdb adb, required Uint8List serverJarBytes})
+    : _adb = adb,
+      _serverJarBytes = serverJarBytes;
 
   final ScrcpyAdb _adb;
   final Uint8List _serverJarBytes;
@@ -105,16 +103,20 @@ class ScrcpySessionImpl implements ScrcpySession {
   }
 
   void injectKey(int keycode, {int metastate = 0}) {
-    sendControlMessage(ScrcpyInjectKeyMessage(
-      action: ScrcpyAction.down,
-      keycode: keycode,
-      metastate: metastate,
-    ));
-    sendControlMessage(ScrcpyInjectKeyMessage(
-      action: ScrcpyAction.up,
-      keycode: keycode,
-      metastate: metastate,
-    ));
+    sendControlMessage(
+      ScrcpyInjectKeyMessage(
+        action: ScrcpyAction.down,
+        keycode: keycode,
+        metastate: metastate,
+      ),
+    );
+    sendControlMessage(
+      ScrcpyInjectKeyMessage(
+        action: ScrcpyAction.up,
+        keycode: keycode,
+        metastate: metastate,
+      ),
+    );
   }
 
   @override

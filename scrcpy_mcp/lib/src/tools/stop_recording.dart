@@ -26,7 +26,8 @@ class StopRecordingTool extends McpTool {
   final ToolInputSchema inputSchema = JsonSchema.object(
     properties: {
       'save_path': JsonSchema.string(
-        description: 'Local file path '
+        description:
+            'Local file path '
             '(default: ~/Downloads/scrcpy_records/rec_<timestamp>.mp4)',
       ),
     },
@@ -38,9 +39,9 @@ class StopRecordingTool extends McpTool {
     RequestHandlerExtra extra,
   ) async {
     if (!_controller.isRecording) {
-      return CallToolResult.fromContent(
-        [const TextContent(text: 'No active recording.')],
-      );
+      return CallToolResult.fromContent([
+        const TextContent(text: 'No active recording.'),
+      ]);
     }
     final savePath = args['save_path'] as String?;
     logger.fine('stop_recording: savePath=${savePath ?? "(default)"}');

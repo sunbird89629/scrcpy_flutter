@@ -15,7 +15,7 @@ class SettingsManager {
 
   Future<ScrcpyConfig> loadConfig() async {
     final file = File(_configPath);
-    if (!await file.exists()) return const ScrcpyConfig();
+    if (!file.existsSync()) return const ScrcpyConfig();
     final json = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
     return ScrcpyConfig.fromJson(json);
   }
@@ -23,12 +23,14 @@ class SettingsManager {
   Future<void> saveConfig(ScrcpyConfig config) async {
     final file = File(_configPath);
     await file.parent.create(recursive: true);
-    await file.writeAsString(const JsonEncoder.withIndent('  ').convert(config.toJson()));
+    await file.writeAsString(
+      const JsonEncoder.withIndent('  ').convert(config.toJson()),
+    );
   }
 
   Future<List<String>> loadKnownSerials() async {
     final file = File(_knownSerialsPath);
-    if (!await file.exists()) return [];
+    if (!file.existsSync()) return [];
     final json = jsonDecode(await file.readAsString()) as List;
     return json.cast<String>();
   }
@@ -36,6 +38,8 @@ class SettingsManager {
   Future<void> saveKnownSerials(List<String> serials) async {
     final file = File(_knownSerialsPath);
     await file.parent.create(recursive: true);
-    await file.writeAsString(const JsonEncoder.withIndent('  ').convert(serials));
+    await file.writeAsString(
+      const JsonEncoder.withIndent('  ').convert(serials),
+    );
   }
 }

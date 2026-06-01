@@ -19,8 +19,8 @@ class AdbScrcpyDeviceProvisioner implements ScrcpyDeviceProvisioner {
     required this.options,
     this.port = 27183,
     ScrcpyLogger? logger,
-  })  : _serverJarBytes = serverJarBytes,
-        _log = logger ?? const NoOpScrcpyLogger();
+  }) : _serverJarBytes = serverJarBytes,
+       _log = logger ?? const NoOpScrcpyLogger();
 
   final ScrcpyAdb adb;
 
@@ -84,17 +84,25 @@ class AdbScrcpyDeviceProvisioner implements ScrcpyDeviceProvisioner {
     const version = ScrcpyServer.serverVersion;
 
     try {
-      _log.debug('[AdbScrcpyDeviceProvisioner] Writing server JAR to temp file');
+      _log.debug(
+        '[AdbScrcpyDeviceProvisioner] Writing server JAR to temp file',
+      );
       final tempDir = Directory.systemTemp;
       final localTempFile = File(
         p.join(tempDir.path, 'scrcpy-server-v$version.jar'),
       );
       await localTempFile.writeAsBytes(_serverJarBytes, flush: true);
-      _log.debug('[AdbScrcpyDeviceProvisioner] Pushing server to device: $_remoteJarPath');
+      _log.debug(
+        '[AdbScrcpyDeviceProvisioner] Pushing server to device: $_remoteJarPath',
+      );
       await adb.push(localTempFile.path, _remoteJarPath, deviceId: deviceId);
       await localTempFile.delete();
     } on Exception catch (e, st) {
-      _log.error('[AdbScrcpyDeviceProvisioner] Failed to prepare server on device', e, st);
+      _log.error(
+        '[AdbScrcpyDeviceProvisioner] Failed to prepare server on device',
+        e,
+        st,
+      );
       rethrow;
     }
   }
@@ -170,26 +178,26 @@ class AdbScrcpyDeviceProvisioner implements ScrcpyDeviceProvisioner {
     _log.debug('[AdbScrcpyDeviceProvisioner] Executing: adb ${args.join(' ')}');
     _serverProcess = await adb.startProcess(args);
 
-    _stdoutSubscription = _serverProcess!.stdout
-        .transform(utf8.decoder)
-        .listen((line) {
-      final trimmed = line.trim();
-      if (trimmed.isNotEmpty) {
-        _log.debug('[AdbScrcpyDeviceProvisioner:stdout] $trimmed');
-      }
-    });
+    _stdoutSubscription = _serverProcess!.stdout.transform(utf8.decoder).listen(
+      (line) {
+        final trimmed = line.trim();
+        if (trimmed.isNotEmpty) {
+          _log.debug('[AdbScrcpyDeviceProvisioner:stdout] $trimmed');
+        }
+      },
+    );
 
-    _stderrSubscription = _serverProcess!.stderr
-        .transform(utf8.decoder)
-        .listen((line) {
-      final trimmed = line.trim();
-      if (trimmed.isEmpty) return;
-      if (trimmed.contains('ERROR') || trimmed.contains('Exception')) {
-        _log.error('[AdbScrcpyDeviceProvisioner:stderr] $trimmed');
-      } else {
-        _log.warn('[AdbScrcpyDeviceProvisioner:stderr] $trimmed');
-      }
-    });
+    _stderrSubscription = _serverProcess!.stderr.transform(utf8.decoder).listen(
+      (line) {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty) return;
+        if (trimmed.contains('ERROR') || trimmed.contains('Exception')) {
+          _log.error('[AdbScrcpyDeviceProvisioner:stderr] $trimmed');
+        } else {
+          _log.warn('[AdbScrcpyDeviceProvisioner:stderr] $trimmed');
+        }
+      },
+    );
 
     unawaited(
       _serverProcess!.exitCode.then((code) {

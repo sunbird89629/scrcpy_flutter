@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:logging/logging.dart';
+import 'package:logger_utils/logger_utils.dart';
 import 'package:scrcpy_plus/scrcpy/scrcpy_config.dart';
 
 /// Application-wide logger instance.

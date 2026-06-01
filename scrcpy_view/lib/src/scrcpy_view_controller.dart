@@ -29,8 +29,9 @@ import 'package:scrcpy_view/src/scrcpy_websocket_server.dart';
 /// ```
 class ScrcpyViewController extends ChangeNotifier implements ScrcpySession {
   ScrcpyViewController({required ScrcpyAdb adb}) : _adb = adb {
-    PlatformInAppWebViewController.debugLoggingSettings.excludeFilter
-        .add(RegExp('statsHandler'));
+    PlatformInAppWebViewController.debugLoggingSettings.excludeFilter.add(
+      RegExp('statsHandler'),
+    );
   }
 
   final ScrcpyAdb _adb;
@@ -44,11 +45,10 @@ class ScrcpyViewController extends ChangeNotifier implements ScrcpySession {
 
   /// Touch event forwarder passed to the video backend.
   // ignore: prefer_function_declarations_over_variables
-  late final ScrcpyTouchCallback touchController =
-      (msg) => _impl?.sendControlMessage(msg);
+  late final ScrcpyTouchCallback touchController = (msg) =>
+      _impl?.sendControlMessage(msg);
 
-  Future<List<String>> getDevices() =>
-      _impl?.getDevices() ?? _adb.getDevices();
+  Future<List<String>> getDevices() => _impl?.getDevices() ?? _adb.getDevices();
 
   // ── Readable state ────────────────────────────────────────────────────────
 
@@ -112,8 +112,12 @@ class ScrcpyViewController extends ChangeNotifier implements ScrcpySession {
       _impl = ScrcpySessionImpl(adb: _adb, serverJarBytes: serverJarBytes);
 
       // ScrcpySessionImpl.start() blocks until sockets are connected.
-      await _impl!.start(deviceId,
-          logger: logger, onStopped: onStopped, onError: onError);
+      await _impl!.start(
+        deviceId,
+        logger: logger,
+        onStopped: onStopped,
+        onError: onError,
+      );
 
       // Wire up proxy servers directly here (not inside an async onStarted
       // callback) so we can safely await each step.
@@ -207,8 +211,9 @@ class ScrcpyViewController extends ChangeNotifier implements ScrcpySession {
     final tempDir = Directory.systemTemp;
     final webDir = Directory(p.join(tempDir.path, 'autoglm_web_player'))
       ..createSync(recursive: true);
-    await File(p.join(webDir.path, 'index.html'))
-        .writeAsBytes(webPlayerBytes, flush: true);
+    await File(
+      p.join(webDir.path, 'index.html'),
+    ).writeAsBytes(webPlayerBytes, flush: true);
     return webDir.path;
   }
 }

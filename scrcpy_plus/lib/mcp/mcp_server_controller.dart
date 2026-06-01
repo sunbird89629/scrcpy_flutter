@@ -10,11 +10,9 @@ import 'package:scrcpy_mcp/scrcpy_mcp.dart';
 /// Streamable HTTP MCP endpoint. Startup failures are captured into
 /// [errorMessage] rather than thrown, so the tray app keeps running.
 class McpServerController {
-  McpServerController({
-    required AdbClient adb,
-    ScrcpySession? session,
-  })  : _adb = ScrcpyMcpAdb(adb),
-        _injectedSession = session;
+  McpServerController({required AdbClient adb, ScrcpySession? session})
+    : _adb = ScrcpyMcpAdb(adb),
+      _injectedSession = session;
 
   final ScrcpyMcpAdb _adb;
   final McpHttpServer _server = McpHttpServer();

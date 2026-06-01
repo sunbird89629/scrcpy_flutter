@@ -13,8 +13,7 @@ class _FakeLlmClient implements LlmClient {
   Future<LlmResponse> chat({
     required List<LlmMessage> messages,
     required List<ToolSchema> tools,
-  }) async =>
-      _responses[_i++];
+  }) async => _responses[_i++];
 }
 
 void main() {
@@ -23,15 +22,14 @@ void main() {
       List<LlmResponse> responses, {
       ToolExecutor? executor,
       int maxSteps = 10,
-    }) =>
-        PhoneAgent(
-          config: AgentConfig(maxSteps: maxSteps),
-          llmClient: _FakeLlmClient(responses),
-          tools: const [],
-          executeToolCall: executor ??
-              (_, __) async =>
-                  (text: 'ok', imageBase64: null, imageMimeType: null),
-        );
+    }) => PhoneAgent(
+      config: AgentConfig(maxSteps: maxSteps),
+      llmClient: _FakeLlmClient(responses),
+      tools: const [],
+      executeToolCall:
+          executor ??
+          (_, __) async => (text: 'ok', imageBase64: null, imageMimeType: null),
+    );
 
     test('returns success when LLM stops without tool calls', () async {
       final result = await makeAgent([
@@ -47,9 +45,15 @@ void main() {
       final executed = <String>[];
       final result = await makeAgent(
         [
-          LlmResponse(toolCalls: [
-            const ToolCall(id: 'c1', name: 'take_screenshot', arguments: '{}'),
-          ]),
+          LlmResponse(
+            toolCalls: [
+              const ToolCall(
+                id: 'c1',
+                name: 'take_screenshot',
+                arguments: '{}',
+              ),
+            ],
+          ),
           const LlmResponse(text: 'Done'),
         ],
         executor: (name, _) async {
@@ -57,7 +61,7 @@ void main() {
           return (
             text: 'screenshot taken',
             imageBase64: null,
-            imageMimeType: null
+            imageMimeType: null,
           );
         },
       ).run('check screen');
@@ -69,9 +73,11 @@ void main() {
 
     test('feeds tool result back into message history', () async {
       final capturingFake = _CapturingLlmClient([
-        LlmResponse(toolCalls: [
-          const ToolCall(id: 'c1', name: 'take_screenshot', arguments: '{}'),
-        ]),
+        LlmResponse(
+          toolCalls: [
+            const ToolCall(id: 'c1', name: 'take_screenshot', arguments: '{}'),
+          ],
+        ),
         const LlmResponse(text: 'Done'),
       ]);
 
@@ -97,9 +103,15 @@ void main() {
       final result = await makeAgent(
         List.generate(
           3,
-          (_) => LlmResponse(toolCalls: [
-            const ToolCall(id: 'c1', name: 'take_screenshot', arguments: '{}'),
-          ]),
+          (_) => LlmResponse(
+            toolCalls: [
+              const ToolCall(
+                id: 'c1',
+                name: 'take_screenshot',
+                arguments: '{}',
+              ),
+            ],
+          ),
         ),
         maxSteps: 3,
       ).run('impossible task');
@@ -112,9 +124,11 @@ void main() {
     test('continues loop when tool execution throws', () async {
       final result = await makeAgent(
         [
-          LlmResponse(toolCalls: [
-            const ToolCall(id: 'c1', name: 'bad_tool', arguments: '{}'),
-          ]),
+          LlmResponse(
+            toolCalls: [
+              const ToolCall(id: 'c1', name: 'bad_tool', arguments: '{}'),
+            ],
+          ),
           const LlmResponse(text: 'Recovered after error'),
         ],
         executor: (_, __) async => throw Exception('network fail'),
@@ -124,31 +138,40 @@ void main() {
       expect(result.result, 'Recovered after error');
     });
 
-    test('includes image in tool result message when executor returns one',
-        () async {
-      final capturingFake = _CapturingLlmClient([
-        LlmResponse(toolCalls: [
-          const ToolCall(id: 'c1', name: 'take_screenshot', arguments: '{}'),
-        ]),
-        const LlmResponse(text: 'Done'),
-      ]);
+    test(
+      'includes image in tool result message when executor returns one',
+      () async {
+        final capturingFake = _CapturingLlmClient([
+          LlmResponse(
+            toolCalls: [
+              const ToolCall(
+                id: 'c1',
+                name: 'take_screenshot',
+                arguments: '{}',
+              ),
+            ],
+          ),
+          const LlmResponse(text: 'Done'),
+        ]);
 
-      await PhoneAgent(
-        config: const AgentConfig(maxSteps: 5),
-        llmClient: capturingFake,
-        tools: const [],
-        executeToolCall: (_, __) async => (
-          text: 'res: 1264x2800',
-          imageBase64: 'base64png',
-          imageMimeType: 'image/png',
-        ),
-      ).run('screenshot test');
+        await PhoneAgent(
+          config: const AgentConfig(maxSteps: 5),
+          llmClient: capturingFake,
+          tools: const [],
+          executeToolCall: (_, __) async => (
+            text: 'res: 1264x2800',
+            imageBase64: 'base64png',
+            imageMimeType: 'image/png',
+          ),
+        ).run('screenshot test');
 
-      final toolMsg =
-          capturingFake.capturedMessages[1].firstWhere((m) => m.role == 'tool');
-      expect(toolMsg.imageBase64, 'base64png');
-      expect(toolMsg.imageMimeType, 'image/png');
-    });
+        final toolMsg = capturingFake.capturedMessages[1].firstWhere(
+          (m) => m.role == 'tool',
+        );
+        expect(toolMsg.imageBase64, 'base64png');
+        expect(toolMsg.imageMimeType, 'image/png');
+      },
+    );
   });
 }
 

@@ -41,9 +41,7 @@ void main() {
   group('AdbClient.getDeviceInfo', () {
     test('returns device with model info', () async {
       final client = AdbClient(
-        runner: _MapRunner({
-          '-s R3CN12345 shell getprop': _sampleGetprop,
-        }),
+        runner: _MapRunner({'-s R3CN12345 shell getprop': _sampleGetprop}),
       );
 
       final d = await client.getDeviceInfo('R3CN12345');
@@ -70,9 +68,7 @@ void main() {
     });
 
     test('getprop exception throws AdbException', () async {
-      final client = AdbClient(
-        runner: _MapRunner({}, throwOn: 'getprop'),
-      );
+      final client = AdbClient(runner: _MapRunner({}, throwOn: 'getprop'));
 
       expect(
         () => client.getDeviceInfo('R3CN12345'),
@@ -82,9 +78,7 @@ void main() {
 
     test('empty getprop returns null fields', () async {
       final client = AdbClient(
-        runner: _MapRunner({
-          '-s R3CN12345 shell getprop': '',
-        }),
+        runner: _MapRunner({'-s R3CN12345 shell getprop': ''}),
       );
 
       final d = await client.getDeviceInfo('R3CN12345');

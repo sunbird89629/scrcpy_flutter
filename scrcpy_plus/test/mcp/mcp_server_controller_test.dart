@@ -15,7 +15,14 @@ class _MockSession implements ScrcpySession {
   @override
   int? get videoHeight => null;
   @override
-  Future<void> start(String deviceId, {dynamic options, dynamic logger, void Function()? onStarted, void Function()? onStopped, void Function(String)? onError}) async {}
+  Future<void> start(
+    String deviceId, {
+    dynamic options,
+    dynamic logger,
+    void Function()? onStarted,
+    void Function()? onStopped,
+    void Function(String)? onError,
+  }) async {}
   @override
   Future<void> stop() async {}
   @override
@@ -26,8 +33,9 @@ class _MockSession implements ScrcpySession {
   Stream<ScrcpyDeviceMessage> get deviceMessages =>
       const Stream<ScrcpyDeviceMessage>.empty();
   @override
-  Future<String> getClipboard({Duration timeout = const Duration(seconds: 5)}) =>
-      Future.value('');
+  Future<String> getClipboard({
+    Duration timeout = const Duration(seconds: 5),
+  }) => Future.value('');
 }
 
 void main() {
@@ -54,33 +62,37 @@ void main() {
       expect(controller.serverUrl, isNull);
     });
 
-    test('start on an in-use port records errorMessage without throwing',
-        () async {
-      final first = McpServerController(
-        adb: const AdbClient(),
-        session: _MockSession(),
-      );
-      addTearDown(first.stop);
-      await first.start(7098);
-      final second = McpServerController(
-        adb: const AdbClient(),
-        session: _MockSession(),
-      );
-      await second.start(7098); // same port — should fail gracefully
-      expect(second.isRunning, false);
-      expect(second.errorMessage, isNotNull);
-    });
+    test(
+      'start on an in-use port records errorMessage without throwing',
+      () async {
+        final first = McpServerController(
+          adb: const AdbClient(),
+          session: _MockSession(),
+        );
+        addTearDown(first.stop);
+        await first.start(7098);
+        final second = McpServerController(
+          adb: const AdbClient(),
+          session: _MockSession(),
+        );
+        await second.start(7098); // same port — should fail gracefully
+        expect(second.isRunning, false);
+        expect(second.errorMessage, isNotNull);
+      },
+    );
 
-    test('start() builds a session from bundled assets (no injected session)',
-        () async {
-      TestWidgetsFlutterBinding.ensureInitialized();
-      final controller = McpServerController(adb: const AdbClient());
-      addTearDown(controller.stop);
-      await controller.start(7095);
-      expect(controller.errorMessage, isNull);
-      expect(controller.isRunning, true);
-      expect(controller.serverUrl, 'http://localhost:7095/mcp');
-    });
+    test(
+      'start() builds a session from bundled assets (no injected session)',
+      () async {
+        TestWidgetsFlutterBinding.ensureInitialized();
+        final controller = McpServerController(adb: const AdbClient());
+        addTearDown(controller.stop);
+        await controller.start(7095);
+        expect(controller.errorMessage, isNull);
+        expect(controller.isRunning, true);
+        expect(controller.serverUrl, 'http://localhost:7095/mcp');
+      },
+    );
 
     test('start is a no-op when already running', () async {
       final controller = McpServerController(

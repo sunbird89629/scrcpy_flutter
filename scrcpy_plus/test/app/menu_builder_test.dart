@@ -48,10 +48,7 @@ void main() {
     });
 
     test('buildMenu shows mcp error line when error present', () {
-      final menu = MenuBuilder.buildMenu(
-        devices: [],
-        mcpError: 'port in use',
-      );
+      final menu = MenuBuilder.buildMenu(devices: [], mcpError: 'port in use');
       final labels = menu.items!.map((i) => i.label).toList();
       expect(labels.any((l) => l != null && l.contains('port in use')), true);
       final keys = menu.items!.map((i) => i.key).toList();

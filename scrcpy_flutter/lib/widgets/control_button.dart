@@ -4,11 +4,7 @@ class ControlButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
 
-  const ControlButton({
-    super.key,
-    required this.icon,
-    required this.onPressed,
-  });
+  const ControlButton({super.key, required this.icon, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {

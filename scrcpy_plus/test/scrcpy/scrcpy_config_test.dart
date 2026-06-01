@@ -19,10 +19,14 @@ void main() {
       );
       final args = config.toArgs('ABCD1234');
       expect(args, [
-        '--serial', 'ABCD1234',
-        '--max-size', '1280',
-        '--video-bit-rate', '4M',
-        '--video-codec', 'h265',
+        '--serial',
+        'ABCD1234',
+        '--max-size',
+        '1280',
+        '--video-bit-rate',
+        '4M',
+        '--video-codec',
+        'h265',
       ]);
     });
 

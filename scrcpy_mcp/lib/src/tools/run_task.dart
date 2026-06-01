@@ -14,11 +14,11 @@ class RunTaskTool extends McpTool {
     required List<McpTool> tools,
     required ScrcpySession session,
     required SessionContext ctx,
-  })  : _config = config,
-        _llmClient = llmClient,
-        _tools = tools,
-        _session = session,
-        _ctx = ctx;
+  }) : _config = config,
+       _llmClient = llmClient,
+       _tools = tools,
+       _session = session,
+       _ctx = ctx;
 
   final AgentConfig _config;
   final LlmClient _llmClient;
@@ -65,15 +65,17 @@ class RunTaskTool extends McpTool {
 
     final toolMap = {for (final t in _tools) t.name: t};
     final toolSchemas = _tools
-        .map((t) => ToolSchema(
-              name: t.name,
-              description: t.description,
-              parameters: t.inputSchema.toJson(),
-            ))
+        .map(
+          (t) => ToolSchema(
+            name: t.name,
+            description: t.description,
+            parameters: t.inputSchema.toJson(),
+          ),
+        )
         .toList();
 
     Future<({String text, String? imageBase64, String? imageMimeType})>
-        execTool(String toolName, Map<String, dynamic> toolArgs) async {
+    execTool(String toolName, Map<String, dynamic> toolArgs) async {
       final tool = toolMap[toolName];
       if (tool == null) {
         return (
@@ -91,7 +93,7 @@ class RunTaskTool extends McpTool {
         return (
           text: 'Error: $errText',
           imageBase64: null,
-          imageMimeType: null
+          imageMimeType: null,
         );
       }
       String? imgBase64;
@@ -120,7 +122,9 @@ class RunTaskTool extends McpTool {
 
     try {
       final result = await agent.run(message);
-      logger.fine('run_task: completed, steps=${result.steps}, success=${result.success}');
+      logger.fine(
+        'run_task: completed, steps=${result.steps}, success=${result.success}',
+      );
       return CallToolResult.fromStructuredContent({
         'result': result.result,
         'steps': result.steps,

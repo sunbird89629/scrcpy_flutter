@@ -16,7 +16,9 @@ class SetTorchTool extends McpTool {
   @override
   final ToolInputSchema inputSchema = JsonSchema.object(
     properties: {
-      'on': JsonSchema.boolean(description: 'true to turn on, false to turn off'),
+      'on': JsonSchema.boolean(
+        description: 'true to turn on, false to turn off',
+      ),
     },
     required: ['on'],
   );

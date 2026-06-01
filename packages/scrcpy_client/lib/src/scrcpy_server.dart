@@ -21,11 +21,11 @@ class ScrcpyServer {
     required ScrcpyDeviceProvisioner provisioner,
     ScrcpyLogger logger = const NoOpScrcpyLogger(),
     StreamSink<List<int>>? controlSink,
-  })  : _provisioner = provisioner,
-        _log = logger,
-        _controlSink = controlSink,
-        _parser = ScrcpyStreamParser(logger: logger),
-        _deviceParser = ScrcpyDeviceMessageParser(logger: logger);
+  }) : _provisioner = provisioner,
+       _log = logger,
+       _controlSink = controlSink,
+       _parser = ScrcpyStreamParser(logger: logger),
+       _deviceParser = ScrcpyDeviceMessageParser(logger: logger);
 
   final ScrcpyDeviceProvisioner _provisioner;
 
@@ -94,19 +94,16 @@ class ScrcpyServer {
     _videoSocket = await _connectSocket('Video');
 
     var isFirstByteHandled = false;
-    _videoSubscription = _videoSocket!.listen(
-      (data) {
-        if (!isFirstByteHandled) {
-          isFirstByteHandled = true;
-          if (data.isNotEmpty && data[0] == 0) {
-            if (data.length > 1) _parser.feed(Uint8List.sublistView(data, 1));
-            return;
-          }
+    _videoSubscription = _videoSocket!.listen((data) {
+      if (!isFirstByteHandled) {
+        isFirstByteHandled = true;
+        if (data.isNotEmpty && data[0] == 0) {
+          if (data.length > 1) _parser.feed(Uint8List.sublistView(data, 1));
+          return;
         }
-        _parser.feed(data);
-      },
-      onDone: () => _log.warn('[ScrcpyServer] Video socket closed'),
-    );
+      }
+      _parser.feed(data);
+    }, onDone: () => _log.warn('[ScrcpyServer] Video socket closed'));
 
     await Future<void>.delayed(const Duration(milliseconds: 300));
     try {
@@ -120,7 +117,7 @@ class ScrcpyServer {
     }
     _controlSocket!.setOption(SocketOption.tcpNoDelay, true);
     _controlSubscription = _controlSocket!.listen(
-      (data) => _deviceParser.feed(data),
+      _deviceParser.feed,
       onDone: () => _log.warn('[ScrcpyServer] Control socket closed'),
     );
 

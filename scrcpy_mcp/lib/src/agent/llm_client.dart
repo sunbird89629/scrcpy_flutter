@@ -43,7 +43,8 @@ class LlmMessage {
   final String? imageBase64;
   final String? imageMimeType;
   final String? toolCallId; // present on 'tool' role messages
-  final List<ToolCall>? toolCalls; // present on 'assistant' messages with tool calls
+  final List<ToolCall>?
+  toolCalls; // present on 'assistant' messages with tool calls
 }
 
 /// Response from the LLM.

@@ -32,13 +32,21 @@ class CameraZoomTool extends McpTool {
     final direction = args['direction'] as String;
     if (direction == 'in') {
       _session.sendControlMessage(const ScrcpyCameraZoomInMessage());
-      return CallToolResult.fromContent([TextContent(text: 'Camera zoomed in.')]);
+      return CallToolResult.fromContent([
+        TextContent(text: 'Camera zoomed in.'),
+      ]);
     } else if (direction == 'out') {
       _session.sendControlMessage(const ScrcpyCameraZoomOutMessage());
-      return CallToolResult.fromContent([TextContent(text: 'Camera zoomed out.')]);
+      return CallToolResult.fromContent([
+        TextContent(text: 'Camera zoomed out.'),
+      ]);
     }
     return CallToolResult(
-      content: [TextContent(text: 'Invalid direction: "$direction". Use "in" or "out".')],
+      content: [
+        TextContent(
+          text: 'Invalid direction: "$direction". Use "in" or "out".',
+        ),
+      ],
       isError: true,
     );
   }

@@ -28,22 +28,26 @@ void main() {
   });
 
   group('real device — list_devices', () {
-    test('returns the connected device serial', () async {
-      if (realDevices.isEmpty) {
-        markTestSkipped('No Android device connected via ADB');
-        return;
-      }
+    test(
+      'returns the connected device serial',
+      () async {
+        if (realDevices.isEmpty) {
+          markTestSkipped('No Android device connected via ADB');
+          return;
+        }
 
-      final env = RealDeviceEnv(adb: adb);
-      await env.connect();
+        final env = RealDeviceEnv(adb: adb);
+        await env.connect();
 
-      final result = await env.client.callTool(
-        const CallToolRequest(name: 'list_devices'),
-      );
+        final result = await env.client.callTool(
+          const CallToolRequest(name: 'list_devices'),
+        );
 
-      expect(result.isError, isFalse);
-      final devices = jsonDecode(textContent(result)) as List;
-      expect(devices, unorderedEquals(realDevices));
-    }, timeout: const Timeout(Duration(seconds: 15)));
+        expect(result.isError, isFalse);
+        final devices = jsonDecode(textContent(result)) as List;
+        expect(devices, unorderedEquals(realDevices));
+      },
+      timeout: const Timeout(Duration(seconds: 15)),
+    );
   });
 }

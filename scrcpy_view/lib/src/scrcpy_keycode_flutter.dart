@@ -52,13 +52,12 @@ final Map<PhysicalKeyboardKey, int> _map = {
   PhysicalKeyboardKey.digit9: 16,
 
   // ── Whitespace & navigation ──────────────────────────────────────────
-  PhysicalKeyboardKey.enter: 66,      // KEYCODE_ENTER
-  PhysicalKeyboardKey.backspace: 67,  // KEYCODE_DEL
-  PhysicalKeyboardKey.delete: 112,    // KEYCODE_FORWARD_DEL
-  PhysicalKeyboardKey.escape: 111,    // KEYCODE_ESCAPE
-  PhysicalKeyboardKey.tab: 61,        // KEYCODE_TAB
-  PhysicalKeyboardKey.space: 62,      // KEYCODE_SPACE
-
+  PhysicalKeyboardKey.enter: 66, // KEYCODE_ENTER
+  PhysicalKeyboardKey.backspace: 67, // KEYCODE_DEL
+  PhysicalKeyboardKey.delete: 112, // KEYCODE_FORWARD_DEL
+  PhysicalKeyboardKey.escape: 111, // KEYCODE_ESCAPE
+  PhysicalKeyboardKey.tab: 61, // KEYCODE_TAB
+  PhysicalKeyboardKey.space: 62, // KEYCODE_SPACE
   // ── Arrow keys ────────────────────────────────────────────────────────
   PhysicalKeyboardKey.arrowUp: 19,
   PhysicalKeyboardKey.arrowDown: 20,
@@ -80,19 +79,18 @@ final Map<PhysicalKeyboardKey, int> _map = {
   PhysicalKeyboardKey.f12: 142,
 
   // ── Navigation / editing ──────────────────────────────────────────────
-  PhysicalKeyboardKey.home: 3,        // KEYCODE_HOME
-  PhysicalKeyboardKey.end: 123,       // KEYCODE_MOVE_END
-  PhysicalKeyboardKey.pageUp: 92,     // KEYCODE_PAGE_UP
-  PhysicalKeyboardKey.pageDown: 93,   // KEYCODE_PAGE_DOWN
-  PhysicalKeyboardKey.insert: 124,    // KEYCODE_INSERT
-
+  PhysicalKeyboardKey.home: 3, // KEYCODE_HOME
+  PhysicalKeyboardKey.end: 123, // KEYCODE_MOVE_END
+  PhysicalKeyboardKey.pageUp: 92, // KEYCODE_PAGE_UP
+  PhysicalKeyboardKey.pageDown: 93, // KEYCODE_PAGE_DOWN
+  PhysicalKeyboardKey.insert: 124, // KEYCODE_INSERT
   // ── Lock keys ─────────────────────────────────────────────────────────
-  PhysicalKeyboardKey.capsLock: 115,  // KEYCODE_CAPS_LOCK
+  PhysicalKeyboardKey.capsLock: 115, // KEYCODE_CAPS_LOCK
   PhysicalKeyboardKey.scrollLock: 116,
 
   // ── Punctuation / symbols ─────────────────────────────────────────────
-  PhysicalKeyboardKey.minus: 69,       // KEYCODE_MINUS
-  PhysicalKeyboardKey.equal: 70,       // KEYCODE_EQUALS
+  PhysicalKeyboardKey.minus: 69, // KEYCODE_MINUS
+  PhysicalKeyboardKey.equal: 70, // KEYCODE_EQUALS
   PhysicalKeyboardKey.bracketLeft: 71, // KEYCODE_LEFT_BRACKET
   PhysicalKeyboardKey.bracketRight: 72,
   PhysicalKeyboardKey.backslash: 73,
@@ -104,12 +102,12 @@ final Map<PhysicalKeyboardKey, int> _map = {
   PhysicalKeyboardKey.backquote: 68,
 
   // ── Modifier keys ────────────────────────────────────────────────────
-  PhysicalKeyboardKey.shiftLeft: 59,    // KEYCODE_SHIFT_LEFT
-  PhysicalKeyboardKey.shiftRight: 60,   // KEYCODE_SHIFT_RIGHT
-  PhysicalKeyboardKey.altLeft: 57,      // KEYCODE_ALT_LEFT
-  PhysicalKeyboardKey.altRight: 58,     // KEYCODE_ALT_RIGHT
+  PhysicalKeyboardKey.shiftLeft: 59, // KEYCODE_SHIFT_LEFT
+  PhysicalKeyboardKey.shiftRight: 60, // KEYCODE_SHIFT_RIGHT
+  PhysicalKeyboardKey.altLeft: 57, // KEYCODE_ALT_LEFT
+  PhysicalKeyboardKey.altRight: 58, // KEYCODE_ALT_RIGHT
   PhysicalKeyboardKey.controlLeft: 113, // KEYCODE_CTRL_LEFT
   PhysicalKeyboardKey.controlRight: 114,
-  PhysicalKeyboardKey.metaLeft: 117,    // KEYCODE_META_LEFT
+  PhysicalKeyboardKey.metaLeft: 117, // KEYCODE_META_LEFT
   PhysicalKeyboardKey.metaRight: 118,
 };

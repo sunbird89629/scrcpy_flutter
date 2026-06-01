@@ -46,6 +46,9 @@ void expectPressure(double input, int expected) {
     pressure: input,
   );
   final bd = ByteData.sublistView(msg.toBinary());
-  expect(bd.getUint16(22), expected,
-      reason: 'pressure $input should encode as $expected');
+  expect(
+    bd.getUint16(22),
+    expected,
+    reason: 'pressure $input should encode as $expected',
+  );
 }

@@ -62,8 +62,9 @@ void main() {
     });
 
     test('settings round-trip preserves all fields', () async {
-      final tempDir =
-          await Directory.systemTemp.createTemp('scrcpy_plus_integ_');
+      final tempDir = await Directory.systemTemp.createTemp(
+        'scrcpy_plus_integ_',
+      );
       try {
         final manager = SettingsManager(configDir: tempDir.path);
         const config = ScrcpyConfig(

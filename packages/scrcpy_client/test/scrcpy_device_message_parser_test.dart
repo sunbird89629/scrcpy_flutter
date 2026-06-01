@@ -27,67 +27,75 @@ void main() {
       0xAB, 0xCD, // data
     ]);
 
-    test('type 0: emits ScrcpyClipboardDeviceMessage with sequence and text',
-        () async {
-      final parser = ScrcpyDeviceMessageParser();
-      addTearDown(() => parser.close());
+    test(
+      'type 0: emits ScrcpyClipboardDeviceMessage with sequence and text',
+      () async {
+        final parser = ScrcpyDeviceMessageParser();
+        addTearDown(parser.close);
 
-      final msgFuture = parser.messages.first;
-      parser.feed(type0Bytes);
-      final msg = await msgFuture as ScrcpyClipboardDeviceMessage;
+        final msgFuture = parser.messages.first;
+        parser.feed(type0Bytes);
+        final msg = await msgFuture as ScrcpyClipboardDeviceMessage;
 
-      expect(msg.sequence, 1);
-      expect(msg.text, 'ok');
-    });
+        expect(msg.sequence, 1);
+        expect(msg.text, 'ok');
+      },
+    );
 
-    test('type 1: emits ScrcpyAckClipboardDeviceMessage with sequence',
-        () async {
-      final parser = ScrcpyDeviceMessageParser();
-      addTearDown(() => parser.close());
+    test(
+      'type 1: emits ScrcpyAckClipboardDeviceMessage with sequence',
+      () async {
+        final parser = ScrcpyDeviceMessageParser();
+        addTearDown(parser.close);
 
-      final msgFuture = parser.messages.first;
-      parser.feed(type1Bytes);
-      final msg = await msgFuture as ScrcpyAckClipboardDeviceMessage;
+        final msgFuture = parser.messages.first;
+        parser.feed(type1Bytes);
+        final msg = await msgFuture as ScrcpyAckClipboardDeviceMessage;
 
-      expect(msg.sequence, 42);
-    });
+        expect(msg.sequence, 42);
+      },
+    );
 
-    test('type 2: emits ScrcpyUhidOutputDeviceMessage with id and data',
-        () async {
-      final parser = ScrcpyDeviceMessageParser();
-      addTearDown(() => parser.close());
+    test(
+      'type 2: emits ScrcpyUhidOutputDeviceMessage with id and data',
+      () async {
+        final parser = ScrcpyDeviceMessageParser();
+        addTearDown(parser.close);
 
-      final msgFuture = parser.messages.first;
-      parser.feed(type2Bytes);
-      final msg = await msgFuture as ScrcpyUhidOutputDeviceMessage;
+        final msgFuture = parser.messages.first;
+        parser.feed(type2Bytes);
+        final msg = await msgFuture as ScrcpyUhidOutputDeviceMessage;
 
-      expect(msg.id, 7);
-      expect(msg.data, [0xAB, 0xCD]);
-    });
+        expect(msg.id, 7);
+        expect(msg.data, [0xAB, 0xCD]);
+      },
+    );
 
-    test('type 0 with non-ASCII text: decodes UTF-8 byte count correctly',
-        () async {
-      // "你好" = [0xE4,0xBD,0xA0, 0xE5,0xA5,0xBD] — 6 UTF-8 bytes
-      final bytes = Uint8List.fromList([
-        0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, // sequence=1
-        0x00, 0x00, 0x00, 0x06, // length=6 (bytes, not chars)
-        0xE4, 0xBD, 0xA0, 0xE5, 0xA5, 0xBD, // "你好"
-      ]);
+    test(
+      'type 0 with non-ASCII text: decodes UTF-8 byte count correctly',
+      () async {
+        // "你好" = [0xE4,0xBD,0xA0, 0xE5,0xA5,0xBD] — 6 UTF-8 bytes
+        final bytes = Uint8List.fromList([
+          0x00,
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, // sequence=1
+          0x00, 0x00, 0x00, 0x06, // length=6 (bytes, not chars)
+          0xE4, 0xBD, 0xA0, 0xE5, 0xA5, 0xBD, // "你好"
+        ]);
 
-      final parser = ScrcpyDeviceMessageParser();
-      addTearDown(() => parser.close());
+        final parser = ScrcpyDeviceMessageParser();
+        addTearDown(parser.close);
 
-      final msgFuture = parser.messages.first;
-      parser.feed(bytes);
-      final msg = await msgFuture as ScrcpyClipboardDeviceMessage;
+        final msgFuture = parser.messages.first;
+        parser.feed(bytes);
+        final msg = await msgFuture as ScrcpyClipboardDeviceMessage;
 
-      expect(msg.text, '你好');
-    });
+        expect(msg.text, '你好');
+      },
+    );
 
     test('fragmented feed: two feeds produce one event', () async {
       final parser = ScrcpyDeviceMessageParser();
-      addTearDown(() => parser.close());
+      addTearDown(parser.close);
 
       // Split the 15-byte type-0 message at index 7
       parser.feed(Uint8List.sublistView(type0Bytes, 0, 7));
@@ -105,13 +113,31 @@ void main() {
 
     test('concatenated messages: two type-1 messages in one feed', () async {
       final parser = ScrcpyDeviceMessageParser();
-      addTearDown(() => parser.close());
+      addTearDown(parser.close);
 
       final msgsFuture = parser.messages.take(2).toList();
-      parser.feed(Uint8List.fromList([
-        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-      ]));
+      parser.feed(
+        Uint8List.fromList([
+          0x01,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x01,
+          0x01,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x02,
+        ]),
+      );
 
       final msgs = await msgsFuture;
       expect(msgs, hasLength(2));
@@ -121,7 +147,7 @@ void main() {
 
     test('mixed messages: type-0 then type-1 in one feed', () async {
       final parser = ScrcpyDeviceMessageParser();
-      addTearDown(() => parser.close());
+      addTearDown(parser.close);
 
       final msgsFuture = parser.messages.take(2).toList();
       parser.feed(Uint8List.fromList([...type0Bytes, ...type1Bytes]));
@@ -133,7 +159,7 @@ void main() {
 
     test('unknown type: no crash, no further events emitted', () async {
       final parser = ScrcpyDeviceMessageParser();
-      addTearDown(() => parser.close());
+      addTearDown(parser.close);
 
       final events = <ScrcpyDeviceMessage>[];
       parser.messages.listen(events.add);

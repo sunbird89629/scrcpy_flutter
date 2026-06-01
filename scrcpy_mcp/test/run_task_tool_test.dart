@@ -14,8 +14,7 @@ class _DoneLlmClient implements LlmClient {
   Future<LlmResponse> chat({
     required List<LlmMessage> messages,
     required List<ToolSchema> tools,
-  }) async =>
-      const LlmResponse(text: 'Task done');
+  }) async => const LlmResponse(text: 'Task done');
 }
 
 void main() {
@@ -44,10 +43,7 @@ void main() {
       final result = await client.callTool(
         const CallToolRequest(
           name: 'run_task',
-          arguments: {
-            'device_id': 'device1',
-            'message': 'open settings',
-          },
+          arguments: {'device_id': 'device1', 'message': 'open settings'},
         ),
       );
 
@@ -64,8 +60,7 @@ void main() {
         session: MockScrcpySession(),
         adb: MockAdb(),
       );
-      final (clientNoAgent, closeNoAgent) =
-          await connectMcpPair(serverNoAgent);
+      final (clientNoAgent, closeNoAgent) = await connectMcpPair(serverNoAgent);
       addTearDown(closeNoAgent);
 
       final tools = await clientNoAgent.listTools();

@@ -16,10 +16,7 @@ void main() {
 
     test('isWifi returns false for USB serial', () {
       final entry = DeviceEntry(
-        info: const DeviceInfo(
-          serial: 'ABCD1234',
-          status: DeviceStatus.online,
-        ),
+        info: const DeviceInfo(serial: 'ABCD1234', status: DeviceStatus.online),
       );
       expect(entry.isWifi, false);
     });
@@ -37,10 +34,7 @@ void main() {
 
     test('displayName falls back to serial', () {
       final entry = DeviceEntry(
-        info: const DeviceInfo(
-          serial: 'ABCD1234',
-          status: DeviceStatus.online,
-        ),
+        info: const DeviceInfo(serial: 'ABCD1234', status: DeviceStatus.online),
       );
       expect(entry.displayName, 'ABCD1234');
     });
@@ -57,10 +51,7 @@ void main() {
 
     test('connectionLabel shows USB for non-IP serial', () {
       final entry = DeviceEntry(
-        info: const DeviceInfo(
-          serial: 'ABCD1234',
-          status: DeviceStatus.online,
-        ),
+        info: const DeviceInfo(serial: 'ABCD1234', status: DeviceStatus.online),
       );
       expect(entry.connectionLabel, 'USB');
     });
@@ -92,10 +83,7 @@ void main() {
 
     test('detailLine returns null when no details available', () {
       final entry = DeviceEntry(
-        info: const DeviceInfo(
-          serial: 'ABCD1234',
-          status: DeviceStatus.online,
-        ),
+        info: const DeviceInfo(serial: 'ABCD1234', status: DeviceStatus.online),
       );
       expect(entry.detailLine, isNull);
     });

@@ -57,74 +57,94 @@ void main() {
       }
     });
 
-    test('start_recording succeeds and returns device path', () async {
-      if (realDevices.isEmpty) {
-        markTestSkipped('No Android device connected via ADB');
-        return;
-      }
+    test(
+      'start_recording succeeds and returns device path',
+      () async {
+        if (realDevices.isEmpty) {
+          markTestSkipped('No Android device connected via ADB');
+          return;
+        }
 
-      final result = await env.client.callTool(
-        const CallToolRequest(name: 'start_recording'),
-      );
-      addTearDown(() async {
+        final result = await env.client.callTool(
+          const CallToolRequest(name: 'start_recording'),
+        );
+        addTearDown(() async {
+          await env.client.callTool(
+            const CallToolRequest(name: 'stop_recording'),
+          );
+        });
+
+        expect(result.isError, isFalse, reason: textContent(result));
+        final json = jsonDecode(textContent(result)) as Map<String, dynamic>;
+        expect(json['status'], 'recording');
+        expect(json['path_on_device'], contains('.mp4'));
+      },
+      timeout: const Timeout(Duration(seconds: 30)),
+    );
+
+    test(
+      'stop_recording pulls video file to local disk',
+      () async {
+        if (realDevices.isEmpty) {
+          markTestSkipped('No Android device connected via ADB');
+          return;
+        }
+
         await env.client.callTool(
+          const CallToolRequest(name: 'start_recording'),
+        );
+
+        // Record for a short moment so the file is non-empty
+        await Future<void>.delayed(const Duration(seconds: 3));
+
+        final stopResult = await env.client.callTool(
           const CallToolRequest(name: 'stop_recording'),
         );
-      });
 
-      expect(result.isError, isFalse, reason: textContent(result));
-      final json = jsonDecode(textContent(result)) as Map<String, dynamic>;
-      expect(json['status'], 'recording');
-      expect(json['path_on_device'], contains('.mp4'));
-    }, timeout: const Timeout(Duration(seconds: 30)));
+        expect(stopResult.isError, isFalse, reason: textContent(stopResult));
+        final json =
+            jsonDecode(textContent(stopResult)) as Map<String, dynamic>;
+        expect(json['status'], 'finished');
 
-    test('stop_recording pulls video file to local disk', () async {
-      if (realDevices.isEmpty) {
-        markTestSkipped('No Android device connected via ADB');
-        return;
-      }
+        pulledPath = json['local_path'] as String;
+        expect(pulledPath, endsWith('.mp4'));
 
-      await env.client.callTool(const CallToolRequest(name: 'start_recording'));
-
-      // Record for a short moment so the file is non-empty
-      await Future<void>.delayed(const Duration(seconds: 3));
-
-      final stopResult = await env.client.callTool(
-        const CallToolRequest(name: 'stop_recording'),
-      );
-
-      expect(stopResult.isError, isFalse, reason: textContent(stopResult));
-      final json = jsonDecode(textContent(stopResult)) as Map<String, dynamic>;
-      expect(json['status'], 'finished');
-
-      pulledPath = json['local_path'] as String;
-      expect(pulledPath, endsWith('.mp4'));
-
-      final file = File(pulledPath!);
-      expect(file.existsSync(), isTrue,
-          reason: 'File should exist at $pulledPath');
-      expect(json['size_bytes'], greaterThan(0));
-    }, timeout: const Timeout(Duration(seconds: 60)));
-
-    test('double start_recording returns error', () async {
-      if (realDevices.isEmpty) {
-        markTestSkipped('No Android device connected via ADB');
-        return;
-      }
-
-      await env.client.callTool(const CallToolRequest(name: 'start_recording'));
-      addTearDown(() async {
-        await env.client.callTool(
-          const CallToolRequest(name: 'stop_recording'),
+        final file = File(pulledPath!);
+        expect(
+          file.existsSync(),
+          isTrue,
+          reason: 'File should exist at $pulledPath',
         );
-      });
+        expect(json['size_bytes'], greaterThan(0));
+      },
+      timeout: const Timeout(Duration(seconds: 60)),
+    );
 
-      final result = await env.client.callTool(
-        const CallToolRequest(name: 'start_recording'),
-      );
+    test(
+      'double start_recording returns error',
+      () async {
+        if (realDevices.isEmpty) {
+          markTestSkipped('No Android device connected via ADB');
+          return;
+        }
 
-      expect(result.isError, isTrue);
-      expect(textContent(result), contains('Already recording'));
-    }, timeout: const Timeout(Duration(seconds: 30)));
+        await env.client.callTool(
+          const CallToolRequest(name: 'start_recording'),
+        );
+        addTearDown(() async {
+          await env.client.callTool(
+            const CallToolRequest(name: 'stop_recording'),
+          );
+        });
+
+        final result = await env.client.callTool(
+          const CallToolRequest(name: 'start_recording'),
+        );
+
+        expect(result.isError, isTrue);
+        expect(textContent(result), contains('Already recording'));
+      },
+      timeout: const Timeout(Duration(seconds: 30)),
+    );
   });
 }

@@ -15,12 +15,25 @@ void main() {
       addTearDown(sub.cancel);
 
       // type=0, sequence=1, length=2, text="ok"
-      server.feedDeviceBytes(Uint8List.fromList([
-        0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-        0x00, 0x00, 0x00, 0x02,
-        0x6F, 0x6B,
-      ]));
+      server.feedDeviceBytes(
+        Uint8List.fromList([
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x01,
+          0x00,
+          0x00,
+          0x00,
+          0x02,
+          0x6F,
+          0x6B,
+        ]),
+      );
 
       // broadcast stream delivers via microtask
       await Future(() {});

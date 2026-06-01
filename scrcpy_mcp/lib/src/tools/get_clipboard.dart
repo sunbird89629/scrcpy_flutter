@@ -35,7 +35,9 @@ class GetClipboardTool extends McpTool {
       return CallToolResult.fromContent([TextContent(text: text)]);
     } on TimeoutException {
       return CallToolResult(
-        content: [TextContent(text: 'Timed out waiting for clipboard response.')],
+        content: [
+          TextContent(text: 'Timed out waiting for clipboard response.'),
+        ],
         isError: true,
       );
     }

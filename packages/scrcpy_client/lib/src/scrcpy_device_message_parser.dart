@@ -58,11 +58,12 @@ class ScrcpyDeviceMessageParser {
 
         case 1: // ACK_CLIPBOARD
           if (_buffer.length - offset < 9) break outer;
-          final sequence =
-              ByteData.sublistView(_buffer, offset + 1, offset + 9)
-                  .getUint64(0);
-          _controller
-              .add(ScrcpyAckClipboardDeviceMessage(sequence: sequence));
+          final sequence = ByteData.sublistView(
+            _buffer,
+            offset + 1,
+            offset + 9,
+          ).getUint64(0);
+          _controller.add(ScrcpyAckClipboardDeviceMessage(sequence: sequence));
           offset += 9;
 
         case 2: // UHID_OUTPUT

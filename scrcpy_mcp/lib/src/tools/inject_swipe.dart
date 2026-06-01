@@ -32,7 +32,8 @@ class InjectSwipeTool extends McpTool {
       'width': JsonSchema.integer(description: 'Screen width'),
       'height': JsonSchema.integer(description: 'Screen height'),
       'durationMs': JsonSchema.integer(
-        description: 'Total swipe duration in ms (default 300). '
+        description:
+            'Total swipe duration in ms (default 300). '
             'Shorter = fling, longer = slow drag.',
       ),
       'steps': JsonSchema.integer(
@@ -66,19 +67,23 @@ class InjectSwipeTool extends McpTool {
 
     final (vw, vh) = _session.videoSize(width, height);
     final stepDelay = Duration(microseconds: durationMs * 1000 ~/ steps);
-    logger.fine('inject_swipe: ($x1,$y1)→($x2,$y2), video=${vw}x$vh, '
-        '${durationMs}ms, $steps steps, stepDelay=${stepDelay.inMicroseconds}µs');
+    logger.fine(
+      'inject_swipe: ($x1,$y1)→($x2,$y2), video=${vw}x$vh, '
+      '${durationMs}ms, $steps steps, stepDelay=${stepDelay.inMicroseconds}µs',
+    );
 
     void sendTouch(int action, int x, int y) {
       final (rx, ry) = _session.rescale(x, y, width, height);
-      _session.sendControlMessage(ScrcpyInjectTouchMessage(
-        action: action,
-        pointerId: 0,
-        x: rx,
-        y: ry,
-        width: vw,
-        height: vh,
-      ));
+      _session.sendControlMessage(
+        ScrcpyInjectTouchMessage(
+          action: action,
+          pointerId: 0,
+          x: rx,
+          y: ry,
+          width: vw,
+          height: vh,
+        ),
+      );
     }
 
     sendTouch(ScrcpyAction.down, x1, y1);
@@ -95,7 +100,8 @@ class InjectSwipeTool extends McpTool {
 
     return CallToolResult.fromContent([
       TextContent(
-        text: 'Swipe sent: ($x1, $y1) → ($x2, $y2) in ${durationMs}ms '
+        text:
+            'Swipe sent: ($x1, $y1) → ($x2, $y2) in ${durationMs}ms '
             '($steps steps)',
       ),
     ]);

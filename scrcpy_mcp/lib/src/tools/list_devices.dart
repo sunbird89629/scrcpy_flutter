@@ -29,8 +29,6 @@ class ListDevicesTool extends McpTool {
   ) async {
     final devices = await _adb.getDevices();
     logger.fine('list_devices: found ${devices.length} device(s): $devices');
-    return CallToolResult.fromContent(
-      [TextContent(text: jsonEncode(devices))],
-    );
+    return CallToolResult.fromContent([TextContent(text: jsonEncode(devices))]);
   }
 }

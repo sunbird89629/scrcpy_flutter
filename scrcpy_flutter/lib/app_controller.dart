@@ -11,9 +11,7 @@ class AppController extends ChangeNotifier {
   static const _adbClient = AdbClient();
   static const _scrcpyAdb = ScrcpyAdbAdapter(_adbClient);
 
-  final scrcpyViewController = ScrcpyViewController(
-    adb: _scrcpyAdb,
-  );
+  final scrcpyViewController = ScrcpyViewController(adb: _scrcpyAdb);
 
   late final McpServerController mcpServerController = McpServerController(
     session: scrcpyViewController,
@@ -42,9 +40,12 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> connectDevice(final String serial) async {
-    await scrcpyViewController.start(serial, onStarted: () async {
-      running = true;
-      deviceInfo = await _adbClient.getDeviceInfo(serial);
-    });
+    await scrcpyViewController.start(
+      serial,
+      onStarted: () async {
+        running = true;
+        deviceInfo = await _adbClient.getDeviceInfo(serial);
+      },
+    );
   }
 }

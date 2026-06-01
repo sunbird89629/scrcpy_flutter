@@ -18,11 +18,11 @@ class RecordingController {
   bool get isRecording => _process != null;
 
   RecordingStatus get status => RecordingStatus(
-        isRecording: isRecording,
-        deviceId: _deviceId,
-        startTime: _startTime,
-        remotePath: _remotePath,
-      );
+    isRecording: isRecording,
+    deviceId: _deviceId,
+    startTime: _startTime,
+    remotePath: _remotePath,
+  );
 
   Future<String> start(
     String deviceId, {
@@ -57,7 +57,8 @@ class RecordingController {
   }
 
   Future<String> stop({String? savePath}) async {
-    if (!isRecording) throw StateError('stop() called with no active recording');
+    if (!isRecording)
+      throw StateError('stop() called with no active recording');
     final process = _process!;
     final deviceId = _deviceId!;
     final remotePath = _remotePath!;

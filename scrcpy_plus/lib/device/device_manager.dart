@@ -61,10 +61,7 @@ class DeviceManager {
           appLogger.warning('Failed to get info for $serial: $e');
           entries.add(
             DeviceEntry(
-              info: DeviceInfo(
-                serial: serial,
-                status: DeviceStatus.online,
-              ),
+              info: DeviceInfo(serial: serial, status: DeviceStatus.online),
             ),
           );
         }

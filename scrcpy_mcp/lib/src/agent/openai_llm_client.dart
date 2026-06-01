@@ -14,17 +14,17 @@ class OpenAiLlmClient implements LlmClient {
   }) : _http = httpClient ?? http.Client();
 
   factory OpenAiLlmClient.fromEnv() => OpenAiLlmClient(
-        baseUrl: Platform.environment['OPENAI_BASE_URL'] ??
-            'https://api.openai.com/v1',
-        apiKey: Platform.environment['OPENAI_API_KEY']!,
-        model: Platform.environment['OPENAI_MODEL'] ?? 'gpt-4o',
-      );
+    baseUrl:
+        Platform.environment['OPENAI_BASE_URL'] ?? 'https://api.openai.com/v1',
+    apiKey: Platform.environment['OPENAI_API_KEY']!,
+    model: Platform.environment['OPENAI_MODEL'] ?? 'gpt-4o',
+  );
 
   factory OpenAiLlmClient.fromTest() => OpenAiLlmClient(
-        baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-        apiKey: 'dc45fcec2e1743f1ae732cf3b6e6ad17.tMejaXqUvJbJ5zZO',
-        model: 'autoglm-phone',
-      );
+    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+    apiKey: 'dc45fcec2e1743f1ae732cf3b6e6ad17.tMejaXqUvJbJ5zZO',
+    model: 'autoglm-phone',
+  );
 
   static bool get isConfigured =>
       Platform.environment.containsKey('OPENAI_API_KEY');
@@ -89,11 +89,13 @@ class OpenAiLlmClient implements LlmClient {
 
     if (m.toolCalls != null) {
       map['tool_calls'] = m.toolCalls!
-          .map((tc) => {
-                'id': tc.id,
-                'type': 'function',
-                'function': {'name': tc.name, 'arguments': tc.arguments},
-              })
+          .map(
+            (tc) => {
+              'id': tc.id,
+              'type': 'function',
+              'function': {'name': tc.name, 'arguments': tc.arguments},
+            },
+          )
           .toList();
     }
 
@@ -104,9 +106,7 @@ class OpenAiLlmClient implements LlmClient {
       }
       parts.add({
         'type': 'image_url',
-        'image_url': {
-          'url': 'data:${m.imageMimeType};base64,${m.imageBase64}',
-        },
+        'image_url': {'url': 'data:${m.imageMimeType};base64,${m.imageBase64}'},
       });
       map['content'] = parts;
     } else if (m.textContent != null) {
@@ -117,11 +117,11 @@ class OpenAiLlmClient implements LlmClient {
   }
 
   Map<String, dynamic> _toolToJson(ToolSchema t) => {
-        'type': 'function',
-        'function': {
-          'name': t.name,
-          'description': t.description,
-          'parameters': t.parameters,
-        },
-      };
+    'type': 'function',
+    'function': {
+      'name': t.name,
+      'description': t.description,
+      'parameters': t.parameters,
+    },
+  };
 }

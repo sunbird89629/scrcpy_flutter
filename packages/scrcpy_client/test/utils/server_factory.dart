@@ -33,8 +33,6 @@ ScrcpyServer createRealServer({
     serverJarBytes: jarBytes ?? Uint8List(0),
     options: const ScrcpyServerOptions(),
   );
-  final server = ScrcpyServer(
-    provisioner: provisioner,
-  );
+  final server = ScrcpyServer(provisioner: provisioner);
   return server;
 }

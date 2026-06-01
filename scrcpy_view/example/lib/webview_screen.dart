@@ -13,9 +13,7 @@ class WebViewScreen extends StatelessWidget {
       backgroundColor: const Color(0xFF1E1E1E),
       body: Row(
         children: [
-          Expanded(
-            child: ScrcpyView(controller: controller.scrcpyController),
-          ),
+          Expanded(child: ScrcpyView(controller: controller.scrcpyController)),
           const ControlView(),
         ],
       ),

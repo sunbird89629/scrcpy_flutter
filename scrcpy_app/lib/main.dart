@@ -14,8 +14,7 @@ void main() async {
     title: 'ScrcpyApp',
   );
   windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await windowManager.show();
-    await windowManager.focus();
+    await windowManager.hide();
   });
 
   runApp(const ScrcpyApp());

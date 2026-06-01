@@ -17,13 +17,15 @@ class RealAdb implements ScrcpyAdb {
     List<String> arguments, {
     String? deviceId,
     Duration timeout = const Duration(seconds: 30),
-  }) =>
-      adbTool.shell(arguments, deviceId: deviceId, timeout: timeout);
+  }) => adbTool.shell(arguments, deviceId: deviceId, timeout: timeout);
 
   @override
-  Future<void> forward(String local, String remote,
-          {String? deviceId, bool noRebind = false}) =>
-      adbTool.forward(local, remote, deviceId: deviceId, noRebind: noRebind);
+  Future<void> forward(
+    String local,
+    String remote, {
+    String? deviceId,
+    bool noRebind = false,
+  }) => adbTool.forward(local, remote, deviceId: deviceId, noRebind: noRebind);
 
   @override
   Future<void> forwardRemove(String local, {String? deviceId}) =>
@@ -46,22 +48,21 @@ class RealAdb implements ScrcpyAdb {
   static const _contactNameFieldY = 1594;
 
   Future<void> startContactPageForTest(String deviceId) async {
-    await shell(
-      [
-        'am',
-        'start',
-        '-a',
-        'android.intent.action.INSERT',
-        '-t',
-        'vnd.android.cursor.dir/contact'
-      ],
-      deviceId: deviceId,
-    );
+    await shell([
+      'am',
+      'start',
+      '-a',
+      'android.intent.action.INSERT',
+      '-t',
+      'vnd.android.cursor.dir/contact',
+    ], deviceId: deviceId);
     await Future<void>.delayed(const Duration(seconds: 2));
-    await shell(
-      ['input', 'tap', '$_contactNameFieldX', '$_contactNameFieldY'],
-      deviceId: deviceId,
-    );
+    await shell([
+      'input',
+      'tap',
+      '$_contactNameFieldX',
+      '$_contactNameFieldY',
+    ], deviceId: deviceId);
     await Future<void>.delayed(const Duration(milliseconds: 500));
   }
 }

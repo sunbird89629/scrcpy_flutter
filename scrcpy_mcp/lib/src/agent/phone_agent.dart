@@ -4,11 +4,9 @@ import 'agent_config.dart';
 import 'llm_client.dart';
 
 /// Callback that executes one tool call and returns text + optional image.
-typedef ToolExecutor = Future<
-    ({String text, String? imageBase64, String? imageMimeType})> Function(
-  String name,
-  Map<String, dynamic> args,
-);
+typedef ToolExecutor =
+    Future<({String text, String? imageBase64, String? imageMimeType})>
+    Function(String name, Map<String, dynamic> args);
 
 /// ReAct agent: loops think → act → observe until the LLM stops calling tools
 /// or [AgentConfig.maxSteps] is exhausted.
@@ -43,21 +41,22 @@ class PhoneAgent {
       }
 
       // Append assistant's tool-call message
-      messages.add(LlmMessage(
-        role: 'assistant',
-        toolCalls: response.toolCalls,
-      ));
+      messages.add(
+        LlmMessage(role: 'assistant', toolCalls: response.toolCalls),
+      );
 
       // Execute each tool call, append result
       for (final call in response.toolCalls!) {
         final result = await _safeExecute(call);
-        messages.add(LlmMessage(
-          role: 'tool',
-          textContent: result.text,
-          imageBase64: result.imageBase64,
-          imageMimeType: result.imageMimeType,
-          toolCallId: call.id,
-        ));
+        messages.add(
+          LlmMessage(
+            role: 'tool',
+            textContent: result.text,
+            imageBase64: result.imageBase64,
+            imageMimeType: result.imageMimeType,
+            toolCallId: call.id,
+          ),
+        );
       }
     }
 
@@ -70,7 +69,7 @@ class PhoneAgent {
   }
 
   Future<({String text, String? imageBase64, String? imageMimeType})>
-      _safeExecute(ToolCall call) async {
+  _safeExecute(ToolCall call) async {
     try {
       final args = jsonDecode(call.arguments) as Map<String, dynamic>;
       return await executeToolCall(call.name, args);

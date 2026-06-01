@@ -43,8 +43,9 @@ void main() {
       server.sendControlMessage(const ScrcpyInjectTextMessage(text));
       final bytes = Uint8List.fromList(captured.single);
       final bd = ByteData.sublistView(bytes);
-      final encoded =
-          utf8.encode(text); // Dart text.length == 2 (surrogate pair)
+      final encoded = utf8.encode(
+        text,
+      ); // Dart text.length == 2 (surrogate pair)
       expect(bytes.length, 5 + encoded.length);
       expect(bd.getUint8(0), 1);
       expect(bd.getUint32(1), encoded.length);
@@ -113,7 +114,8 @@ void main() {
       final (server, captured) = createTestServer();
       const text = '你好世界';
       server.sendControlMessage(
-          const ScrcpySetClipboardMessage(text: text, sequence: 42));
+        const ScrcpySetClipboardMessage(text: text, sequence: 42),
+      );
       final bytes = Uint8List.fromList(captured.single);
       final bd = ByteData.sublistView(bytes);
       final encoded = utf8.encode(text);
@@ -131,8 +133,9 @@ void main() {
       server.sendControlMessage(const ScrcpySetClipboardMessage(text: text));
       final bytes = Uint8List.fromList(captured.single);
       final bd = ByteData.sublistView(bytes);
-      final encoded =
-          utf8.encode(text); // Dart text.length == 2 (surrogate pair)
+      final encoded = utf8.encode(
+        text,
+      ); // Dart text.length == 2 (surrogate pair)
       expect(bytes.length, 14 + encoded.length);
       expect(bd.getUint8(0), 9);
       expect(bd.getUint32(10), encoded.length);

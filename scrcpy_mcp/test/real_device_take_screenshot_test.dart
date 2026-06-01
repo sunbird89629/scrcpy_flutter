@@ -28,50 +28,58 @@ void main() {
   });
 
   group('real device — take_screenshot', () {
-    test('returns a valid PNG from the first connected device', () async {
-      if (realDevices.isEmpty) {
-        markTestSkipped('No Android device connected via ADB');
-        return;
-      }
+    test(
+      'returns a valid PNG from the first connected device',
+      () async {
+        if (realDevices.isEmpty) {
+          markTestSkipped('No Android device connected via ADB');
+          return;
+        }
 
-      final env = RealDeviceEnv(adb: adb);
-      await env.connect();
+        final env = RealDeviceEnv(adb: adb);
+        await env.connect();
 
-      final result = await env.client.callTool(
-        const CallToolRequest(name: 'take_screenshot'),
-      );
+        final result = await env.client.callTool(
+          const CallToolRequest(name: 'take_screenshot'),
+        );
 
-      expect(result.isError, isFalse);
-      final img = result.content.first as ImageContent;
-      expect(img.mimeType, 'image/png');
+        expect(result.isError, isFalse);
+        final img = result.content.first as ImageContent;
+        expect(img.mimeType, 'image/png');
 
-      final bytes = base64Decode(img.data);
-      // PNG magic: 89 50 4E 47 0D 0A 1A 0A
-      expect(
-        bytes.sublist(0, 4),
-        equals([0x89, 0x50, 0x4E, 0x47]),
-        reason: 'First 4 bytes must be PNG magic',
-      );
-      expect(bytes.length, greaterThan(64));
-    }, timeout: const Timeout(Duration(seconds: 30)));
+        final bytes = base64Decode(img.data);
+        // PNG magic: 89 50 4E 47 0D 0A 1A 0A
+        expect(
+          bytes.sublist(0, 4),
+          equals([0x89, 0x50, 0x4E, 0x47]),
+          reason: 'First 4 bytes must be PNG magic',
+        );
+        expect(bytes.length, greaterThan(64));
+      },
+      timeout: const Timeout(Duration(seconds: 30)),
+    );
 
-    test('explicit invalid device_id returns error', () async {
-      if (realDevices.isEmpty) {
-        markTestSkipped('No Android device connected via ADB');
-        return;
-      }
+    test(
+      'explicit invalid device_id returns error',
+      () async {
+        if (realDevices.isEmpty) {
+          markTestSkipped('No Android device connected via ADB');
+          return;
+        }
 
-      final env = RealDeviceEnv(adb: adb);
-      await env.connect();
+        final env = RealDeviceEnv(adb: adb);
+        await env.connect();
 
-      final result = await env.client.callTool(
-        const CallToolRequest(
-          name: 'take_screenshot',
-          arguments: {'device_id': 'invalid-device-serial-xyz'},
-        ),
-      );
+        final result = await env.client.callTool(
+          const CallToolRequest(
+            name: 'take_screenshot',
+            arguments: {'device_id': 'invalid-device-serial-xyz'},
+          ),
+        );
 
-      expect(result.isError, isTrue);
-    }, timeout: const Timeout(Duration(seconds: 15)));
+        expect(result.isError, isTrue);
+      },
+      timeout: const Timeout(Duration(seconds: 15)),
+    );
   });
 }
