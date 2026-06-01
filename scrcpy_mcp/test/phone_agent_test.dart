@@ -30,6 +30,146 @@ class _CapturingLlmClient implements LlmClient {
   }
 }
 
+/// Subset of real MCP tool schemas that the agent can call.
+/// Mirrors the schemas defined in lib/src/tools/ so the LLM receives accurate
+/// tool definitions during testing.
+const _agentTools = [
+  ToolSchema(
+    name: 'list_devices',
+    description: 'List connected Android devices',
+    parameters: {},
+  ),
+  ToolSchema(
+    name: 'start_mirroring',
+    description: 'Start screen mirroring on a device',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'device_id': {
+          'type': 'string',
+          'description': 'The Android device serial',
+        },
+      },
+      'required': ['device_id'],
+    },
+  ),
+  ToolSchema(
+    name: 'take_screenshot',
+    description: 'Take a screenshot of the device screen',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'device_id': {
+          'type': 'string',
+          'description':
+              'Device serial (optional, uses connected device if omitted)',
+        },
+      },
+    },
+  ),
+  ToolSchema(
+    name: 'inject_touch',
+    description: 'Inject a touch event (tap/swipe segment)',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'x': {'type': 'integer', 'description': 'X coordinate'},
+        'y': {'type': 'integer', 'description': 'Y coordinate'},
+        'width': {'type': 'integer', 'description': 'Screen width'},
+        'height': {'type': 'integer', 'description': 'Screen height'},
+        'action': {
+          'type': 'integer',
+          'description': 'Touch action: 0=down, 1=up, 2=move (default: 0)',
+        },
+      },
+      'required': ['x', 'y', 'width', 'height'],
+    },
+  ),
+  ToolSchema(
+    name: 'inject_swipe',
+    description: 'Swipe between two points',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'x1': {'type': 'integer', 'description': 'Start X coordinate'},
+        'y1': {'type': 'integer', 'description': 'Start Y coordinate'},
+        'x2': {'type': 'integer', 'description': 'End X coordinate'},
+        'y2': {'type': 'integer', 'description': 'End Y coordinate'},
+        'width': {'type': 'integer', 'description': 'Screen width'},
+        'height': {'type': 'integer', 'description': 'Screen height'},
+        'durationMs': {
+          'type': 'integer',
+          'description':
+              'Total swipe duration in ms (default 300). Shorter = fling.',
+        },
+      },
+      'required': ['x1', 'y1', 'x2', 'y2', 'width', 'height'],
+    },
+  ),
+  ToolSchema(
+    name: 'inject_text',
+    description: 'Input text on the device',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'text': {'type': 'string', 'description': 'Text to input'},
+      },
+      'required': ['text'],
+    },
+  ),
+  ToolSchema(
+    name: 'inject_key',
+    description: 'Inject a key event (e.g. Home=3, Back=4)',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'keycode': {
+          'type': 'integer',
+          'description': 'Android KeyEvent keycode',
+        },
+        'action': {
+          'type': 'integer',
+          'description': 'Key action: 0=down, 1=up (default: 0)',
+        },
+      },
+      'required': ['keycode'],
+    },
+  ),
+  ToolSchema(
+    name: 'press_back',
+    description: 'Press the Back button',
+    parameters: {},
+  ),
+  ToolSchema(
+    name: 'start_app',
+    description: 'Launch an app by package name',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'package': {
+          'type': 'string',
+          'description': 'Android package name of the app to launch',
+        },
+      },
+      'required': ['package'],
+    },
+  ),
+  ToolSchema(
+    name: 'set_screen_power',
+    description: 'Turn the screen on/off',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'mode': {
+          'type': 'string',
+          'description': 'Power mode: on | off',
+        },
+      },
+      'required': ['mode'],
+    },
+  ),
+];
+
 void main() {
   group('PhoneAgent', () {
     PhoneAgent makeAgent(
@@ -39,7 +179,7 @@ void main() {
     }) => PhoneAgent(
       config: AgentConfig(maxSteps: maxSteps),
       llmClient: _FakeLlmClient(responses),
-      tools: const [],
+      tools: _agentTools,
       executeToolCall:
           executor ??
           (_, __) async => (text: 'ok', imageBase64: null, imageMimeType: null),
@@ -98,7 +238,7 @@ void main() {
       final capturingAgent = PhoneAgent(
         config: const AgentConfig(maxSteps: 5),
         llmClient: capturingFake,
-        tools: const [],
+        tools: _agentTools,
         executeToolCall: (_, __) async =>
             (text: 'res: 1264x2800', imageBase64: null, imageMimeType: null),
       );
