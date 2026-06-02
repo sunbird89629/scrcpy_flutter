@@ -31,3 +31,29 @@ ScreenCheckResult parseScreenCheckResponse(String raw) {
   }
   throw LlmException('Unparseable vision response: $raw');
 }
+
+const _systemPrompt =
+    '你是一个手机界面分析助手。请根据截图判断用户描述的内容或状态是否出现在界面上。'
+    '严格按以下格式回答：第一行只写"是"或"否"，第二行起简要说明理由。';
+
+/// Asks [client] whether [expectation] appears in [base64Screenshot].
+/// Throws [LlmException] if the reply can't be parsed.
+Future<ScreenCheckResult> checkScreenContains({
+  required LlmClient client,
+  required String base64Screenshot,
+  required String expectation,
+  String mimeType = 'image/png',
+}) async {
+  final response = await client.chat(
+    messages: [
+      const LlmMessage(role: 'system', textContent: _systemPrompt),
+      LlmMessage(
+        role: 'user',
+        textContent: '界面上是否出现了"$expectation"？',
+        imageBase64: base64Screenshot,
+        imageMimeType: mimeType,
+      ),
+    ],
+  );
+  return parseScreenCheckResponse(response.text ?? '');
+}

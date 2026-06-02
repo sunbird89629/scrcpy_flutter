@@ -45,4 +45,58 @@ void main() {
           throwsA(isA<LlmException>()));
     });
   });
+
+  group('checkScreenContains', () {
+    test('wires messages and parses 是', () async {
+      final fake = _FakeLlmClient('是\n有图标');
+      final r = await checkScreenContains(
+        client: fake,
+        base64Screenshot: 'AAAA',
+        expectation: '应用图标',
+      );
+      expect(r.matched, isTrue);
+
+      final msgs = fake.captured!;
+      expect(msgs.first.role, 'system');
+      expect(msgs.first.textContent, contains('手机界面分析助手'));
+      final user = msgs.last;
+      expect(user.role, 'user');
+      expect(user.textContent, contains('应用图标'));
+      expect(user.imageBase64, 'AAAA');
+      expect(user.imageMimeType, 'image/png');
+    });
+
+    test('parses 否 as not matched', () async {
+      final r = await checkScreenContains(
+        client: _FakeLlmClient('否'),
+        base64Screenshot: 'AAAA',
+        expectation: '计算器',
+      );
+      expect(r.matched, isFalse);
+    });
+
+    test('empty model reply throws LlmException', () async {
+      await expectLater(
+        () => checkScreenContains(
+          client: _FakeLlmClient(''),
+          base64Screenshot: 'AAAA',
+          expectation: 'x',
+        ),
+        throwsA(isA<LlmException>()),
+      );
+    });
+  });
+}
+
+class _FakeLlmClient implements LlmClient {
+  _FakeLlmClient(this.reply);
+
+  final String reply;
+  List<LlmMessage>? captured;
+
+  @override
+  Future<LlmResponse> chat({required List<LlmMessage> messages}) async {
+    captured = messages;
+    return LlmResponse(text: reply);
+  }
 }
