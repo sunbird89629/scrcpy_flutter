@@ -6,8 +6,18 @@ import 'package:scrcpy_client/scrcpy_client.dart';
 import 'package:scrcpy_mcp/scrcpy_mcp.dart';
 import 'package:test/test.dart';
 
+import 'visual_assertion.dart';
+
 const _deviceId = '39111FDJH00D47';
-const _task = '帮我通过 chrome 打开 twitter 的官网';
+const _task = '''
+  帮我通过 chrome 打开 twitter 的官网,具体步骤如下：
+  1. 先进入桌面
+  2. 打开chrome
+  3. 在地址栏输入 twitter 的网址：https://www.x.com
+  4. 点击输入法上的确认按钮
+  5. 等待页面加载
+  6. 确认当前页面是 twitter 的主页
+''';
 
 /// Common app name → package name mappings.
 const _appMap = {
@@ -70,6 +80,15 @@ void main() {
         );
         final agentResult = await phoneAgent.run(_task);
         expect(agentResult, isNotNull);
+
+        // Verify the agent actually reached the Twitter homepage.
+        final check = await checkDeviceScreenContains(
+          client: AutoglmLlmClient.fromTest(),
+          adb: adb,
+          deviceId: _deviceId,
+          expectation: 'Twitter（X）的主页',
+        );
+        expect(check.matched, isTrue, reason: check.reason);
       } finally {
         await session.stop();
       }
@@ -90,17 +109,27 @@ Future<String> _tap(
     return 'Error: missing coordinates';
   }
   final s = await size();
-  session.sendControlMessage(ScrcpyInjectTouchMessage(
-    action: 0, pointerId: 0,
-    x: action.element![0], y: action.element![1],
-    width: s.$1, height: s.$2,
-  ));
+  session.sendControlMessage(
+    ScrcpyInjectTouchMessage(
+      action: 0,
+      pointerId: 0,
+      x: action.element![0],
+      y: action.element![1],
+      width: s.$1,
+      height: s.$2,
+    ),
+  );
   await Future<void>.delayed(const Duration(milliseconds: 50));
-  session.sendControlMessage(ScrcpyInjectTouchMessage(
-    action: 1, pointerId: 0,
-    x: action.element![0], y: action.element![1],
-    width: s.$1, height: s.$2,
-  ));
+  session.sendControlMessage(
+    ScrcpyInjectTouchMessage(
+      action: 1,
+      pointerId: 0,
+      x: action.element![0],
+      y: action.element![1],
+      width: s.$1,
+      height: s.$2,
+    ),
+  );
   return 'Tapped (${action.element![0]}, ${action.element![1]})';
 }
 
@@ -109,14 +138,20 @@ Future<String> _swipe(
   DoAction action,
   Future<(int, int)> Function() size,
 ) async {
-  if (action.start == null || action.end == null) return 'Error: missing coords';
+  if (action.start == null || action.end == null) {
+    return 'Error: missing coords';
+  }
   final s = await size();
-  session.sendControlMessage(ScrcpyInjectScrollMessage(
-    x: action.start![0], y: action.start![1],
-    width: s.$1, height: s.$2,
-    hScroll: action.end![0] - action.start![0],
-    vScroll: action.end![1] - action.start![1],
-  ));
+  session.sendControlMessage(
+    ScrcpyInjectScrollMessage(
+      x: action.start![0],
+      y: action.start![1],
+      width: s.$1,
+      height: s.$2,
+      hScroll: action.end![0] - action.start![0],
+      vScroll: action.end![1] - action.start![1],
+    ),
+  );
   return 'Swiped (${action.start![0]},${action.start![1]}) → (${action.end![0]},${action.end![1]})';
 }
 
@@ -129,10 +164,14 @@ Future<String> _typeText(ScrcpySession session, DoAction action) async {
 Future<String> _launch(ScrcpyMcpAdb adb, DoAction action) async {
   if (action.app == null) return 'Error: missing app';
   final pkg = _appMap[action.app] ?? action.app!;
-  final r = await adb.shell(
-    ['monkey', '-p', pkg, '-c', 'android.intent.category.LAUNCHER', '1'],
-    deviceId: _deviceId,
-  );
+  final r = await adb.shell([
+    'monkey',
+    '-p',
+    pkg,
+    '-c',
+    'android.intent.category.LAUNCHER',
+    '1',
+  ], deviceId: _deviceId);
   return r.exitCode == 0 ? 'Launched $pkg' : 'Failed: $pkg';
 }
 
@@ -142,7 +181,9 @@ Future<String> _back(ScrcpySession session) async {
 }
 
 Future<String> _home(ScrcpySession session) async {
-  session.sendControlMessage(const ScrcpyInjectKeyMessage(action: 0, keycode: 3));
+  session.sendControlMessage(
+    const ScrcpyInjectKeyMessage(action: 0, keycode: 3),
+  );
   return 'Pressed Home';
 }
 
@@ -155,17 +196,27 @@ Future<String> _longPress(
     return 'Error: missing coordinates';
   }
   final s = await size();
-  session.sendControlMessage(ScrcpyInjectTouchMessage(
-    action: 0, pointerId: 0,
-    x: action.element![0], y: action.element![1],
-    width: s.$1, height: s.$2,
-  ));
+  session.sendControlMessage(
+    ScrcpyInjectTouchMessage(
+      action: 0,
+      pointerId: 0,
+      x: action.element![0],
+      y: action.element![1],
+      width: s.$1,
+      height: s.$2,
+    ),
+  );
   await Future<void>.delayed(const Duration(seconds: 1));
-  session.sendControlMessage(ScrcpyInjectTouchMessage(
-    action: 1, pointerId: 0,
-    x: action.element![0], y: action.element![1],
-    width: s.$1, height: s.$2,
-  ));
+  session.sendControlMessage(
+    ScrcpyInjectTouchMessage(
+      action: 1,
+      pointerId: 0,
+      x: action.element![0],
+      y: action.element![1],
+      width: s.$1,
+      height: s.$2,
+    ),
+  );
   return 'Long pressed (${action.element![0]}, ${action.element![1]})';
 }
 
