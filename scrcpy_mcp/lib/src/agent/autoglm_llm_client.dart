@@ -66,6 +66,19 @@ class AutoglmLlmClient implements LlmClient {
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     final choice = (json['choices'] as List).first as Map<String, dynamic>;
+
+    // A finish_reason other than "stop" means the output is not a clean,
+    // complete answer — "length" = truncated by max_tokens (the trailing
+    // finish()/action is likely cut off), "content_filter" = blocked. Surface
+    // it so downstream parse failures are explainable rather than silent.
+    final finishReason = choice['finish_reason'] as String?;
+    if (finishReason != null && finishReason != 'stop') {
+      _log.warning(
+        'autoglm-phone finish_reason="$finishReason" — output may be '
+        'truncated or filtered; raise max_tokens or shorten the prompt.',
+      );
+    }
+
     final message = choice['message'] as Map<String, dynamic>;
 
     return LlmResponse(text: message['content'] as String?);

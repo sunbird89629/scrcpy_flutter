@@ -286,5 +286,23 @@ void main() {
       );
       expect(action, isA<DoAction>());
     });
+
+    test('finish() tolerates unescaped inner quotes in message', () {
+      // Real autoglm-phone output: natural-language prefix + finish() whose
+      // message contains unescaped inner quotes around 「Twitter（X）的主页」.
+      const content =
+          '否，界面上没有出现"Twitter（X）的主页"。当前显示的是Google的界面。\n'
+          'finish(message="否，界面上没有出现"Twitter（X）的主页"。当前显示的是Google的界面。")';
+      final action = ActionParser.parse(content);
+
+      expect(action, isA<FinishAction>());
+      final finish = action! as FinishAction;
+      // Message is extracted cleanly: no `message="` wrapper leaking in, and
+      // the inner quotes are preserved verbatim.
+      expect(finish.message, startsWith('否，界面上没有出现'));
+      expect(finish.message, isNot(contains('message=')));
+      expect(finish.message, contains('"Twitter（X）的主页"'));
+      expect(finish.message, endsWith('Google的界面。'));
+    });
   });
 }

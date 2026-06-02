@@ -57,20 +57,17 @@ class ActionParser {
     ).firstMatch(text);
     final effectiveText = answerMatch?.group(1) ?? text;
 
-    // 1. finish(message="...")
+    // 1. finish(message="...") / 2. screenshot(message="...") — finish variants.
+    // The model frequently emits *unescaped* inner quotes in the message, e.g.
+    //   finish(message="否，未出现"Twitter（X）"。")
+    // so the body is matched greedily up to the final `")` rather than the
+    // first inner quote (which would truncate/garble the message).
     final finishMatch = RegExp(
-      r'finish\s*\(\s*message\s*=\s*"((?:[^"\\]|\\.)*)"\s*\)',
+      r'(?:finish|screenshot)\s*\(\s*message\s*=\s*"(.*)"\s*\)',
+      dotAll: true,
     ).firstMatch(effectiveText);
     if (finishMatch != null) {
       return FinishAction(_unescape(finishMatch.group(1)!));
-    }
-
-    // 2. screenshot(message="...") — another finish variant
-    final screenshotMatch = RegExp(
-      r'screenshot\s*\(\s*message\s*=\s*"((?:[^"\\]|\\.)*)"\s*\)',
-    ).firstMatch(effectiveText);
-    if (screenshotMatch != null) {
-      return FinishAction(_unescape(screenshotMatch.group(1)!));
     }
 
     // 3. do(action="...", ...)
