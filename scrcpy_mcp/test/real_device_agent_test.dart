@@ -8,6 +8,7 @@
 /// Run with:
 ///   dart test test/real_device_agent_test.dart
 @TestOn('vm')
+@Tags(['real-device'])
 library;
 
 import 'package:adb_tools/adb_tools.dart';

@@ -23,8 +23,9 @@ class DeviceEntry {
   String? get detailLine {
     final parts = <String>[];
     if (battery != null) parts.add('Battery: $battery%');
-    if (info.androidVersion != null)
+    if (info.androidVersion != null) {
       parts.add('Android ${info.androidVersion}');
+    }
     if (info.screenWidth > 0) {
       parts.add('${info.screenWidth.toInt()}x${info.screenHeight.toInt()}');
     }
