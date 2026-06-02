@@ -17,6 +17,12 @@ import '../session_context.dart';
 /// independent of the actual device resolution.
 const _kCoordSpace = 1000;
 
+// Android KeyEvent constants for clearing a text field before typing.
+const _keycodeA = 29; // KEYCODE_A
+const _keycodeDel = 67; // KEYCODE_DEL (backspace) — deletes the selection
+const _keycodeCtrlLeft = 113; // KEYCODE_CTRL_LEFT
+const _metaCtrlOn = 0x1000; // META_CTRL_ON
+
 /// Common app name → package name mappings for autoglm-phone's Launch action.
 const _appNameToPackage = {
   'Chrome': 'com.android.chrome',
@@ -209,8 +215,37 @@ class RunTaskTool extends McpTool {
 
   Future<String> _typeText(DoAction action, String deviceId) async {
     if (action.text == null) return 'Error: Type missing text';
+    // autoglm-phone's Type *replaces* a field's content, so clear it first
+    // (select-all, then Del) — otherwise text is appended onto whatever is
+    // already there. Mirrors the official handler's clear_text-before-type.
+    _selectAll();
+    _sendKey(_keycodeDel);
+    await Future<void>.delayed(const Duration(milliseconds: 50));
     _session.injectText(action.text!);
     return 'Typed: ${action.text}';
+  }
+
+  /// Selects all text in the focused field via a Ctrl+A chord: Ctrl down,
+  /// A down/up (with Ctrl in the metastate), Ctrl up — the way scrcpy injects
+  /// modifier combinations.
+  void _selectAll() {
+    _session.sendControlMessage(
+      const ScrcpyInjectKeyMessage(action: 0, keycode: _keycodeCtrlLeft),
+    );
+    _sendKey(_keycodeA, metastate: _metaCtrlOn);
+    _session.sendControlMessage(
+      const ScrcpyInjectKeyMessage(action: 1, keycode: _keycodeCtrlLeft),
+    );
+  }
+
+  /// Sends a key down+up pair (optionally with modifier [metastate]).
+  void _sendKey(int keycode, {int metastate = 0}) {
+    _session.sendControlMessage(
+      ScrcpyInjectKeyMessage(action: 0, keycode: keycode, metastate: metastate),
+    );
+    _session.sendControlMessage(
+      ScrcpyInjectKeyMessage(action: 1, keycode: keycode, metastate: metastate),
+    );
   }
 
   Future<String> _launch(DoAction action, String deviceId) async {

@@ -131,6 +131,15 @@ Future<String> _swipe(
 
 Future<String> _typeText(ScrcpyMcpAdb adb, DoAction action) async {
   if (action.text == null) return 'Error: missing text';
+  // Type replaces the field, so clear it first (select-all + delete) — otherwise
+  // text is appended onto existing content (e.g. a stale URL in the omnibox).
+  // NB: `input keyevent KEYCODE_CTRL_A` is a no-op (not a real keycode); the
+  // chord must go through `input keycombination`.
+  await adb.shell(
+    ['input', 'keycombination', 'KEYCODE_CTRL_LEFT', 'KEYCODE_A'],
+    deviceId: _deviceId,
+  );
+  await adb.shell(['input', 'keyevent', 'KEYCODE_DEL'], deviceId: _deviceId);
   // `adb shell input text` treats spaces specially (use %s) and only handles
   // ASCII; fine for the URL this test types.
   final escaped = action.text!.replaceAll(' ', '%s');
