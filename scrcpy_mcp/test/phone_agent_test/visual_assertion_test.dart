@@ -15,8 +15,10 @@ void main() {
       expect(parseScreenCheckResponse('是').matched, isTrue);
     });
 
-    test('leading 否 → not matched', () {
-      expect(parseScreenCheckResponse('否\n没有看到').matched, isFalse);
+    test('leading 否 → not matched, reason preserved', () {
+      final r = parseScreenCheckResponse('否\n没有看到');
+      expect(r.matched, isFalse);
+      expect(r.reason, contains('没有看到'));
     });
 
     test('不是 → not matched (regression for contains("是") bug)', () {

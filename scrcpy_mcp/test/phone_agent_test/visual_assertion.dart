@@ -18,7 +18,9 @@ class ScreenCheckResult {
 /// Rules: trim, take the first line. Leading "否"/"不" → not matched;
 /// leading "是" → matched; anything else (including empty) → [LlmException].
 /// Checking "否"/"不" before "是" avoids the `contains('是')` misjudgment
-/// where "不是" was wrongly read as a match.
+/// where "不是" was wrongly read as a match. Any "不"-prefixed reply (e.g.
+/// "不确定") is intentionally treated as not matched — the system prompt
+/// instructs the model to answer strictly with "是"/"否".
 ScreenCheckResult parseScreenCheckResponse(String raw) {
   final text = raw.trim();
   if (text.isEmpty) {
