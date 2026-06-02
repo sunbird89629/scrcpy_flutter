@@ -51,13 +51,14 @@ void main() {
           actionRunner: actionRunner ?? (_) async => 'ok',
         );
 
-    test('returns success when LLM returns plain text (no action)', () async {
+    test('returns failure when LLM output has no parseable action', () async {
       final result = await makeAgent([
         const LlmResponse(text: 'Task complete'),
       ]).run('open settings');
 
-      expect(result.success, isTrue);
-      expect(result.result, 'Task complete');
+      expect(result.success, isFalse);
+      expect(result.result, contains('Could not parse an action'));
+      expect(result.result, contains('Task complete'));
       expect(result.steps, 1);
     });
 
@@ -108,6 +109,37 @@ void main() {
       expect(secondCallMessages.any((m) => m.role == 'assistant'), isTrue);
       final lastMsg = secondCallMessages.last;
       expect(lastMsg.imageBase64, isNotNull);
+    });
+
+    test('keeps only the most recent screenshot in history', () async {
+      final capturingFake = _CapturingLlmClient([
+        const LlmResponse(text: 'do(action="Tap", element=[500,300])'),
+        const LlmResponse(text: 'do(action="Tap", element=[600,400])'),
+        const LlmResponse(text: 'finish(message="Done")'),
+      ]);
+
+      final agent = PhoneAgent(
+        config: const AgentConfig(maxSteps: 5),
+        llmClient: capturingFake,
+        takeScreenshot: _fakeScreenshot,
+        actionRunner: (_) async => 'ok',
+      );
+
+      await agent.run('tap twice');
+
+      // Third call carries two prior user screenshots + the current one, but
+      // only the current (last) one should retain its image.
+      final thirdCall = capturingFake.capturedMessages[2];
+      final withImages = thirdCall.where((m) => m.imageBase64 != null);
+      expect(withImages.length, 1);
+      expect(thirdCall.last.imageBase64, isNotNull);
+
+      // Older user messages keep their text but drop the screenshot.
+      final staleUserMsgs = thirdCall
+          .where((m) => m.role == 'user' && m.imageBase64 == null)
+          .toList();
+      expect(staleUserMsgs, isNotEmpty);
+      expect(staleUserMsgs.first.textContent, contains('历史截图已省略'));
     });
 
     test('returns failure when max steps reached', () async {

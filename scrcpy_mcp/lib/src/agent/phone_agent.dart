@@ -53,7 +53,7 @@ class PhoneAgent {
         ),
       );
 
-      final response = await llmClient.chat(messages: List.unmodifiable(messages));
+      final response = await llmClient.chat(messages: _trimHistory(messages));
 
       final rawText = response.text ?? '';
       if (rawText.isEmpty) {
@@ -68,14 +68,17 @@ class PhoneAgent {
       final action = ActionParser.parse(rawText);
 
       if (action == null) {
-        // Could not parse an action — treat as finish with raw text
+        // The model must emit a parseable action — completion goes through
+        // finish(...)/screenshot(...), which ActionParser handles. Reaching
+        // here means the output format broke, so report failure instead of
+        // masquerading a format error as success.
         final cleaned = rawText
             .replaceAll(RegExp('</?think>'), '')
             .trim();
         return AgentResult(
-          result: cleaned,
+          result: 'Could not parse an action from model output: $cleaned',
           steps: step + 1,
-          success: true,
+          success: false,
         );
       }
 
@@ -121,5 +124,36 @@ class PhoneAgent {
       steps: config.maxSteps,
       success: false,
     );
+  }
+
+  /// Returns a copy of [messages] where only the most recent screenshot is
+  /// kept. autoglm-phone has a 20K-token context window and each full-screen
+  /// screenshot costs ~1–1.5K tokens, so retaining every step's image would
+  /// overflow the window within a handful of steps and eventually evict the
+  /// system prompt. The model decides from the current screen plus the textual
+  /// action history (the assistant turns), so stale screenshots only waste
+  /// tokens — drop them but keep their text.
+  static List<LlmMessage> _trimHistory(List<LlmMessage> messages) {
+    var lastImageIndex = -1;
+    for (var i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].imageBase64 != null) {
+        lastImageIndex = i;
+        break;
+      }
+    }
+    if (lastImageIndex == -1) return List.unmodifiable(messages);
+
+    return List.unmodifiable([
+      for (var i = 0; i < messages.length; i++)
+        if (i == lastImageIndex || messages[i].imageBase64 == null)
+          messages[i]
+        else
+          LlmMessage(
+            role: messages[i].role,
+            textContent: messages[i].textContent == null
+                ? '（历史截图已省略）'
+                : '${messages[i].textContent}\n（历史截图已省略）',
+          ),
+    ]);
   }
 }

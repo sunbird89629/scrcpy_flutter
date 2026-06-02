@@ -40,7 +40,8 @@ class AutoglmLlmClient implements LlmClient {
     final rawBody = {
       'model': model,
       'messages': messages.map(_messageToJson).toList(),
-      'max_tokens': 3000,
+      // autoglm-phone caps output at 2048 tokens; do not exceed it.
+      'max_tokens': 2048,
       'frequency_penalty': 0.5,
       'temperature': 0.1,
     };

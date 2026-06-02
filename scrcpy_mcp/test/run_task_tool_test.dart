@@ -8,13 +8,13 @@ import 'package:test/test.dart';
 
 import 'real_device_test_utils.dart';
 
-// Fake LLM that immediately returns "Done".
+// Fake LLM that immediately completes the task with a finish() action.
 class _DoneLlmClient implements LlmClient {
   @override
   Future<LlmResponse> chat({
     required List<LlmMessage> messages,
   }) async =>
-      const LlmResponse(text: 'Task done');
+      const LlmResponse(text: 'finish(message="Task done")');
 }
 
 void main() {
