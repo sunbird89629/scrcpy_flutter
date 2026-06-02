@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:scrcpy_mcp/scrcpy_mcp.dart';
 
 /// Result of a visual assertion against a screenshot.
@@ -56,4 +58,20 @@ Future<ScreenCheckResult> checkScreenContains({
     ],
   );
   return parseScreenCheckResponse(response.text ?? '');
+}
+
+/// Captures a screenshot from [deviceId] via [adb], then runs
+/// [checkScreenContains].
+Future<ScreenCheckResult> checkDeviceScreenContains({
+  required LlmClient client,
+  required ScrcpyMcpAdb adb,
+  required String deviceId,
+  required String expectation,
+}) async {
+  final bytes = await adb.takeScreenshot(deviceId);
+  return checkScreenContains(
+    client: client,
+    base64Screenshot: base64Encode(bytes),
+    expectation: expectation,
+  );
 }
