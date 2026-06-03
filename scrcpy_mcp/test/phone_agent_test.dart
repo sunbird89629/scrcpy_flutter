@@ -77,6 +77,22 @@ void main() {
       expect(result.steps, 2);
     });
 
+    test('Interact aborts as needs-human without running it', () async {
+      var ran = false;
+      final result = await makeAgent(
+        [const LlmResponse(text: 'do(action="Interact")')],
+        actionRunner: (_) async {
+          ran = true;
+          return 'ok';
+        },
+      ).run('pick one');
+
+      expect(result.success, isFalse);
+      expect(result.result, contains('requires human'));
+      expect(ran, isFalse, reason: 'Interact must not reach the action runner');
+      expect(result.steps, 1);
+    });
+
     test('feeds screenshot into message history', () async {
       final capturingFake = _CapturingLlmClient([
         const LlmResponse(text: 'do(action="Tap", element=[500,300])'),
@@ -322,6 +338,57 @@ void main() {
       expect(finish.message, isNot(contains('message=')));
       expect(finish.message, contains('"Twitter（X）的主页"'));
       expect(finish.message, endsWith('Google的界面。'));
+    });
+
+    test('parses Type_Name do() into text', () {
+      final action = ActionParser.parse('do(action="Type_Name", text="张三")');
+      expect(action, isA<DoAction>());
+      final doAction = action! as DoAction;
+      expect(doAction.action, 'Type_Name');
+      expect(doAction.text, '张三');
+    });
+
+    test('parses Interact do() with no args', () {
+      final action = ActionParser.parse('do(action="Interact")');
+      expect(action, isA<DoAction>());
+      expect((action! as DoAction).action, 'Interact');
+    });
+
+    test('parses Note do() into message', () {
+      final action = ActionParser.parse('do(action="Note", message="True")');
+      expect(action, isA<DoAction>());
+      final doAction = action! as DoAction;
+      expect(doAction.action, 'Note');
+      expect(doAction.message, 'True');
+    });
+
+    test('parses Call_API instruction into message', () {
+      final action = ActionParser.parse(
+        'do(action="Call_API", instruction="总结当前页面")',
+      );
+      expect(action, isA<DoAction>());
+      final doAction = action! as DoAction;
+      expect(doAction.action, 'Call_API');
+      expect(doAction.message, '总结当前页面');
+    });
+
+    test('parses sensitive Tap with message', () {
+      final action = ActionParser.parse(
+        'do(action="Tap", element=[10, 20], message="重要操作")',
+      );
+      expect(action, isA<DoAction>());
+      final doAction = action! as DoAction;
+      expect(doAction.action, 'Tap');
+      expect(doAction.element, [10, 20]);
+      expect(doAction.message, '重要操作');
+    });
+
+    test('parses Type_Name shorthand into text', () {
+      final action = ActionParser.parse('Type_Name("李四")');
+      expect(action, isA<DoAction>());
+      final doAction = action! as DoAction;
+      expect(doAction.action, 'Type_Name');
+      expect(doAction.text, '李四');
     });
   });
 }

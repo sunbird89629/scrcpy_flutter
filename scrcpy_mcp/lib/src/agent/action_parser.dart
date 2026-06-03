@@ -95,7 +95,11 @@ class ActionParser {
       text: _extractString(args, 'text'),
       app: _extractString(args, 'app'),
       duration: _extractString(args, 'duration'),
-      message: _extractString(args, 'message'),
+      // Call_API carries its payload under `instruction`; fold it into message
+      // so the runner has a single field to read.
+      message:
+          _extractString(args, 'message') ??
+          _extractString(args, 'instruction'),
     );
   }
 
@@ -189,6 +193,27 @@ class ActionParser {
         return DoAction(
           action: 'Type',
           text: args.isNotEmpty && args[0] is String ? args[0] as String : null,
+        );
+      case 'Type_Name':
+        return DoAction(
+          action: 'Type_Name',
+          text: args.isNotEmpty && args[0] is String ? args[0] as String : null,
+        );
+      case 'Interact':
+        return const DoAction(action: 'Interact');
+      case 'Note':
+        return DoAction(
+          action: 'Note',
+          message: args.isNotEmpty && args[0] is String
+              ? args[0] as String
+              : null,
+        );
+      case 'Call_API':
+        return DoAction(
+          action: 'Call_API',
+          message: args.isNotEmpty && args[0] is String
+              ? args[0] as String
+              : null,
         );
       case 'Launch':
         return DoAction(

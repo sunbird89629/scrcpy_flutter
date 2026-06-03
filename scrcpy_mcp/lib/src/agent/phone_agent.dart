@@ -1,6 +1,10 @@
+import 'package:logger_utils/logger_utils.dart';
+
 import 'action_parser.dart';
 import 'agent_config.dart';
 import 'llm_client.dart';
+
+final _log = Logger('PhoneAgent');
 
 /// Callback that takes a screenshot and returns base64-encoded PNG data.
 typedef ScreenshotProvider =
@@ -30,9 +34,22 @@ class PhoneAgent {
   final ScreenshotProvider takeScreenshot;
   final ActionRunner actionRunner;
 
+  static const _weekdayNames = [
+    '星期一',
+    '星期二',
+    '星期三',
+    '星期四',
+    '星期五',
+    '星期六',
+    '星期日',
+  ];
+
   Future<AgentResult> run(String message) async {
-    final dateStr =
-        '${DateTime.now().year}年${DateTime.now().month}月${DateTime.now().day}日';
+    final now = DateTime.now();
+    final mm = now.month.toString().padLeft(2, '0');
+    final dd = now.day.toString().padLeft(2, '0');
+    final weekday = _weekdayNames[now.weekday - 1];
+    final dateStr = '${now.year}年$mm月$dd日 $weekday';
     final systemPrompt = config.systemPrompt.replaceFirst('{DATE}', dateStr);
     final messages = <LlmMessage>[
       LlmMessage(role: 'system', textContent: systemPrompt),
@@ -67,19 +84,20 @@ class PhoneAgent {
 
       final userContent = step == 0 ? message : '继续执行任务';
 
-      // 2. Send to LLM with screenshot
-      messages.add(
-        LlmMessage(
-          role: 'user',
-          textContent: userContent,
-          imageBase64: screenshot.base64,
-          imageMimeType: screenshot.mimeType,
-        ),
+      final llmMessage = LlmMessage(
+        role: 'user',
+        textContent: userContent,
+        imageBase64: screenshot.base64,
+        imageMimeType: screenshot.mimeType,
       );
+      // 2. Send to LLM with screenshot
+      messages.add(llmMessage);
 
+      _log.info(llmMessage.toString());
       final response = await llmClient.chat(messages: _trimHistory(messages));
 
       final rawText = response.text ?? '';
+
       if (rawText.isEmpty) {
         return AgentResult(
           result: 'Model returned empty response at step $step',
@@ -105,14 +123,20 @@ class PhoneAgent {
       }
 
       // 4. Add assistant response to history
-      messages.add(LlmMessage(role: 'assistant', textContent: rawText));
+      final assistantMessage = LlmMessage(
+        role: 'assistant',
+        textContent: rawText,
+      );
+      messages.add(assistantMessage);
 
       switch (action) {
         case DoAction():
-          // Take_over means the task cannot continue without human help.
-          if (action.action == 'Take_over') {
+          // Take_over (login/verification) and Interact (ambiguous choice) both
+          // need a human in the loop, which a headless run_task does not have —
+          // abort with the model's message rather than guess.
+          if (action.action == 'Take_over' || action.action == 'Interact') {
             return AgentResult(
-              result: 'Task requires human: ${action.message ?? ""}',
+              result: 'Task requires human: ${action.message ?? action.action}',
               steps: step + 1,
               success: false,
             );

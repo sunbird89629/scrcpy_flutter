@@ -142,9 +142,18 @@ class RunTaskTool extends McpTool {
       case 'Swipe':
         return _swipe(action, deviceId);
       case 'Type':
+      case 'Type_Name':
         return _typeText(action, deviceId);
       case 'Launch':
         return _launch(action, deviceId);
+      case 'Note':
+        // Recording-only action: nothing to do on-device, just acknowledge so
+        // the agent loop continues.
+        return Future.value('Noted');
+      case 'Call_API':
+        // Summarize/comment action with no on-device effect in this headless
+        // flow; acknowledge with the model's instruction so the loop continues.
+        return Future.value('Acknowledged: ${action.message ?? 'summary'}');
       case 'Back':
         return _back(deviceId);
       case 'Home':
