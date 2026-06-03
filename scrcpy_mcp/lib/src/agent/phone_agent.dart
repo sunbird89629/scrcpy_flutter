@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:logger_utils/logger_utils.dart';
 
 import 'action_parser.dart';
@@ -51,12 +52,14 @@ class PhoneAgent {
     final weekday = _weekdayNames[now.weekday - 1];
     final dateStr = '${now.year}年$mm月$dd日 $weekday';
     final systemPrompt = config.systemPrompt.replaceFirst('{DATE}', dateStr);
-    final messages = <LlmMessage>[
+
+    final messages = MessageList(<LlmMessage>[
       LlmMessage(role: 'system', textContent: systemPrompt),
-    ];
+    ]);
 
     String? prevScreenshot;
     var stalledSteps = 0;
+    String? lastResult;
 
     for (var step = 0; step < config.maxSteps; step++) {
       // 1. Take screenshot
@@ -82,7 +85,13 @@ class PhoneAgent {
         );
       }
 
-      final userContent = step == 0 ? message : '继续执行任务';
+      // Feed the previous action's result back instead of a constant prompt.
+      // This gives the model outcome feedback to self-correct, and — because the
+      // text varies each step — avoids the low-temperature repetition collapse
+      // that a fixed "继续执行任务" can trigger.
+      final userContent = step == 0
+          ? message
+          : '上一步操作结果：${lastResult ?? '已执行'}。请对照当前截图判断是否生效，并继续完成任务。';
 
       final llmMessage = LlmMessage(
         role: 'user',
@@ -92,11 +101,10 @@ class PhoneAgent {
       );
       // 2. Send to LLM with screenshot
       messages.add(llmMessage);
-
-      _log.info(llmMessage.toString());
       final response = await llmClient.chat(messages: _trimHistory(messages));
 
       final rawText = response.text ?? '';
+      _log.info('rawText:$rawText');
 
       if (rawText.isEmpty) {
         return AgentResult(
@@ -148,6 +156,7 @@ class PhoneAgent {
           } catch (e) {
             result = 'Error executing $action: $e';
           }
+          lastResult = result;
           if (step == config.maxSteps - 1) {
             return AgentResult(
               result: 'Max steps reached after executing: $action → $result',
@@ -203,5 +212,14 @@ class PhoneAgent {
                 : '${messages[i].textContent}\n（历史截图已省略）',
           ),
     ]);
+  }
+}
+
+class MessageList extends DelegatingList<LlmMessage> {
+  MessageList(super.base);
+  @override
+  void add(LlmMessage value) {
+    _log.info(value.toLog());
+    super.add(value);
   }
 }

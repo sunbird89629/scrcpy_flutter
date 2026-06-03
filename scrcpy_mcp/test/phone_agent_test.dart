@@ -122,6 +122,32 @@ void main() {
       expect(lastMsg.imageBase64, isNotNull);
     });
 
+    test(
+      'feeds the previous action result into the next user message',
+      () async {
+        final capturingFake = _CapturingLlmClient([
+          const LlmResponse(text: 'do(action="Tap", element=[500,300])'),
+          const LlmResponse(text: 'finish(message="done")'),
+        ]);
+
+        final agent = PhoneAgent(
+          config: const AgentConfig(maxSteps: 5),
+          llmClient: capturingFake,
+          takeScreenshot: _fakeScreenshot,
+          actionRunner: (_) async => 'Tapped (540, 1200)',
+        );
+
+        await agent.run('do it');
+
+        // The second call's latest user turn carries the prior action's result,
+        // not a constant prompt — this is what gives feedback and breaks the
+        // repetition-collapse failure mode.
+        final secondCall = capturingFake.capturedMessages[1];
+        final lastUser = secondCall.lastWhere((m) => m.role == 'user');
+        expect(lastUser.textContent, contains('Tapped (540, 1200)'));
+      },
+    );
+
     test('keeps only the last keepScreenshots screenshots in history', () async {
       final capturingFake = _CapturingLlmClient([
         const LlmResponse(text: 'do(action="Tap", element=[500,300])'),
