@@ -46,8 +46,6 @@ class AutoglmLlmClient implements LlmClient {
     };
     final body = jsonEncode(rawBody);
 
-    _log.infoJson('>>>POST $uri', _summarizeBody(rawBody));
-
     final response = await _http.post(
       uri,
       headers: {
@@ -56,8 +54,6 @@ class AutoglmLlmClient implements LlmClient {
       },
       body: body,
     );
-
-    _log.infoJson('<<<HTTP ${response.statusCode}', response.body);
 
     if (response.statusCode != 200) {
       throw LlmException('HTTP ${response.statusCode}: ${response.body}');
@@ -80,7 +76,10 @@ class AutoglmLlmClient implements LlmClient {
 
     final message = choice['message'] as Map<String, dynamic>;
 
-    return LlmResponse(text: message['content'] as String?);
+    return LlmResponse(
+      text: message['content'] as String?,
+      finishReason: finishReason,
+    );
   }
 
   Map<String, dynamic> _messageToJson(LlmMessage m) {
@@ -101,36 +100,5 @@ class AutoglmLlmClient implements LlmClient {
     }
 
     return map;
-  }
-
-  /// Returns a copy of [body] with base64 images truncated to keep logs
-  /// readable.
-  static Map<String, dynamic> _summarizeBody(Map<String, dynamic> body) {
-    final copy = Map<String, dynamic>.from(body);
-    final msgs = (copy['messages'] as List).cast<Map<String, dynamic>>();
-    copy['messages'] = msgs.map((m) {
-      final content = m['content'];
-      if (content is List) {
-        return {
-          ...m,
-          'content': content.map((part) {
-            if (part is Map && part['type'] == 'image_url') {
-              final url = (part['image_url'] as Map)['url'] as String? ?? '';
-              return {
-                ...part,
-                'image_url': {
-                  'url': url.length > 80
-                      ? '${url.substring(0, 80)}...<truncated>'
-                      : url,
-                },
-              };
-            }
-            return part;
-          }).toList(),
-        };
-      }
-      return m;
-    }).toList();
-    return copy;
   }
 }

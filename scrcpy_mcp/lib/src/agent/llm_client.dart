@@ -27,12 +27,29 @@ class LlmMessage {
   final String? textContent;
   final String? imageBase64;
   final String? imageMimeType;
+  @override
+  String toString() {
+    return 'LlmMessage('
+        'role: $role, '
+        'textContent: $textContent, '
+        'hasImage: ${imageBase64 != null}, '
+        'imageMimeType: $imageMimeType'
+        ')';
+  }
+
+  String toLog() {
+    return '$role:$textContent';
+  }
 }
 
 /// Response from the LLM.
 class LlmResponse {
-  const LlmResponse({this.text});
+  const LlmResponse({this.text, this.finishReason});
   final String? text;
+
+  /// Why generation stopped: 'stop' (clean), 'length' (truncated by max_tokens),
+  /// 'content_filter', etc. Null when the client doesn't report it.
+  final String? finishReason;
 }
 
 /// Thrown when the LLM API returns an error or an unparseable response.

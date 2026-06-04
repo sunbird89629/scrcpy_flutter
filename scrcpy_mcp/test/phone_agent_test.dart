@@ -148,6 +148,58 @@ void main() {
       },
     );
 
+    test('retries once on a truncated (length) response', () async {
+      final result = await makeAgent([
+        // Unparseable garbage, flagged as truncated by max_tokens.
+        const LlmResponse(text: '重复重复重复没有动作', finishReason: 'length'),
+        const LlmResponse(text: 'finish(message="recovered")'),
+      ]).run('do it');
+
+      // The agent recovers within the same step instead of failing.
+      expect(result.success, isTrue);
+      expect(result.result, 'recovered');
+      expect(result.steps, 1);
+    });
+
+    test(
+      'does not retry an unparseable response that was not truncated',
+      () async {
+        final result = await makeAgent([
+          const LlmResponse(text: '没有动作的普通文本'),
+        ]).run('do it');
+
+        expect(result.success, isFalse);
+        expect(result.result, contains('Could not parse an action'));
+        expect(result.steps, 1);
+      },
+    );
+
+    test('strips <think> blocks from assistant history', () async {
+      final capturingFake = _CapturingLlmClient([
+        const LlmResponse(
+          text:
+              '<think>这里是冗长的推理过程</think>'
+              'do(action="Tap", element=[1,2])',
+        ),
+        const LlmResponse(text: 'finish(message="done")'),
+      ]);
+
+      final agent = PhoneAgent(
+        config: const AgentConfig(maxSteps: 5),
+        llmClient: capturingFake,
+        takeScreenshot: _fakeScreenshot,
+        actionRunner: (_) async => 'ok',
+      );
+
+      await agent.run('go');
+
+      final secondCall = capturingFake.capturedMessages[1];
+      final assistant = secondCall.firstWhere((m) => m.role == 'assistant');
+      expect(assistant.textContent, isNot(contains('推理过程')));
+      expect(assistant.textContent, isNot(contains('<think>')));
+      expect(assistant.textContent, contains('do(action'));
+    });
+
     test('keeps only the last keepScreenshots screenshots in history', () async {
       final capturingFake = _CapturingLlmClient([
         const LlmResponse(text: 'do(action="Tap", element=[500,300])'),

@@ -17,6 +17,11 @@ import '../session_context.dart';
 /// independent of the actual device resolution.
 const _kCoordSpace = 1000;
 
+/// A real 1080-wide screencap is tens to hundreds of KB; a FLAG_SECURE / blank
+/// screen encodes to a near-empty PNG. Below this byte size we treat the
+/// screenshot as blank and retry rather than feed the model a black frame.
+const _kBlankScreenshotBytes = 20000;
+
 // Android KeyEvent constants for clearing a text field before typing.
 const _keycodeA = 29; // KEYCODE_A
 const _keycodeDel = 67; // KEYCODE_DEL (backspace) — deletes the selection
@@ -101,7 +106,13 @@ class RunTaskTool extends McpTool {
       config: _config,
       llmClient: _llmClient,
       takeScreenshot: () async {
-        final bytes = await _adb.takeScreenshot(deviceId);
+        var bytes = await _adb.takeScreenshot(deviceId);
+        // Blank/secure screens screencap to a near-empty PNG. Wait and retry
+        // rather than feed the model a black frame it will misread.
+        for (var i = 0; i < 2 && bytes.length < _kBlankScreenshotBytes; i++) {
+          await Future<void>.delayed(const Duration(seconds: 1));
+          bytes = await _adb.takeScreenshot(deviceId);
+        }
         return (base64: base64Encode(bytes), mimeType: 'image/png');
       },
       actionRunner: (action) => _executeAction(action, deviceId),

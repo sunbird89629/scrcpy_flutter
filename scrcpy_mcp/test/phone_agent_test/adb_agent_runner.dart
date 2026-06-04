@@ -35,7 +35,13 @@ Future<AgentResult> runAgentTask({
     config: AgentConfig(maxSteps: maxSteps),
     llmClient: AutoglmLlmClient.fromTest(),
     takeScreenshot: () async {
-      final bytes = await adb.takeScreenshot(device);
+      var bytes = await adb.takeScreenshot(device);
+      // Blank/secure screens screencap to a near-empty PNG; wait and retry
+      // instead of feeding the model a black frame (mirrors run_task.dart).
+      for (var i = 0; i < 2 && bytes.length < 20000; i++) {
+        await Future<void>.delayed(const Duration(seconds: 1));
+        bytes = await adb.takeScreenshot(device);
+      }
       return (base64: base64Encode(bytes), mimeType: 'image/png');
     },
     actionRunner: (action) => _runAction(adb, device, size, action),

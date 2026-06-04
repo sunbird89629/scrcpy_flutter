@@ -103,10 +103,28 @@ class PhoneAgent {
       );
       // 2. Send to LLM with screenshot
       messages.add(llmMessage);
-      final response = await llmClient.chat(messages: _trimHistory(messages));
-
-      final rawText = response.text ?? '';
+      var response = await llmClient.chat(messages: _trimHistory(messages));
+      var rawText = response.text ?? '';
       _log.info('rawText:$rawText');
+      var action = rawText.isEmpty ? null : ActionParser.parse(rawText);
+
+      // Recover from a truncated response: finish_reason="length" means the
+      // output hit max_tokens and is usually repetition garbage with no parsable
+      // action. Retry once asking for a single, concise action before giving up.
+      if (action == null && response.finishReason == 'length') {
+        _log.info('output truncated (length); retrying with a concise nudge');
+        messages.add(
+          const LlmMessage(
+            role: 'user',
+            textContent:
+                '上次输出过长被截断。请只输出一个动作指令（如 do(action="Tap", element=[x,y]) 或 finish(message="...")），不要输出任何多余内容。',
+          ),
+        );
+        response = await llmClient.chat(messages: _trimHistory(messages));
+        rawText = response.text ?? '';
+        _log.info('rawText(retry):$rawText');
+        action = rawText.isEmpty ? null : ActionParser.parse(rawText);
+      }
 
       if (rawText.isEmpty) {
         return AgentResult(
@@ -115,9 +133,6 @@ class PhoneAgent {
           success: false,
         );
       }
-
-      // 3. Parse action from model output
-      final action = ActionParser.parse(rawText);
 
       if (action == null) {
         // The model must emit a parseable action — completion goes through
@@ -132,10 +147,15 @@ class PhoneAgent {
         );
       }
 
-      // 4. Add assistant response to history
+      // 4. Add assistant response to history, dropping any <think>…</think>
+      // block to save context. Untagged reasoning is kept on purpose — the model
+      // often records data there (e.g. items to summarize) without using tags.
+      final historyText = rawText
+          .replaceAll(RegExp('<think>.*?</think>', dotAll: true), '')
+          .trim();
       final assistantMessage = LlmMessage(
         role: 'assistant',
-        textContent: rawText,
+        textContent: historyText.isEmpty ? rawText : historyText,
       );
       messages.add(assistantMessage);
 
