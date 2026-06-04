@@ -13,13 +13,15 @@
 | [multi-agent-adapter-pattern.md](./multi-agent-adapter-pattern.md) | 多 agent 可插拔模式 | 参考 AutoGLM-GUI：自研 AsyncAgent 协议 + 工厂注册表，外部框架当后端 |
 | [langchain-dart-tool-adapter.md](./langchain-dart-tool-adapter.md) | LangChain.dart 编排（备选） | 能干净包住 MCP 工具，但仅在「多底座切换+复杂编排」时才值得引；当前不实施 |
 | [glm-action-mapping.md](./glm-action-mapping.md) | 接 GLM/AutoGLM 输出 | 坐标是 0–999 归一化需换算成像素；动作 DSL → MCP 工具映射表 |
+| [autoglm-task-completion-improvements.md](./autoglm-task-completion-improvements.md) | 提升任务完成度 | 真机实测失败模式 + 三层改进（harness 兜底 / 任务设计 / 混合架构）|
 
 ## 阅读顺序建议
 
 1. **想了解整体思路** → 先读 `hybrid-agent-routing.md`（全局分流架构）。
 2. **要选模型/框架** → `gui-agent-base-model-selection.md` + `multi-agent-adapter-pattern.md`。
 3. **要动手接入** → `glm-action-mapping.md`（坐标换算与动作映射是第一道坎）+ `functiongemma-confidence.md`（端侧路由判定）。
-4. **重构评估** → `langchain-dart-tool-adapter.md`（仅备选预研）。
+4. **跑通后提完成度** → `autoglm-task-completion-improvements.md`（实测失败模式与改进优先级）。
+5. **重构评估** → `langchain-dart-tool-adapter.md`（仅备选预研）。
 
 ## 核心结论速记
 
