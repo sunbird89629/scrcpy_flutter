@@ -6,7 +6,6 @@ environment:
 
 workspace:
   - packages/adb_tools
-  - packages/logger_utils
   - packages/scrcpy_client
   - scrcpy_app
   - scrcpy_flutter
@@ -16,6 +15,7 @@ workspace:
 
 dev_dependencies:
   melos: ^7.0.0
+  very_good_analysis: ^7.0.0
 
 melos:
   command:
