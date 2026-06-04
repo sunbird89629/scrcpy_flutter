@@ -38,8 +38,9 @@ void main() {
 
     test('pair success parses output', () async {
       final client = AdbClient(
-        runner:
-            const FakeRunner('Successfully paired to 192.168.1.1:5555 [guid]'),
+        runner: const FakeRunner(
+          'Successfully paired to 192.168.1.1:5555 [guid]',
+        ),
       );
       final res = await client.pair('192.168.1.1', 5555, '123456');
       expect(res, contains('Successfully paired'));

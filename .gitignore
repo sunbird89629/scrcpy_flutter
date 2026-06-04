@@ -42,5 +42,8 @@ apps/desktop/macos/Flutter/ephemeral/
 # Logs
 *.log
 
+# Scratch / debug artifacts
+temp/
+
 # FVM Version Cache
 .fvm/

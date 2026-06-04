@@ -4,9 +4,7 @@ import 'package:scrcpy_flutter/widgets/control_button.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
 class ControlButtonWidget extends StatelessWidget {
-  const ControlButtonWidget({
-    super.key,
-  });
+  const ControlButtonWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,10 +19,12 @@ class ControlButtonWidget extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: defaultNavButtons
-            .map((b) => ControlButton(
-                  icon: b.$1,
-                  onPressed: () => controller.injectKey(b.$2),
-                ))
+            .map(
+              (b) => ControlButton(
+                icon: b.$1,
+                onPressed: () => controller.injectKey(b.$2),
+              ),
+            )
             .toList(),
       ),
     );

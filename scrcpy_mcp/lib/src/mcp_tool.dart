@@ -2,7 +2,7 @@ import 'package:logger_utils/logger_utils.dart';
 import 'package:mcp_dart/mcp_dart.dart' hide Logger;
 import 'package:scrcpy_client/scrcpy_client.dart';
 
-final _logger = Logger('scrcpy.mcp');
+final _log = Logger('scrcpy.mcp.tool');
 
 /// Base contract for all MCP tool implementations.
 ///
@@ -19,20 +19,52 @@ abstract class McpTool {
   String get description;
   ToolInputSchema get inputSchema;
 
+  /// Logger for subclasses — use [Logger.fine] for debug-level step details.
+  ///
+  /// ```dart
+  /// logger.fine('rescaled ($x,$y) → ($rx,$ry)');
+  /// ```
+  Logger get logger => _log;
+
   Future<CallToolResult> call(
     Map<String, dynamic> args,
     RequestHandlerExtra extra,
   ) async {
-    _logger.info('$name ← $args');
+    _log.info('$name ← ${truncate(args.toString(), 200)}');
     final sw = Stopwatch()..start();
     final result = await execute(args, extra);
     final ms = sw.elapsedMilliseconds;
+    final summary = _summarizeResult(result);
     if (result.isError == true) {
-      _logger.warning('$name → ${ms}ms ERROR');
+      _log.warning('$name → ${ms}ms | ERROR | $summary');
     } else {
-      _logger.info('$name → ${ms}ms');
+      _log.info('$name → ${ms}ms | $summary');
     }
     return result;
+  }
+
+  /// Clip [s] to at most [maxLen] characters, appending `…` when truncated.
+  static String truncate(String s, int maxLen) =>
+      s.length > maxLen ? '${s.substring(0, maxLen)}…' : s;
+
+  /// Extract a short human-readable summary of a [CallToolResult].
+  static String _summarizeResult(CallToolResult result) {
+    final parts = <String>[];
+    for (final c in result.content) {
+      if (c is TextContent) {
+        parts.add('text: ${truncate(c.text, 120)}');
+      } else if (c is ImageContent) {
+        final len = c.data.length;
+        parts.add('${c.mimeType}, base64 len=$len');
+      }
+    }
+    if (result.structuredContent case final sc?) {
+      if (sc.isNotEmpty) {
+        final keys = sc.keys.join(', ');
+        parts.add('structured: {$keys}');
+      }
+    }
+    return parts.isEmpty ? '(empty)' : parts.join(' | ');
   }
 
   Future<CallToolResult> execute(

@@ -5,10 +5,7 @@ import 'package:scrcpy_view_example/views/control/widgets/control_button.dart';
 import 'package:scrcpy_view_example/views/control/widgets/stats_panel.dart';
 
 class ControlView extends StatelessWidget {
-  const ControlView({
-    super.key,
-    this.width = 300,
-  });
+  const ControlView({super.key, this.width = 300});
   final double width;
 
   @override
@@ -57,10 +54,12 @@ class ControlView extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: defaultNavButtons
-          .map((b) => ControlButton(
-                icon: b.$1,
-                onPressed: () => controller.injectKey(b.$2),
-              ))
+          .map(
+            (b) => ControlButton(
+              icon: b.$1,
+              onPressed: () => controller.injectKey(b.$2),
+            ),
+          )
           .toList(),
     );
   }

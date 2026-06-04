@@ -47,14 +47,17 @@ void main() {
       );
       screenSize = await getScreenSize(adb, deviceId);
       // Force-stop Settings so re-launch reliably resets scroll to the top.
-      await adb.shell(
-        ['am', 'force-stop', 'com.android.settings'],
-        deviceId: realDevices.first,
-      );
-      await adb.shell(
-        ['am', 'start', '-a', 'android.settings.SETTINGS'],
-        deviceId: realDevices.first,
-      );
+      await adb.shell([
+        'am',
+        'force-stop',
+        'com.android.settings',
+      ], deviceId: realDevices.first);
+      await adb.shell([
+        'am',
+        'start',
+        '-a',
+        'android.settings.SETTINGS',
+      ], deviceId: realDevices.first);
       // Wait long enough for Settings RecyclerView to finish initial layout
       // before scroll events. A short wait can cause scroll events to be
       // dropped because the view tree is still settling.
@@ -72,48 +75,56 @@ void main() {
       }
     });
 
-    test('inject_swipe changes screen content', () async {
-      if (realDevices.isEmpty) {
-        markTestSkipped('No Android device connected via ADB');
-        return;
-      }
-      final (w, h) = screenSize;
+    test(
+      'inject_swipe changes screen content',
+      () async {
+        if (realDevices.isEmpty) {
+          markTestSkipped('No Android device connected via ADB');
+          return;
+        }
+        final (w, h) = screenSize;
 
-      final before = screenshotBytes(await e2eEnv.client.callTool(
-        const CallToolRequest(name: 'take_screenshot'),
-      ));
+        final before = screenshotBytes(
+          await e2eEnv.client.callTool(
+            const CallToolRequest(name: 'take_screenshot'),
+          ),
+        );
 
-      // Swipe up from bottom-third to top-third = scroll content down.
-      final swipeResult = await e2eEnv.client.callTool(
-        CallToolRequest(
-          name: 'inject_swipe',
-          arguments: {
-            'x1': w ~/ 2,
-            'y1': h * 2 ~/ 3,
-            'x2': w ~/ 2,
-            'y2': h ~/ 3,
-            'width': w,
-            'height': h,
-            'durationMs': 400,
-            'steps': 24,
-          },
-        ),
-      );
-      expect(swipeResult.isError, isFalse, reason: textContent(swipeResult));
+        // Swipe up from bottom-third to top-third = scroll content down.
+        final swipeResult = await e2eEnv.client.callTool(
+          CallToolRequest(
+            name: 'inject_swipe',
+            arguments: {
+              'x1': w ~/ 2,
+              'y1': h * 2 ~/ 3,
+              'x2': w ~/ 2,
+              'y2': h ~/ 3,
+              'width': w,
+              'height': h,
+              'durationMs': 400,
+              'steps': 24,
+            },
+          ),
+        );
+        expect(swipeResult.isError, isFalse, reason: textContent(swipeResult));
 
-      // Wait for fling/inertia to settle.
-      await Future<void>.delayed(const Duration(milliseconds: 1500));
+        // Wait for fling/inertia to settle.
+        await Future<void>.delayed(const Duration(milliseconds: 1500));
 
-      final after = screenshotBytes(await e2eEnv.client.callTool(
-        const CallToolRequest(name: 'take_screenshot'),
-      ));
+        final after = screenshotBytes(
+          await e2eEnv.client.callTool(
+            const CallToolRequest(name: 'take_screenshot'),
+          ),
+        );
 
-      expect(
-        hasScreenChanged(before, after),
-        isTrue,
-        reason: 'Screen should change after swipe',
-      );
-    }, timeout: const Timeout(Duration(seconds: 60)));
+        expect(
+          hasScreenChanged(before, after),
+          isTrue,
+          reason: 'Screen should change after swipe',
+        );
+      },
+      timeout: const Timeout(Duration(seconds: 60)),
+    );
 
     test('inject_scroll succeeds', () async {
       if (realDevices.isEmpty) {
@@ -143,92 +154,105 @@ void main() {
       expect(scrollResult.isError, isFalse, reason: textContent(scrollResult));
     }, timeout: const Timeout(Duration(seconds: 60)));
 
-    test('inject_key Home navigates to launcher', () async {
-      if (realDevices.isEmpty) {
-        markTestSkipped('No Android device connected via ADB');
-        return;
-      }
+    test(
+      'inject_key Home navigates to launcher',
+      () async {
+        if (realDevices.isEmpty) {
+          markTestSkipped('No Android device connected via ADB');
+          return;
+        }
 
-      final before = screenshotBytes(await e2eEnv.client.callTool(
-        const CallToolRequest(name: 'take_screenshot'),
-      ));
+        final before = screenshotBytes(
+          await e2eEnv.client.callTool(
+            const CallToolRequest(name: 'take_screenshot'),
+          ),
+        );
 
-      // Android KEYCODE_HOME requires DOWN+UP to trigger navigation.
-      final downResult = await e2eEnv.client.callTool(
-        const CallToolRequest(
-          name: 'inject_key',
-          arguments: {'keycode': 3, 'action': 0},
-        ),
-      );
-      expect(downResult.isError, isFalse, reason: textContent(downResult));
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      final upResult = await e2eEnv.client.callTool(
-        const CallToolRequest(
-          name: 'inject_key',
-          arguments: {'keycode': 3, 'action': 1},
-        ),
-      );
-      expect(upResult.isError, isFalse, reason: textContent(upResult));
+        // Android KEYCODE_HOME requires DOWN+UP to trigger navigation.
+        final downResult = await e2eEnv.client.callTool(
+          const CallToolRequest(
+            name: 'inject_key',
+            arguments: {'keycode': 3, 'action': 0},
+          ),
+        );
+        expect(downResult.isError, isFalse, reason: textContent(downResult));
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        final upResult = await e2eEnv.client.callTool(
+          const CallToolRequest(
+            name: 'inject_key',
+            arguments: {'keycode': 3, 'action': 1},
+          ),
+        );
+        expect(upResult.isError, isFalse, reason: textContent(upResult));
 
-      await Future<void>.delayed(const Duration(milliseconds: 800));
+        await Future<void>.delayed(const Duration(milliseconds: 800));
 
-      final after = screenshotBytes(await e2eEnv.client.callTool(
-        const CallToolRequest(name: 'take_screenshot'),
-      ));
+        final after = screenshotBytes(
+          await e2eEnv.client.callTool(
+            const CallToolRequest(name: 'take_screenshot'),
+          ),
+        );
 
-      expect(
-        hasScreenChanged(before, after),
-        isTrue,
-        reason: 'Home key should trigger navigation or launcher animation',
-      );
-    }, timeout: const Timeout(Duration(seconds: 60)));
+        expect(
+          hasScreenChanged(before, after),
+          isTrue,
+          reason: 'Home key should trigger navigation or launcher animation',
+        );
+      },
+      timeout: const Timeout(Duration(seconds: 60)),
+    );
 
-    test('inject_touch at centre succeeds', () async {
-      if (realDevices.isEmpty) {
-        markTestSkipped('No Android device connected via ADB');
-        return;
-      }
-      final (w, h) = screenSize;
+    test(
+      'inject_touch at centre succeeds',
+      () async {
+        if (realDevices.isEmpty) {
+          markTestSkipped('No Android device connected via ADB');
+          return;
+        }
+        final (w, h) = screenSize;
 
-      final downResult = await e2eEnv.client.callTool(
-        CallToolRequest(
-          name: 'inject_touch',
-          arguments: {
-            'x': w ~/ 2,
-            'y': h ~/ 2,
-            'width': w,
-            'height': h,
-            'action': 0, // ScrcpyAction.down
-          },
-        ),
-      );
-      expect(downResult.isError, isFalse, reason: textContent(downResult));
+        final downResult = await e2eEnv.client.callTool(
+          CallToolRequest(
+            name: 'inject_touch',
+            arguments: {
+              'x': w ~/ 2,
+              'y': h ~/ 2,
+              'width': w,
+              'height': h,
+              'action': 0, // ScrcpyAction.down
+            },
+          ),
+        );
+        expect(downResult.isError, isFalse, reason: textContent(downResult));
 
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+        await Future<void>.delayed(const Duration(milliseconds: 100));
 
-      final upResult = await e2eEnv.client.callTool(
-        CallToolRequest(
-          name: 'inject_touch',
-          arguments: {
-            'x': w ~/ 2,
-            'y': h ~/ 2,
-            'width': w,
-            'height': h,
-            'action': 1, // ScrcpyAction.up
-          },
-        ),
-      );
-      expect(upResult.isError, isFalse, reason: textContent(upResult));
+        final upResult = await e2eEnv.client.callTool(
+          CallToolRequest(
+            name: 'inject_touch',
+            arguments: {
+              'x': w ~/ 2,
+              'y': h ~/ 2,
+              'width': w,
+              'height': h,
+              'action': 1, // ScrcpyAction.up
+            },
+          ),
+        );
+        expect(upResult.isError, isFalse, reason: textContent(upResult));
 
-      await Future<void>.delayed(const Duration(milliseconds: 400));
+        await Future<void>.delayed(const Duration(milliseconds: 400));
 
-      // Weak assertion: log screenshot size for debugging, no pixel-diff required.
-      // Tapping empty space produces no guaranteed visual change.
-      final after = screenshotBytes(await e2eEnv.client.callTool(
-        const CallToolRequest(name: 'take_screenshot'),
-      ));
-      printOnFailure('inject_touch screenshot size: ${after.length} bytes');
-    }, timeout: const Timeout(Duration(seconds: 60)));
-
+        // Weak assertion: log screenshot size for debugging, no pixel-diff required.
+        // Tapping empty space produces no guaranteed visual change.
+        final after = screenshotBytes(
+          await e2eEnv.client.callTool(
+            const CallToolRequest(name: 'take_screenshot'),
+          ),
+        );
+        printOnFailure('inject_touch screenshot size: ${after.length} bytes');
+      },
+      timeout: const Timeout(Duration(seconds: 60)),
+    );
   });
 }

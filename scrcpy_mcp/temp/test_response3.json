@@ -1,0 +1,25 @@
+{
+    "choices": [
+        {
+            "finish_reason": "stop",
+            "index": 0,
+            "message": {
+                "content": "用户想要通过 Chrome 打开 Twitter 的官网。我需要：\n1. 先打开 Chrome 浏览器\n2. 然后在 Chrome 中搜索或打开 Twitter 官网\n\n从截图看，当前在系统桌面。我可以看到屏幕上有一个 Google 应用图标，但没有看到明显的 Chrome 或 Twitter 图标。\n\n让我先启动 Chrome 应用。根据允许的应用列表，\"chrome\" 是允许的应用之一。\n\n我应该使用 Launch 工具来打开 Chrome。\nLaunch(\"chrome\")",
+                "role": "assistant"
+            }
+        }
+    ],
+    "created": 1780327454,
+    "id": "2026060123240897379a56ad104c89",
+    "model": "autoglm-phone",
+    "object": "chat.completion",
+    "request_id": "2026060123240897379a56ad104c89",
+    "usage": {
+        "completion_tokens": 103,
+        "prompt_tokens": 3455,
+        "prompt_tokens_details": {
+            "cached_tokens": 89
+        },
+        "total_tokens": 3558
+    }
+}

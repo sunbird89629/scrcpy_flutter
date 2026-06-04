@@ -20,14 +20,13 @@ void main() {
     test('run throws AdbException on timeout', () async {
       const runner = AdbProcessRunnerImpl();
       await expectLater(
-        runner.run(
-          'sleep',
-          ['2'],
-          timeout: const Duration(milliseconds: 100),
-        ),
+        runner.run('sleep', ['2'], timeout: const Duration(milliseconds: 100)),
         throwsA(
-          isA<AdbException>()
-              .having((e) => e.message, 'message', contains('timeout')),
+          isA<AdbException>().having(
+            (e) => e.message,
+            'message',
+            contains('timeout'),
+          ),
         ),
       );
     });

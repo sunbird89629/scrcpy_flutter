@@ -21,12 +21,11 @@ class RecordingStatus {
   final String? remotePath;
 
   Map<String, dynamic> toJson() => {
-        'is_recording': isRecording,
-        if (deviceId != null) 'device_id': deviceId,
-        if (startTime != null)
-          'start_time': startTime!.toUtc().toIso8601String(),
-        if (remotePath != null) 'remote_path': remotePath,
-      };
+    'is_recording': isRecording,
+    if (deviceId != null) 'device_id': deviceId,
+    if (startTime != null) 'start_time': startTime!.toUtc().toIso8601String(),
+    if (remotePath != null) 'remote_path': remotePath,
+  };
 }
 
 /// ADB operations required for screen recording.

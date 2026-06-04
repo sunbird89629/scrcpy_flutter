@@ -28,11 +28,11 @@ class AdbClient {
     String? deviceId,
     Duration timeout = const Duration(seconds: 30),
   }) {
-    return runner.run(
-      adbPath,
-      [..._baseArgs(deviceId), 'shell', ...arguments],
-      timeout: timeout,
-    );
+    return runner.run(adbPath, [
+      ..._baseArgs(deviceId),
+      'shell',
+      ...arguments,
+    ], timeout: timeout);
   }
 
   Future<void> forward(
@@ -140,11 +140,13 @@ class AdbClient {
   }
 
   Future<Uint8List> takeScreenshot(String deviceId) async {
-    final result = await Process.run(
-      adbPath,
-      ['-s', deviceId, 'exec-out', 'screencap', '-p'],
-      stdoutEncoding: null,
-    );
+    final result = await Process.run(adbPath, [
+      '-s',
+      deviceId,
+      'exec-out',
+      'screencap',
+      '-p',
+    ], stdoutEncoding: null);
     if (result.exitCode != 0) {
       throw AdbException(
         'screencap failed (exit ${result.exitCode}): ${result.stderr}',
@@ -177,10 +179,12 @@ class AdbClient {
 
   Future<(double, double)> getDeviceScreenInfo(String serial) async {
     try {
-      final result = await runner.run(
-        adbPath,
-        [..._baseArgs(serial), 'shell', 'wm', 'size'],
-      );
+      final result = await runner.run(adbPath, [
+        ..._baseArgs(serial),
+        'shell',
+        'wm',
+        'size',
+      ]);
       final stdout = result.stdout.toString();
       final [double width, double height] = stdout
           .trim()

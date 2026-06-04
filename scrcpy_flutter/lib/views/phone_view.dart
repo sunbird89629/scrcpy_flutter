@@ -4,9 +4,7 @@ import 'package:scrcpy_flutter/views/device_control_view.dart';
 import 'package:scrcpy_view/scrcpy_view.dart';
 
 class PhoneView extends StatelessWidget {
-  const PhoneView({
-    super.key,
-  });
+  const PhoneView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,10 +21,7 @@ class PhoneView extends StatelessWidget {
             : 9 / 16;
         return ClipRRect(
           borderRadius: BorderRadius.circular(22),
-          child: AspectRatio(
-            aspectRatio: aspectRatio,
-            child: mainContent,
-          ),
+          child: AspectRatio(aspectRatio: aspectRatio, child: mainContent),
         );
       },
     );

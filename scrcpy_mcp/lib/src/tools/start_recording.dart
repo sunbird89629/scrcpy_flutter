@@ -66,6 +66,9 @@ class StartRecordingTool extends McpTool {
     }
     final bitrate = args['bitrate'] as int? ?? 4000000;
     final maxTime = args['max_time'] as int? ?? 180;
+    logger.fine(
+      'start_recording: bitrate=$bitrate, maxTime=${maxTime}s, device=${_ctx.connectedDeviceId}',
+    );
     try {
       final remotePath = await _controller.start(
         _ctx.connectedDeviceId!,

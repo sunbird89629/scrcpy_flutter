@@ -23,7 +23,7 @@ class ScrcpyWebsocketServer {
   final ScrcpyLogger _log;
 
   ScrcpyWebsocketServer({ScrcpyLogger logger = const NoOpScrcpyLogger()})
-      : _log = logger;
+    : _log = logger;
 
   /// The WebSocket URL.
   String get wsUrl => 'ws://127.0.0.1:$_port/ws';
@@ -67,10 +67,12 @@ class ScrcpyWebsocketServer {
       defaultDocument: 'index.html',
     );
 
-    final cascade = Cascade().add((Request request) {
-      if (request.url.path == 'ws') return wsHandler(request);
-      return Response.notFound('Not WS');
-    }).add(staticHandler);
+    final cascade = Cascade()
+        .add((Request request) {
+          if (request.url.path == 'ws') return wsHandler(request);
+          return Response.notFound('Not WS');
+        })
+        .add(staticHandler);
 
     _server = await io.serve(cascade.handler, InternetAddress.loopbackIPv4, 0);
     _port = _server!.port;

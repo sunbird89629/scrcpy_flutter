@@ -35,10 +35,14 @@ void main() {
         return;
       }
 
-      final processResult = await adb.shell(
-        ['am', 'start', '-a', 'android.intent.action.INSERT', '-t', 'vnd.android.cursor.dir/contact'],
-        deviceId: realDevices.first,
-      );
+      final processResult = await adb.shell([
+        'am',
+        'start',
+        '-a',
+        'android.intent.action.INSERT',
+        '-t',
+        'vnd.android.cursor.dir/contact',
+      ], deviceId: realDevices.first);
       expect(processResult.exitCode, 0);
     });
   });
@@ -58,30 +62,41 @@ void main() {
           arguments: {'device_id': realDevices.first},
         ),
       );
-      await adb.shell(
-        ['am', 'start', '-a', 'android.intent.action.INSERT',
-         '-t', 'vnd.android.cursor.dir/contact'],
-        deviceId: realDevices.first,
-      );
+      await adb.shell([
+        'am',
+        'start',
+        '-a',
+        'android.intent.action.INSERT',
+        '-t',
+        'vnd.android.cursor.dir/contact',
+      ], deviceId: realDevices.first);
       await Future<void>.delayed(const Duration(seconds: 2));
       // Coordinates 540,1594 target the 名字 field on 1080×2340 Pixel devices.
-      await adb.shell(
-        ['input', 'tap', '540', '1594'],
-        deviceId: realDevices.first,
-      );
+      await adb.shell([
+        'input',
+        'tap',
+        '540',
+        '1594',
+      ], deviceId: realDevices.first);
       await Future<void>.delayed(const Duration(milliseconds: 500));
     });
 
     setUp(() async {
       if (realDevices.isEmpty) return;
-      await adb.shell(
-        ['input', 'keyevent', 'KEYCODE_CTRL_A'],
-        deviceId: realDevices.first,
-      );
-      await adb.shell(
-        ['input', 'keyevent', 'KEYCODE_DEL'],
-        deviceId: realDevices.first,
-      );
+      // Select-all then delete to clear the field. NB: `input keyevent
+      // KEYCODE_CTRL_A` is a no-op (not a real keycode) — the chord must go
+      // through `input keycombination`.
+      await adb.shell([
+        'input',
+        'keycombination',
+        'KEYCODE_CTRL_LEFT',
+        'KEYCODE_A',
+      ], deviceId: realDevices.first);
+      await adb.shell([
+        'input',
+        'keyevent',
+        'KEYCODE_DEL',
+      ], deviceId: realDevices.first);
       await Future<void>.delayed(const Duration(milliseconds: 200));
     });
 
@@ -97,49 +112,58 @@ void main() {
     });
 
     Future<String> uiautomatorText() async {
-      final result = await adb.shell(
-        ['sh', '-c', 'uiautomator dump /sdcard/ui.xml && cat /sdcard/ui.xml'],
-        deviceId: realDevices.first,
-      );
+      final result = await adb.shell([
+        'sh',
+        '-c',
+        'uiautomator dump /sdcard/ui.xml && cat /sdcard/ui.xml',
+      ], deviceId: realDevices.first);
       return result.stdout as String;
     }
 
-    test('inject_text — ASCII appears in focused input', () async {
-      if (realDevices.isEmpty) {
-        markTestSkipped('No Android device connected via ADB');
-        return;
-      }
+    test(
+      'inject_text — ASCII appears in focused input',
+      () async {
+        if (realDevices.isEmpty) {
+          markTestSkipped('No Android device connected via ADB');
+          return;
+        }
 
-      const text = 'hello';
-      final textResult = await e2eEnv.client.callTool(
-        const CallToolRequest(
-          name: 'inject_text',
-          arguments: {'text': text},
-        ),
-      );
-      expect(textResult.isError, isFalse, reason: textContent(textResult));
+        const text = 'hello';
+        final textResult = await e2eEnv.client.callTool(
+          const CallToolRequest(name: 'inject_text', arguments: {'text': text}),
+        );
+        expect(textResult.isError, isFalse, reason: textContent(textResult));
 
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-      expect(await uiautomatorText(), contains(text));
-    }, timeout: const Timeout(Duration(seconds: 60)));
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+        final dump = await uiautomatorText();
+        expect(dump, contains(text));
+        // Field was cleared in setUp, so the text must appear exactly once —
+        // catches the Type/inject duplication regression.
+        expect(dump, isNot(contains('$text$text')));
+      },
+      timeout: const Timeout(Duration(seconds: 60)),
+    );
 
-    test('inject_text — Chinese text appears in focused input', () async {
-      if (realDevices.isEmpty) {
-        markTestSkipped('No Android device connected via ADB');
-        return;
-      }
+    test(
+      'inject_text — Chinese text appears in focused input',
+      () async {
+        if (realDevices.isEmpty) {
+          markTestSkipped('No Android device connected via ADB');
+          return;
+        }
 
-      const text = '你好，最近怎么样？';
-      final textResult = await e2eEnv.client.callTool(
-        const CallToolRequest(
-          name: 'inject_text',
-          arguments: {'text': text},
-        ),
-      );
-      expect(textResult.isError, isFalse, reason: textContent(textResult));
+        const text = '你好，最近怎么样？';
+        final textResult = await e2eEnv.client.callTool(
+          const CallToolRequest(name: 'inject_text', arguments: {'text': text}),
+        );
+        expect(textResult.isError, isFalse, reason: textContent(textResult));
 
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-      expect(await uiautomatorText(), contains(text));
-    }, timeout: const Timeout(Duration(seconds: 60)));
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+        final dump = await uiautomatorText();
+        expect(dump, contains(text));
+        expect(dump, isNot(contains('$text$text')));
+      },
+      timeout: const Timeout(Duration(seconds: 60)),
+    );
   });
 }

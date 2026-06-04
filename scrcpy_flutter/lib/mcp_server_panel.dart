@@ -34,8 +34,9 @@ class _McpServerPanelState extends State<McpServerPanel> {
     return Container(
       // color: const Color(0xFF1A1A1A),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child:
-          ctrl.isRunning ? _buildRunning(ctrl, theme) : _buildIdle(ctrl, theme),
+      child: ctrl.isRunning
+          ? _buildRunning(ctrl, theme)
+          : _buildIdle(ctrl, theme),
     );
   }
 
@@ -58,8 +59,10 @@ class _McpServerPanelState extends State<McpServerPanel> {
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: const InputDecoration(
                   isDense: true,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
                   border: OutlineInputBorder(),
                 ),
                 onChanged: (v) {
@@ -69,18 +72,16 @@ class _McpServerPanelState extends State<McpServerPanel> {
               ),
             ),
             const SizedBox(width: 12),
-            FilledButton(
-              onPressed: ctrl.start,
-              child: const Text('Start'),
-            ),
+            FilledButton(onPressed: ctrl.start, child: const Text('Start')),
           ],
         ),
         if (ctrl.errorMessage != null) ...[
           const SizedBox(height: 4),
           Text(
             ctrl.errorMessage!,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.error),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.error,
+            ),
           ),
         ],
       ],
@@ -108,10 +109,7 @@ class _McpServerPanelState extends State<McpServerPanel> {
           onPressed: () => Clipboard.setData(ClipboardData(text: url)),
         ),
         const SizedBox(width: 4),
-        OutlinedButton(
-          onPressed: ctrl.stop,
-          child: const Text('Stop'),
-        ),
+        OutlinedButton(onPressed: ctrl.stop, child: const Text('Stop')),
       ],
     );
   }

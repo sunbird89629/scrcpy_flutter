@@ -46,15 +46,10 @@ class AdbProcessRunnerImpl extends AdbProcessRunner {
   static String _formatResult(String command, ProcessResult r) {
     final buf = StringBuffer();
     buf.writeln();
-    buf.writeln('=' * 30);
-    buf.writeln('command:');
-    buf.writeln(command);
-    buf.writeln('exit code: ${r.exitCode}');
-    buf.writeln('stdout:');
-    buf.writeln(r.stdout.toString());
-    buf.writeln('stderr:');
-    buf.writeln(r.stderr.toString());
-    buf.writeln('-' * 30);
+    buf.writeln('>' * 20);
+    buf.writeln('command:$command');
+    buf.writeln('result:$r');
+    buf.writeln('<' * 20);
     return buf.toString();
   }
 }

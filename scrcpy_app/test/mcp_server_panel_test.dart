@@ -11,13 +11,18 @@ class _MockAdb implements ScrcpyAdb {
   @override
   Future<List<String>> getDevices() async => [];
   @override
-  Future<ProcessResult> shell(List<String> a,
-          {String? deviceId,
-          Duration timeout = const Duration(seconds: 30)}) async =>
-      ProcessResult(0, 0, '', '');
+  Future<ProcessResult> shell(
+    List<String> a, {
+    String? deviceId,
+    Duration timeout = const Duration(seconds: 30),
+  }) async => ProcessResult(0, 0, '', '');
   @override
-  Future<void> forward(String l, String r,
-      {String? deviceId, bool noRebind = false}) async {}
+  Future<void> forward(
+    String l,
+    String r, {
+    String? deviceId,
+    bool noRebind = false,
+  }) async {}
   @override
   Future<void> forwardRemove(String l, {String? deviceId}) async {}
   @override
@@ -61,17 +66,18 @@ class _FakeController extends McpServerController {
 }
 
 Widget _wrap(McpServerController ctrl) => MaterialApp(
-      home: Scaffold(
-        body: ListenableBuilder(
-          listenable: ctrl,
-          builder: (_, __) => McpServerPanel(controller: ctrl),
-        ),
-      ),
-    );
+  home: Scaffold(
+    body: ListenableBuilder(
+      listenable: ctrl,
+      builder: (_, __) => McpServerPanel(controller: ctrl),
+    ),
+  ),
+);
 
 void main() {
-  testWidgets('shows port field and Start button when not running',
-      (tester) async {
+  testWidgets('shows port field and Start button when not running', (
+    tester,
+  ) async {
     final ctrl = _FakeController();
     addTearDown(ctrl.dispose);
 

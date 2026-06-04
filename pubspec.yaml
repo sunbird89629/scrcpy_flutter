@@ -2,7 +2,7 @@ name: scrcpy_flutter_workspace
 publish_to: none
 
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.10.0
 
 workspace:
   - packages/adb_tools
@@ -11,6 +11,7 @@ workspace:
   - scrcpy_app
   - scrcpy_flutter
   - scrcpy_mcp
+  - scrcpy_plus
   - scrcpy_view
 
 dev_dependencies:
@@ -41,8 +42,12 @@ melos:
         failFast: true
 
     test:
-      description: Run package tests
-      run: melos exec --fail-fast --dir-exists=test -- flutter test test
+      description: Run package tests (excludes real-device e2e; run those with melos run test:device)
+      run: melos exec --fail-fast --dir-exists=test -- flutter test test --exclude-tags real-device
+
+    test:device:
+      description: Run real-device e2e tests (requires a connected Android device)
+      run: melos exec --dir-exists=test -- flutter test test --tags real-device
 
     gen:
       description: Run build_runner for packages that need it

@@ -4,12 +4,127 @@
 // Import it from individual *_real_device_*_test.dart files.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:mcp_dart/mcp_dart.dart';
 import 'package:scrcpy_client/scrcpy_client.dart';
 import 'package:scrcpy_mcp/src/scrcpy_mcp_adapters.dart';
 import 'package:scrcpy_mcp/src/scrcpy_mcp_server.dart';
+
+// ---------------------------------------------------------------------------
+// Mock ADB — minimal implementation for unit tests
+// ---------------------------------------------------------------------------
+
+class MockAdb implements ScrcpyAdb {
+  MockAdb({List<String>? devices}) : _devices = devices ?? ['device1'];
+  final List<String> _devices;
+
+  @override
+  Future<List<String>> getDevices() async => List.unmodifiable(_devices);
+
+  @override
+  Future<ProcessResult> shell(
+    List<String> arguments, {
+    String? deviceId,
+    Duration timeout = const Duration(seconds: 30),
+  }) async => ProcessResult(0, 0, '', '');
+
+  @override
+  Future<void> forward(
+    String local,
+    String remote, {
+    String? deviceId,
+    bool noRebind = false,
+  }) async {}
+
+  @override
+  Future<void> forwardRemove(String local, {String? deviceId}) async {}
+
+  @override
+  Future<void> push(
+    String localPath,
+    String remotePath, {
+    String? deviceId,
+  }) async {}
+
+  @override
+  Future<Process> startProcess(List<String> arguments) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Uint8List> takeScreenshot(String deviceId) async =>
+      // minimal 1x1 transparent PNG (67 bytes)
+      Uint8List.fromList([
+        0x89,
+        0x50,
+        0x4E,
+        0x47,
+        0x0D,
+        0x0A,
+        0x1A,
+        0x0A,
+        0x00,
+        0x00,
+        0x00,
+        0x0D,
+        0x49,
+        0x48,
+        0x44,
+        0x52,
+        0x00,
+        0x00,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x00,
+        0x01,
+        0x08,
+        0x06,
+        0x00,
+        0x00,
+        0x00,
+        0x1F,
+        0x15,
+        0xC4,
+        0x89,
+        0x00,
+        0x00,
+        0x00,
+        0x0A,
+        0x49,
+        0x44,
+        0x41,
+        0x54,
+        0x78,
+        0x9C,
+        0x62,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x05,
+        0x00,
+        0x01,
+        0x0D,
+        0x0A,
+        0x2D,
+        0xB4,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x49,
+        0x45,
+        0x4E,
+        0x44,
+        0xAE,
+        0x42,
+        0x60,
+        0x82,
+      ]);
+}
 
 // ---------------------------------------------------------------------------
 // Mock session — keeps session "alive" without real scrcpy
@@ -38,6 +153,15 @@ class MockScrcpySession implements ScrcpySession {
 
   @override
   void injectText(String text) {}
+
+  @override
+  Stream<ScrcpyDeviceMessage> get deviceMessages =>
+      const Stream<ScrcpyDeviceMessage>.empty();
+
+  @override
+  Future<String> getClipboard({
+    Duration timeout = const Duration(seconds: 5),
+  }) => Future.value('');
 }
 
 // ---------------------------------------------------------------------------
@@ -104,10 +228,7 @@ Future<(McpClient client, Future<void> Function() close)> connectMcpPair(
   final clientToServer = StreamController<List<int>>();
 
   await server.mcpServer.connect(
-    IOStreamTransport(
-      stream: clientToServer.stream,
-      sink: serverToClient.sink,
-    ),
+    IOStreamTransport(stream: clientToServer.stream, sink: serverToClient.sink),
   );
 
   final client = McpClient(
@@ -115,10 +236,7 @@ Future<(McpClient client, Future<void> Function() close)> connectMcpPair(
     options: const McpClientOptions(capabilities: ClientCapabilities()),
   );
   await client.connect(
-    IOStreamTransport(
-      stream: serverToClient.stream,
-      sink: clientToServer.sink,
-    ),
+    IOStreamTransport(stream: serverToClient.stream, sink: clientToServer.sink),
   );
 
   Future<void> close() async {

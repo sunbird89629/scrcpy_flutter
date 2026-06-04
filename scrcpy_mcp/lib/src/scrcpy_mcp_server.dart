@@ -3,13 +3,17 @@ import 'dart:convert';
 import 'package:mcp_dart/mcp_dart.dart';
 import 'package:scrcpy_client/scrcpy_client.dart';
 
+import 'agent/agent_config.dart';
+import 'agent/llm_client.dart';
 import 'recording_adb.dart';
 import 'recording_controller.dart';
 import 'session_context.dart';
+import 'tools/run_task.dart' show RunTaskTool;
 import 'tools/camera_zoom.dart' show CameraZoomTool;
 import 'tools/collapse_panels.dart' show CollapsePanelsTool;
 import 'tools/expand_notification_panel.dart' show ExpandNotificationPanelTool;
 import 'tools/expand_settings_panel.dart' show ExpandSettingsPanelTool;
+import 'tools/get_clipboard.dart' show GetClipboardTool;
 import 'tools/inject_key.dart' show InjectKeyTool;
 import 'tools/inject_scroll.dart' show InjectScrollTool;
 import 'tools/inject_swipe.dart' show InjectSwipeTool;
@@ -34,9 +38,13 @@ class ScrcpyMcpServer {
     required ScrcpySession session,
     required ScrcpyAdb adb,
     RecordingAdb? recordingAdb,
-  })  : _session = session,
-        _adb = adb,
-        _ctx = SessionContext() {
+    AgentConfig? agentConfig,
+    LlmClient? llmClient,
+  }) : _session = session,
+       _adb = adb,
+       _agentConfig = agentConfig,
+       _llmClient = llmClient,
+       _ctx = SessionContext() {
     if (recordingAdb != null) {
       _recordingController = RecordingController(recordingAdb);
     }
@@ -56,6 +64,8 @@ class ScrcpyMcpServer {
   final ScrcpySession _session;
   final ScrcpyAdb _adb;
   final SessionContext _ctx;
+  final AgentConfig? _agentConfig;
+  final LlmClient? _llmClient;
   late final McpServer _mcpServer;
   RecordingController? _recordingController;
 
@@ -83,6 +93,7 @@ class ScrcpyMcpServer {
       SetScreenPowerTool(_session),
       RotateDeviceTool(_session),
       SetClipboardTool(_session),
+      GetClipboardTool(_session),
       ExpandNotificationPanelTool(_session),
       ExpandSettingsPanelTool(_session),
       CollapsePanelsTool(_session),
@@ -93,6 +104,20 @@ class ScrcpyMcpServer {
         StopRecordingTool(_recordingController!),
       ],
     ];
+
+    // Agent tool — only when both config and client are provided.
+    if (_agentConfig != null && _llmClient != null) {
+      tools.add(
+        RunTaskTool(
+          config: _agentConfig,
+          llmClient: _llmClient,
+          adb: _adb,
+          session: _session,
+          ctx: _ctx,
+        ),
+      );
+    }
+
     for (final tool in tools) {
       _mcpServer.registerTool(
         tool.name,
@@ -105,35 +130,20 @@ class ScrcpyMcpServer {
 
   void _registerResources() {
     _mcpServer
-      ..registerResource(
-        'Connected Devices',
-        'device://list',
-        (
-          description: 'List of currently connected Android devices.',
-          mimeType: 'application/json',
-        ),
-        _readDeviceList,
-      )
-      ..registerResource(
-        'Mirroring Status',
-        'mirroring://status',
-        (
-          description: 'Current mirroring session status.',
-          mimeType: 'application/json',
-        ),
-        _readMirroringStatus,
-      );
+      ..registerResource('Connected Devices', 'device://list', (
+        description: 'List of currently connected Android devices.',
+        mimeType: 'application/json',
+      ), _readDeviceList)
+      ..registerResource('Mirroring Status', 'mirroring://status', (
+        description: 'Current mirroring session status.',
+        mimeType: 'application/json',
+      ), _readMirroringStatus);
 
     if (_recordingController != null) {
-      _mcpServer.registerResource(
-        'Recording Status',
-        'recording://status',
-        (
-          description: 'Current screen recording state.',
-          mimeType: 'application/json',
-        ),
-        _readRecordingStatus,
-      );
+      _mcpServer.registerResource('Recording Status', 'recording://status', (
+        description: 'Current screen recording state.',
+        mimeType: 'application/json',
+      ), _readRecordingStatus);
     }
   }
 
@@ -226,7 +236,7 @@ class ScrcpyMcpServer {
         : 'Available devices: ${devices.join(", ")}';
     final recordingLine = _recordingController != null
         ? '- start_recording, stop_recording '
-            '(max 180 s; requires active mirroring)\n'
+              '(max 180 s; requires active mirroring)\n'
         : '';
 
     return GetPromptResult(
@@ -235,14 +245,15 @@ class ScrcpyMcpServer {
         PromptMessage(
           role: PromptMessageRole.user,
           content: TextContent(
-            text: 'You are an Android device control assistant.\n\n'
+            text:
+                'You are an Android device control assistant.\n\n'
                 '$deviceInfo\n\n'
                 'Available tools:\n'
                 '- list_devices, start_mirroring, stop_mirroring\n'
                 '- inject_key (Home=3, Back=4, AppSwitch=187)\n'
                 '- inject_touch, inject_text, inject_scroll, inject_swipe\n'
                 '- press_back, set_screen_power, rotate_device\n'
-                '- set_clipboard\n'
+                '- set_clipboard, get_clipboard\n'
                 '- expand_notification_panel, expand_settings_panel, collapse_panels\n'
                 '- set_torch, camera_zoom\n'
                 '- start_app (launch app by package name)\n'
@@ -268,7 +279,8 @@ class ScrcpyMcpServer {
         PromptMessage(
           role: PromptMessageRole.user,
           content: TextContent(
-            text: 'You are an Android device troubleshooting assistant.\n\n'
+            text:
+                'You are an Android device troubleshooting assistant.\n\n'
                 'Connected devices: '
                 '${devices.isEmpty ? "none" : devices.join(", ")}\n'
                 '${issue != null ? "Reported issue: $issue\n" : ""}\n'

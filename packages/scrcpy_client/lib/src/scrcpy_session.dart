@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:scrcpy_client/src/messages/control_message.dart';
+import 'package:scrcpy_client/src/messages/device_message.dart';
 import 'package:scrcpy_client/src/messages/scrcpy_control_message.dart';
 
 /// Abstraction over a scrcpy mirroring session.
@@ -10,16 +14,9 @@ abstract class ScrcpySession {
   bool get isConnected;
 
   /// The width of the scrcpy video stream, or `null` if no metadata yet.
-  ///
-  /// scrcpy may scale device frames (e.g. via `max_size`) so this can
-  /// differ from the device's logical resolution. Touch/scroll control
-  /// messages are silently dropped by the scrcpy server when the
-  /// `width`/`height` they report do not equal the video size, so callers
-  /// using device-resolution coordinates must rescale to this size.
   int? get videoWidth;
 
   /// The height of the scrcpy video stream, or `null` if no metadata yet.
-  /// See [videoWidth].
   int? get videoHeight;
 
   /// Starts a mirroring session for [deviceId].
@@ -33,4 +30,14 @@ abstract class ScrcpySession {
 
   /// Injects text into the focused field on the device.
   void injectText(String text);
+
+  /// Stream of parsed device→host messages received on the control socket.
+  Stream<ScrcpyDeviceMessage> get deviceMessages;
+
+  /// Reads the device clipboard.
+  ///
+  /// Sends a [ScrcpyGetClipboardMessage] then waits for the device to reply
+  /// with a [ScrcpyClipboardDeviceMessage]. Throws [TimeoutException] if no
+  /// reply arrives within [timeout].
+  Future<String> getClipboard({Duration timeout = const Duration(seconds: 5)});
 }

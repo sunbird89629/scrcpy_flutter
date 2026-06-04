@@ -43,30 +43,34 @@ void main() {
       await adb.startContactPageForTest(realDeviceId);
       server.sendControlMessage(const ScrcpyInjectTextMessage(targetText));
 
-      final result = await adb.shell(
-        ['sh', '-c', 'uiautomator dump /sdcard/ui.xml && cat /sdcard/ui.xml'],
-        deviceId: realDeviceId,
-      );
+      final result = await adb.shell([
+        'sh',
+        '-c',
+        'uiautomator dump /sdcard/ui.xml && cat /sdcard/ui.xml',
+      ], deviceId: realDeviceId);
       expect(result.stdout as String, contains(targetText));
     });
 
-    test('CJK (3 bytes/char) encodes UTF-8 byte count in length field',
-        () async {
-      final server = createRealServer(
-        deviceId: realDeviceId,
-        jarBytes: realJarBytes,
-      );
-      addTearDown(server.stop);
-      const targetText = '你好你好😀';
-      await server.start();
-      await adb.startContactPageForTest(realDeviceId);
-      server.sendControlMessage(ScrcpySetClipboardMessage(text: targetText));
-      final result = await adb.shell(
-        ['sh', '-c', 'uiautomator dump /sdcard/ui.xml && cat /sdcard/ui.xml'],
-        deviceId: realDeviceId,
-      );
-      expect(result.stdout as String, contains(targetText));
-    });
+    test(
+      'CJK (3 bytes/char) encodes UTF-8 byte count in length field',
+      () async {
+        final server = createRealServer(
+          deviceId: realDeviceId,
+          jarBytes: realJarBytes,
+        );
+        addTearDown(server.stop);
+        const targetText = '你好你好😀';
+        await server.start();
+        await adb.startContactPageForTest(realDeviceId);
+        server.sendControlMessage(ScrcpySetClipboardMessage(text: targetText));
+        final result = await adb.shell([
+          'sh',
+          '-c',
+          'uiautomator dump /sdcard/ui.xml && cat /sdcard/ui.xml',
+        ], deviceId: realDeviceId);
+        expect(result.stdout as String, contains(targetText));
+      },
+    );
 
     test('emoji (4 bytes/char) encodes UTF-8 byte count in length field', () {
       final (server, captured) = createTestServer();
@@ -74,8 +78,9 @@ void main() {
       server.sendControlMessage(const ScrcpyInjectTextMessage(text));
       final bytes = Uint8List.fromList(captured.single);
       final bd = ByteData.sublistView(bytes);
-      final encoded =
-          utf8.encode(text); // Dart text.length == 2 (surrogate pair)
+      final encoded = utf8.encode(
+        text,
+      ); // Dart text.length == 2 (surrogate pair)
       expect(bytes.length, 5 + encoded.length);
       expect(bd.getUint8(0), 1);
       expect(bd.getUint32(1), encoded.length);
@@ -144,7 +149,8 @@ void main() {
       final (server, captured) = createTestServer();
       const text = '你好世界';
       server.sendControlMessage(
-          const ScrcpySetClipboardMessage(text: text, sequence: 42));
+        const ScrcpySetClipboardMessage(text: text, sequence: 42),
+      );
       final bytes = Uint8List.fromList(captured.single);
       final bd = ByteData.sublistView(bytes);
       final encoded = utf8.encode(text);
@@ -162,8 +168,9 @@ void main() {
       server.sendControlMessage(const ScrcpySetClipboardMessage(text: text));
       final bytes = Uint8List.fromList(captured.single);
       final bd = ByteData.sublistView(bytes);
-      final encoded =
-          utf8.encode(text); // Dart text.length == 2 (surrogate pair)
+      final encoded = utf8.encode(
+        text,
+      ); // Dart text.length == 2 (surrogate pair)
       expect(bytes.length, 14 + encoded.length);
       expect(bd.getUint8(0), 9);
       expect(bd.getUint32(10), encoded.length);

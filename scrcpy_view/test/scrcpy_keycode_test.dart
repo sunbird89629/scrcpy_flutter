@@ -4,12 +4,14 @@ import 'package:scrcpy_view/scrcpy_view.dart';
 
 void main() {
   group('androidKeycodeForPhysicalKey', () {
-    test('letter keys A-Z map to Android KEYCODE_A (29) through KEYCODE_Z (54)',
-        () {
-      expect(androidKeycodeForPhysicalKey(PhysicalKeyboardKey.keyA), 29);
-      expect(androidKeycodeForPhysicalKey(PhysicalKeyboardKey.keyM), 41);
-      expect(androidKeycodeForPhysicalKey(PhysicalKeyboardKey.keyZ), 54);
-    });
+    test(
+      'letter keys A-Z map to Android KEYCODE_A (29) through KEYCODE_Z (54)',
+      () {
+        expect(androidKeycodeForPhysicalKey(PhysicalKeyboardKey.keyA), 29);
+        expect(androidKeycodeForPhysicalKey(PhysicalKeyboardKey.keyM), 41);
+        expect(androidKeycodeForPhysicalKey(PhysicalKeyboardKey.keyZ), 54);
+      },
+    );
 
     test('digit keys 0-9 map to KEYCODE_0 (7) through KEYCODE_9 (16)', () {
       expect(androidKeycodeForPhysicalKey(PhysicalKeyboardKey.digit0), 7);
@@ -45,9 +47,13 @@ void main() {
       expect(androidKeycodeForPhysicalKey(PhysicalKeyboardKey.altLeft), 57);
       expect(androidKeycodeForPhysicalKey(PhysicalKeyboardKey.altRight), 58);
       expect(
-          androidKeycodeForPhysicalKey(PhysicalKeyboardKey.controlLeft), 113);
+        androidKeycodeForPhysicalKey(PhysicalKeyboardKey.controlLeft),
+        113,
+      );
       expect(
-          androidKeycodeForPhysicalKey(PhysicalKeyboardKey.controlRight), 114);
+        androidKeycodeForPhysicalKey(PhysicalKeyboardKey.controlRight),
+        114,
+      );
       expect(androidKeycodeForPhysicalKey(PhysicalKeyboardKey.metaLeft), 117);
       expect(androidKeycodeForPhysicalKey(PhysicalKeyboardKey.metaRight), 118);
     });
@@ -63,10 +69,11 @@ void main() {
     test('punctuation keys map correctly', () {
       expect(androidKeycodeForPhysicalKey(PhysicalKeyboardKey.minus), 69);
       expect(androidKeycodeForPhysicalKey(PhysicalKeyboardKey.equal), 70);
+      expect(androidKeycodeForPhysicalKey(PhysicalKeyboardKey.bracketLeft), 71);
       expect(
-          androidKeycodeForPhysicalKey(PhysicalKeyboardKey.bracketLeft), 71);
-      expect(
-          androidKeycodeForPhysicalKey(PhysicalKeyboardKey.bracketRight), 72);
+        androidKeycodeForPhysicalKey(PhysicalKeyboardKey.bracketRight),
+        72,
+      );
       expect(androidKeycodeForPhysicalKey(PhysicalKeyboardKey.backslash), 73);
       expect(androidKeycodeForPhysicalKey(PhysicalKeyboardKey.semicolon), 74);
       expect(androidKeycodeForPhysicalKey(PhysicalKeyboardKey.quote), 75);

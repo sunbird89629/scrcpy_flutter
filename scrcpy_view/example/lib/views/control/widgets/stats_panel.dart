@@ -11,21 +11,13 @@ class StatsPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _statRow(
-          'Status',
-          stats.status,
-          _statusColor(stats.status),
-        ),
+        _statRow('Status', stats.status, _statusColor(stats.status)),
         _statRow(
           'Latency',
           '${stats.latencyMs}ms',
           _latencyColor(stats.latencyMs),
         ),
-        _statRow(
-          'FPS',
-          '${stats.fps}',
-          null,
-        ),
+        _statRow('FPS', '${stats.fps}', null),
         _statRow(
           'Buffered',
           '${stats.buffered}',
@@ -45,8 +37,10 @@ class StatsPanel extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: const TextStyle(color: Colors.white54, fontSize: 11)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white54, fontSize: 11),
+          ),
           Text(
             value,
             style: TextStyle(

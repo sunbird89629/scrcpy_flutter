@@ -4,9 +4,7 @@ import 'package:scrcpy_flutter/mcp_server_panel.dart';
 import 'package:scrcpy_flutter/views/floating_control_button.dart';
 
 class ControlView extends StatelessWidget {
-  const ControlView({
-    super.key,
-  });
+  const ControlView({super.key});
 
   @override
   Widget build(BuildContext context) {

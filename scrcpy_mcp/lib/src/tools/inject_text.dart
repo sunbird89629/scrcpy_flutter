@@ -19,9 +19,7 @@ class InjectTextTool extends McpTool {
 
   @override
   final ToolInputSchema inputSchema = JsonSchema.object(
-    properties: {
-      'text': JsonSchema.string(description: 'Text to input'),
-    },
+    properties: {'text': JsonSchema.string(description: 'Text to input')},
     required: ['text'],
   );
 
@@ -32,9 +30,12 @@ class InjectTextTool extends McpTool {
   ) async {
     if (!_session.isConnected) return McpTool.notConnectedResult;
     final text = args['text'] as String;
-    _session.injectText(text);
-    return CallToolResult.fromContent(
-      [TextContent(text: 'Text sent: "$text"')],
+    logger.fine(
+      'inject_text: len=${text.length}, text="${McpTool.truncate(text, 60)}"',
     );
+    _session.injectText(text);
+    return CallToolResult.fromContent([
+      TextContent(text: 'Text sent: "$text"'),
+    ]);
   }
 }

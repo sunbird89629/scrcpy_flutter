@@ -28,8 +28,7 @@ class MockAdb implements ScrcpyAdb {
     List<String> arguments, {
     String? deviceId,
     Duration timeout = const Duration(seconds: 30),
-  }) async =>
-      ProcessResult(0, 0, '', '');
+  }) async => ProcessResult(0, 0, '', '');
 
   @override
   Future<void> forward(
@@ -161,6 +160,17 @@ class MockScrcpySession implements ScrcpySession {
 
   @override
   void injectText(String text) {}
+
+  Future<String> Function()? getClipboardImpl;
+
+  @override
+  Stream<ScrcpyDeviceMessage> get deviceMessages =>
+      const Stream<ScrcpyDeviceMessage>.empty();
+
+  @override
+  Future<String> getClipboard({
+    Duration timeout = const Duration(seconds: 5),
+  }) => getClipboardImpl?.call() ?? Future.value('');
 }
 
 // ---------------------------------------------------------------------------
@@ -169,8 +179,8 @@ class MockScrcpySession implements ScrcpySession {
 
 class _TestEnv {
   _TestEnv({List<String>? devices})
-      : adb = MockAdb(devices: devices ?? ['device1']),
-        session = MockScrcpySession() {
+    : adb = MockAdb(devices: devices ?? ['device1']),
+      session = MockScrcpySession() {
     server = ScrcpyMcpServer(session: session, adb: adb);
   }
 
@@ -230,9 +240,9 @@ class _FakeRecordingProcess implements RecordingProcess {
 
 class _RecordingTestEnv {
   _RecordingTestEnv({List<String>? devices})
-      : adb = MockAdb(devices: devices ?? ['device1']),
-        recordingAdb = _MockRecordingAdb(),
-        session = MockScrcpySession() {
+    : adb = MockAdb(devices: devices ?? ['device1']),
+      recordingAdb = _MockRecordingAdb(),
+      session = MockScrcpySession() {
     server = ScrcpyMcpServer(
       session: session,
       adb: adb,
@@ -266,7 +276,7 @@ String _resourceText(ReadResourceResult r) =>
 
 void main() {
   group('ScrcpyMcpServer — initialization', () {
-    test('advertises 19 tools after connect', () async {
+    test('advertises 20 tools after connect', () async {
       final env = _TestEnv();
       await env.connect();
 
@@ -289,6 +299,7 @@ void main() {
           'set_screen_power',
           'rotate_device',
           'set_clipboard',
+          'get_clipboard',
           'expand_notification_panel',
           'expand_settings_panel',
           'collapse_panels',
@@ -346,28 +357,27 @@ void main() {
       expect(jsonDecode(textContent(result)), isEmpty);
     });
 
-    test('stop_mirroring without active session returns informational message',
-        () async {
-      final env = _TestEnv();
-      await env.connect();
+    test(
+      'stop_mirroring without active session returns informational message',
+      () async {
+        final env = _TestEnv();
+        await env.connect();
 
-      final result = await env.client.callTool(
-        const CallToolRequest(name: 'stop_mirroring'),
-      );
+        final result = await env.client.callTool(
+          const CallToolRequest(name: 'stop_mirroring'),
+        );
 
-      expect(result.isError, isFalse);
-      expect(textContent(result), contains('No active'));
-    });
+        expect(result.isError, isFalse);
+        expect(textContent(result), contains('No active'));
+      },
+    );
 
     test('inject_key without active session returns error', () async {
       final env = _TestEnv();
       await env.connect();
 
       final result = await env.client.callTool(
-        const CallToolRequest(
-          name: 'inject_key',
-          arguments: {'keycode': 3},
-        ),
+        const CallToolRequest(name: 'inject_key', arguments: {'keycode': 3}),
       );
 
       expect(result.isError, isTrue);
@@ -417,7 +427,10 @@ void main() {
       final env = _TestEnv();
       await env.connect();
       await env.client.callTool(
-        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+        const CallToolRequest(
+          name: 'start_mirroring',
+          arguments: {'device_id': 'device1'},
+        ),
       );
       final result = await env.client.callTool(
         const CallToolRequest(
@@ -472,53 +485,55 @@ void main() {
       expect(result.isError, isTrue);
     });
 
-    test('inject_swipe sends DOWN + steps×MOVE + UP with interpolated coords',
-        () async {
-      final env = _TestEnv();
-      await env.connect();
-      await env.client.callTool(
-        const CallToolRequest(
-          name: 'start_mirroring',
-          arguments: {'device_id': 'device1'},
-        ),
-      );
-      env.session.sentMessages.clear();
+    test(
+      'inject_swipe sends DOWN + steps×MOVE + UP with interpolated coords',
+      () async {
+        final env = _TestEnv();
+        await env.connect();
+        await env.client.callTool(
+          const CallToolRequest(
+            name: 'start_mirroring',
+            arguments: {'device_id': 'device1'},
+          ),
+        );
+        env.session.sentMessages.clear();
 
-      final result = await env.client.callTool(
-        const CallToolRequest(
-          name: 'inject_swipe',
-          arguments: {
-            'x1': 100,
-            'y1': 1000,
-            'x2': 100,
-            'y2': 200,
-            'width': 1080,
-            'height': 1920,
-            'durationMs': 50,
-            'steps': 4,
-          },
-        ),
-      );
+        final result = await env.client.callTool(
+          const CallToolRequest(
+            name: 'inject_swipe',
+            arguments: {
+              'x1': 100,
+              'y1': 1000,
+              'x2': 100,
+              'y2': 200,
+              'width': 1080,
+              'height': 1920,
+              'durationMs': 50,
+              'steps': 4,
+            },
+          ),
+        );
 
-      expect(result.isError, isFalse, reason: textContent(result));
+        expect(result.isError, isFalse, reason: textContent(result));
 
-      final touches = env.session.sentMessages
-          .whereType<ScrcpyInjectTouchMessage>()
-          .toList();
-      expect(touches, hasLength(6), reason: '1 DOWN + 4 MOVE + 1 UP');
+        final touches = env.session.sentMessages
+            .whereType<ScrcpyInjectTouchMessage>()
+            .toList();
+        expect(touches, hasLength(6), reason: '1 DOWN + 4 MOVE + 1 UP');
 
-      expect(touches.first.action, ScrcpyAction.down);
-      expect((touches.first.x, touches.first.y), (100, 1000));
+        expect(touches.first.action, ScrcpyAction.down);
+        expect((touches.first.x, touches.first.y), (100, 1000));
 
-      expect(touches.last.action, ScrcpyAction.up);
-      expect((touches.last.x, touches.last.y), (100, 200));
+        expect(touches.last.action, ScrcpyAction.up);
+        expect((touches.last.x, touches.last.y), (100, 200));
 
-      // Interpolated MOVE coords: y goes 1000 → 800 → 600 → 400 → 200.
-      final moves = touches.sublist(1, 5);
-      expect(moves.every((m) => m.action == ScrcpyAction.move), isTrue);
-      expect(moves.map((m) => m.y).toList(), [800, 600, 400, 200]);
-      expect(moves.every((m) => m.x == 100), isTrue);
-    });
+        // Interpolated MOVE coords: y goes 1000 → 800 → 600 → 400 → 200.
+        final moves = touches.sublist(1, 5);
+        expect(moves.every((m) => m.action == ScrcpyAction.move), isTrue);
+        expect(moves.map((m) => m.y).toList(), [800, 600, 400, 200]);
+        expect(moves.every((m) => m.x == 100), isTrue);
+      },
+    );
 
     test('inject_swipe with steps=0 returns error', () async {
       final env = _TestEnv();
@@ -549,27 +564,29 @@ void main() {
       expect(textContent(result), contains('steps'));
     });
 
-    test('take_screenshot with connected device returns ImageContent',
-        () async {
-      final env = _TestEnv(devices: ['emulator-5554']);
-      await env.connect();
-      await env.client.callTool(
-        const CallToolRequest(
-          name: 'start_mirroring',
-          arguments: {'device_id': 'emulator-5554'},
-        ),
-      );
+    test(
+      'take_screenshot with connected device returns ImageContent',
+      () async {
+        final env = _TestEnv(devices: ['emulator-5554']);
+        await env.connect();
+        await env.client.callTool(
+          const CallToolRequest(
+            name: 'start_mirroring',
+            arguments: {'device_id': 'emulator-5554'},
+          ),
+        );
 
-      final result = await env.client.callTool(
-        const CallToolRequest(name: 'take_screenshot'),
-      );
+        final result = await env.client.callTool(
+          const CallToolRequest(name: 'take_screenshot'),
+        );
 
-      expect(result.isError, isFalse);
-      expect(result.content.first, isA<ImageContent>());
-      final img = result.content.first as ImageContent;
-      expect(img.mimeType, 'image/png');
-      expect(img.data, isNotEmpty);
-    });
+        expect(result.isError, isFalse);
+        expect(result.content.first, isA<ImageContent>());
+        final img = result.content.first as ImageContent;
+        expect(img.mimeType, 'image/png');
+        expect(img.data, isNotEmpty);
+      },
+    );
 
     test('take_screenshot without devices returns error', () async {
       final env = _TestEnv(devices: []);
@@ -596,23 +613,25 @@ void main() {
       await env.connect();
       await env.client.callTool(
         const CallToolRequest(
-            name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+          name: 'start_mirroring',
+          arguments: {'device_id': 'device1'},
+        ),
       );
       final result = await env.client.callTool(
         const CallToolRequest(name: 'press_back'),
       );
       expect(result.isError, isFalse);
       expect(env.session.sentMessages, hasLength(2));
+      expect(env.session.sentMessages[0], isA<ScrcpyBackOrScreenOnMessage>());
       expect(
-          env.session.sentMessages[0], isA<ScrcpyBackOrScreenOnMessage>());
+        (env.session.sentMessages[0] as ScrcpyBackOrScreenOnMessage).action,
+        ScrcpyAction.down,
+      );
+      expect(env.session.sentMessages[1], isA<ScrcpyBackOrScreenOnMessage>());
       expect(
-          (env.session.sentMessages[0] as ScrcpyBackOrScreenOnMessage).action,
-          ScrcpyAction.down);
-      expect(
-          env.session.sentMessages[1], isA<ScrcpyBackOrScreenOnMessage>());
-      expect(
-          (env.session.sentMessages[1] as ScrcpyBackOrScreenOnMessage).action,
-          ScrcpyAction.up);
+        (env.session.sentMessages[1] as ScrcpyBackOrScreenOnMessage).action,
+        ScrcpyAction.up,
+      );
     });
 
     test('set_screen_power without active session returns error', () async {
@@ -620,7 +639,9 @@ void main() {
       await env.connect();
       final result = await env.client.callTool(
         const CallToolRequest(
-            name: 'set_screen_power', arguments: {'on': true}),
+          name: 'set_screen_power',
+          arguments: {'on': true},
+        ),
       );
       expect(result.isError, isTrue);
     });
@@ -630,11 +651,15 @@ void main() {
       await env.connect();
       await env.client.callTool(
         const CallToolRequest(
-            name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+          name: 'start_mirroring',
+          arguments: {'device_id': 'device1'},
+        ),
       );
       final result = await env.client.callTool(
         const CallToolRequest(
-            name: 'set_screen_power', arguments: {'on': false}),
+          name: 'set_screen_power',
+          arguments: {'on': false},
+        ),
       );
       expect(result.isError, isFalse);
       expect(env.session.sentMessages, hasLength(1));
@@ -657,7 +682,9 @@ void main() {
       await env.connect();
       await env.client.callTool(
         const CallToolRequest(
-            name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+          name: 'start_mirroring',
+          arguments: {'device_id': 'device1'},
+        ),
       );
       final result = await env.client.callTool(
         const CallToolRequest(name: 'rotate_device'),
@@ -670,86 +697,127 @@ void main() {
       final env = _TestEnv();
       await env.connect();
       final result = await env.client.callTool(
-        const CallToolRequest(name: 'set_clipboard', arguments: {'text': 'hello'}),
-      );
-      expect(result.isError, isTrue);
-    });
-
-    test('set_clipboard sends SetClipboardMessage with paste=false by default', () async {
-      final env = _TestEnv();
-      await env.connect();
-      await env.client.callTool(
-        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
-      );
-      final result = await env.client.callTool(
-        const CallToolRequest(name: 'set_clipboard', arguments: {'text': 'hello'}),
-      );
-      expect(result.isError, isFalse);
-      final msg = env.session.sentMessages.single as ScrcpySetClipboardMessage;
-      expect(msg.text, 'hello');
-      expect(msg.paste, isFalse);
-    });
-
-    test('set_clipboard with paste=true sends SetClipboardMessage with paste=true', () async {
-      final env = _TestEnv();
-      await env.connect();
-      await env.client.callTool(
-        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
-      );
-      final result = await env.client.callTool(
         const CallToolRequest(
           name: 'set_clipboard',
-          arguments: {'text': 'hello', 'paste': true},
+          arguments: {'text': 'hello'},
         ),
       );
-      expect(result.isError, isFalse);
-      final msg = env.session.sentMessages.single as ScrcpySetClipboardMessage;
-      expect(msg.text, 'hello');
-      expect(msg.paste, isTrue);
-    });
-
-    test('expand_notification_panel without active session returns error', () async {
-      final env = _TestEnv();
-      await env.connect();
-      final result = await env.client.callTool(
-        const CallToolRequest(name: 'expand_notification_panel'),
-      );
       expect(result.isError, isTrue);
     });
 
-    test('expand_notification_panel sends ExpandNotificationPanelMessage', () async {
-      final env = _TestEnv();
-      await env.connect();
-      await env.client.callTool(
-        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
-      );
-      final result = await env.client.callTool(
-        const CallToolRequest(name: 'expand_notification_panel'),
-      );
-      expect(result.isError, isFalse);
-      expect(env.session.sentMessages.single, isA<ScrcpyExpandNotificationPanelMessage>());
-    });
+    test(
+      'set_clipboard sends SetClipboardMessage with paste=false by default',
+      () async {
+        final env = _TestEnv();
+        await env.connect();
+        await env.client.callTool(
+          const CallToolRequest(
+            name: 'start_mirroring',
+            arguments: {'device_id': 'device1'},
+          ),
+        );
+        final result = await env.client.callTool(
+          const CallToolRequest(
+            name: 'set_clipboard',
+            arguments: {'text': 'hello'},
+          ),
+        );
+        expect(result.isError, isFalse);
+        final msg =
+            env.session.sentMessages.single as ScrcpySetClipboardMessage;
+        expect(msg.text, 'hello');
+        expect(msg.paste, isFalse);
+      },
+    );
 
-    test('expand_settings_panel without active session returns error', () async {
-      final env = _TestEnv();
-      await env.connect();
-      final result = await env.client.callTool(
-        const CallToolRequest(name: 'expand_settings_panel'),
-      );
-      expect(result.isError, isTrue);
-    });
+    test(
+      'set_clipboard with paste=true sends SetClipboardMessage with paste=true',
+      () async {
+        final env = _TestEnv();
+        await env.connect();
+        await env.client.callTool(
+          const CallToolRequest(
+            name: 'start_mirroring',
+            arguments: {'device_id': 'device1'},
+          ),
+        );
+        final result = await env.client.callTool(
+          const CallToolRequest(
+            name: 'set_clipboard',
+            arguments: {'text': 'hello', 'paste': true},
+          ),
+        );
+        expect(result.isError, isFalse);
+        final msg =
+            env.session.sentMessages.single as ScrcpySetClipboardMessage;
+        expect(msg.text, 'hello');
+        expect(msg.paste, isTrue);
+      },
+    );
+
+    test(
+      'expand_notification_panel without active session returns error',
+      () async {
+        final env = _TestEnv();
+        await env.connect();
+        final result = await env.client.callTool(
+          const CallToolRequest(name: 'expand_notification_panel'),
+        );
+        expect(result.isError, isTrue);
+      },
+    );
+
+    test(
+      'expand_notification_panel sends ExpandNotificationPanelMessage',
+      () async {
+        final env = _TestEnv();
+        await env.connect();
+        await env.client.callTool(
+          const CallToolRequest(
+            name: 'start_mirroring',
+            arguments: {'device_id': 'device1'},
+          ),
+        );
+        final result = await env.client.callTool(
+          const CallToolRequest(name: 'expand_notification_panel'),
+        );
+        expect(result.isError, isFalse);
+        expect(
+          env.session.sentMessages.single,
+          isA<ScrcpyExpandNotificationPanelMessage>(),
+        );
+      },
+    );
+
+    test(
+      'expand_settings_panel without active session returns error',
+      () async {
+        final env = _TestEnv();
+        await env.connect();
+        final result = await env.client.callTool(
+          const CallToolRequest(name: 'expand_settings_panel'),
+        );
+        expect(result.isError, isTrue);
+      },
+    );
 
     test('expand_settings_panel sends ExpandSettingsPanelMessage', () async {
       final env = _TestEnv();
       await env.connect();
       await env.client.callTool(
-        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+        const CallToolRequest(
+          name: 'start_mirroring',
+          arguments: {'device_id': 'device1'},
+        ),
       );
       final result = await env.client.callTool(
         const CallToolRequest(name: 'expand_settings_panel'),
       );
       expect(result.isError, isFalse);
-      expect(env.session.sentMessages.single, isA<ScrcpyExpandSettingsPanelMessage>());
+      expect(
+        env.session.sentMessages.single,
+        isA<ScrcpyExpandSettingsPanelMessage>(),
+      );
     });
 
     test('collapse_panels without active session returns error', () async {
@@ -765,13 +833,19 @@ void main() {
       final env = _TestEnv();
       await env.connect();
       await env.client.callTool(
-        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+        const CallToolRequest(
+          name: 'start_mirroring',
+          arguments: {'device_id': 'device1'},
+        ),
       );
       final result = await env.client.callTool(
         const CallToolRequest(name: 'collapse_panels'),
       );
       expect(result.isError, isFalse);
-      expect(env.session.sentMessages.single, isA<ScrcpyCollapsePanelsMessage>());
+      expect(
+        env.session.sentMessages.single,
+        isA<ScrcpyCollapsePanelsMessage>(),
+      );
     });
 
     test('set_torch without active session returns error', () async {
@@ -787,13 +861,17 @@ void main() {
       final env = _TestEnv();
       await env.connect();
       await env.client.callTool(
-        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+        const CallToolRequest(
+          name: 'start_mirroring',
+          arguments: {'device_id': 'device1'},
+        ),
       );
       final result = await env.client.callTool(
         const CallToolRequest(name: 'set_torch', arguments: {'on': true}),
       );
       expect(result.isError, isFalse);
-      final msg = env.session.sentMessages.single as ScrcpyCameraSetTorchMessage;
+      final msg =
+          env.session.sentMessages.single as ScrcpyCameraSetTorchMessage;
       expect(msg.on, isTrue);
     });
 
@@ -801,7 +879,10 @@ void main() {
       final env = _TestEnv();
       await env.connect();
       final result = await env.client.callTool(
-        const CallToolRequest(name: 'camera_zoom', arguments: {'direction': 'in'}),
+        const CallToolRequest(
+          name: 'camera_zoom',
+          arguments: {'direction': 'in'},
+        ),
       );
       expect(result.isError, isTrue);
     });
@@ -810,10 +891,16 @@ void main() {
       final env = _TestEnv();
       await env.connect();
       await env.client.callTool(
-        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+        const CallToolRequest(
+          name: 'start_mirroring',
+          arguments: {'device_id': 'device1'},
+        ),
       );
       final result = await env.client.callTool(
-        const CallToolRequest(name: 'camera_zoom', arguments: {'direction': 'in'}),
+        const CallToolRequest(
+          name: 'camera_zoom',
+          arguments: {'direction': 'in'},
+        ),
       );
       expect(result.isError, isFalse);
       expect(env.session.sentMessages.single, isA<ScrcpyCameraZoomInMessage>());
@@ -823,25 +910,90 @@ void main() {
       final env = _TestEnv();
       await env.connect();
       await env.client.callTool(
-        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+        const CallToolRequest(
+          name: 'start_mirroring',
+          arguments: {'device_id': 'device1'},
+        ),
       );
       final result = await env.client.callTool(
-        const CallToolRequest(name: 'camera_zoom', arguments: {'direction': 'out'}),
+        const CallToolRequest(
+          name: 'camera_zoom',
+          arguments: {'direction': 'out'},
+        ),
       );
       expect(result.isError, isFalse);
-      expect(env.session.sentMessages.single, isA<ScrcpyCameraZoomOutMessage>());
+      expect(
+        env.session.sentMessages.single,
+        isA<ScrcpyCameraZoomOutMessage>(),
+      );
     });
 
     test('camera_zoom invalid direction returns error', () async {
       final env = _TestEnv();
       await env.connect();
       await env.client.callTool(
-        const CallToolRequest(name: 'start_mirroring', arguments: {'device_id': 'device1'}),
+        const CallToolRequest(
+          name: 'start_mirroring',
+          arguments: {'device_id': 'device1'},
+        ),
       );
       final result = await env.client.callTool(
-        const CallToolRequest(name: 'camera_zoom', arguments: {'direction': 'sideways'}),
+        const CallToolRequest(
+          name: 'camera_zoom',
+          arguments: {'direction': 'sideways'},
+        ),
       );
       expect(result.isError, isTrue);
+    });
+
+    test('get_clipboard without active session returns error', () async {
+      final env = _TestEnv();
+      await env.connect();
+
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'get_clipboard'),
+      );
+
+      expect(result.isError, isTrue);
+    });
+
+    test('get_clipboard returns clipboard text', () async {
+      final env = _TestEnv();
+      await env.connect();
+      await env.client.callTool(
+        const CallToolRequest(
+          name: 'start_mirroring',
+          arguments: {'device_id': 'device1'},
+        ),
+      );
+      env.session.getClipboardImpl = () async => 'copied text';
+
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'get_clipboard'),
+      );
+
+      expect(result.isError, isFalse);
+      expect(textContent(result), 'copied text');
+    });
+
+    test('get_clipboard returns error on timeout', () async {
+      final env = _TestEnv();
+      await env.connect();
+      await env.client.callTool(
+        const CallToolRequest(
+          name: 'start_mirroring',
+          arguments: {'device_id': 'device1'},
+        ),
+      );
+      env.session.getClipboardImpl = () =>
+          Future.error(TimeoutException('timeout', const Duration(seconds: 5)));
+
+      final result = await env.client.callTool(
+        const CallToolRequest(name: 'get_clipboard'),
+      );
+
+      expect(result.isError, isTrue);
+      expect(textContent(result), contains('Timed out'));
     });
   });
 
@@ -886,34 +1038,38 @@ void main() {
       expect(text, contains('pixel-8'));
     });
 
-    test('control_device prompt with device_id argument targets that device',
-        () async {
-      final env = _TestEnv();
-      await env.connect();
+    test(
+      'control_device prompt with device_id argument targets that device',
+      () async {
+        final env = _TestEnv();
+        await env.connect();
 
-      final result = await env.client.getPrompt(
-        const GetPromptRequest(
-          name: 'control_device',
-          arguments: {'device_id': 'specific-device'},
-        ),
-      );
+        final result = await env.client.getPrompt(
+          const GetPromptRequest(
+            name: 'control_device',
+            arguments: {'device_id': 'specific-device'},
+          ),
+        );
 
-      final text = (result.messages.first.content as TextContent).text;
-      expect(text, contains('specific-device'));
-    });
+        final text = (result.messages.first.content as TextContent).text;
+        expect(text, contains('specific-device'));
+      },
+    );
 
-    test('troubleshoot prompt mentions no-devices when list is empty',
-        () async {
-      final env = _TestEnv(devices: []);
-      await env.connect();
+    test(
+      'troubleshoot prompt mentions no-devices when list is empty',
+      () async {
+        final env = _TestEnv(devices: []);
+        await env.connect();
 
-      final result = await env.client.getPrompt(
-        const GetPromptRequest(name: 'troubleshoot'),
-      );
+        final result = await env.client.getPrompt(
+          const GetPromptRequest(name: 'troubleshoot'),
+        );
 
-      final text = (result.messages.first.content as TextContent).text;
-      expect(text, contains('none'));
-    });
+        final text = (result.messages.first.content as TextContent).text;
+        expect(text, contains('none'));
+      },
+    );
 
     test('troubleshoot prompt includes reported issue in message', () async {
       final env = _TestEnv();
@@ -949,17 +1105,19 @@ void main() {
   });
 
   group('ScrcpyMcpServer — recording', () {
-    test('advertises start_recording and stop_recording when enabled',
-        () async {
-      final env = _RecordingTestEnv();
-      await env.connect();
+    test(
+      'advertises start_recording and stop_recording when enabled',
+      () async {
+        final env = _RecordingTestEnv();
+        await env.connect();
 
-      final tools = await env.client.listTools();
-      final names = tools.tools.map((t) => t.name).toSet();
+        final tools = await env.client.listTools();
+        final names = tools.tools.map((t) => t.name).toSet();
 
-      expect(names, contains('start_recording'));
-      expect(names, contains('stop_recording'));
-    });
+        expect(names, contains('start_recording'));
+        expect(names, contains('stop_recording'));
+      },
+    );
 
     test('advertises recording://status resource when enabled', () async {
       final env = _RecordingTestEnv();
@@ -993,9 +1151,7 @@ void main() {
           arguments: {'device_id': 'device1'},
         ),
       );
-      await env.client.callTool(
-        const CallToolRequest(name: 'start_recording'),
-      );
+      await env.client.callTool(const CallToolRequest(name: 'start_recording'));
 
       final result = await env.client.callTool(
         const CallToolRequest(name: 'start_recording'),
@@ -1005,18 +1161,20 @@ void main() {
       expect(textContent(result), contains('Already recording'));
     });
 
-    test('stop_recording when not recording returns friendly message',
-        () async {
-      final env = _RecordingTestEnv();
-      await env.connect();
+    test(
+      'stop_recording when not recording returns friendly message',
+      () async {
+        final env = _RecordingTestEnv();
+        await env.connect();
 
-      final result = await env.client.callTool(
-        const CallToolRequest(name: 'stop_recording'),
-      );
+        final result = await env.client.callTool(
+          const CallToolRequest(name: 'stop_recording'),
+        );
 
-      expect(result.isError, isFalse);
-      expect(textContent(result), contains('No active recording'));
-    });
+        expect(result.isError, isFalse);
+        expect(textContent(result), contains('No active recording'));
+      },
+    );
 
     test('recording://status is idle when not recording', () async {
       final env = _RecordingTestEnv();
@@ -1040,9 +1198,7 @@ void main() {
           arguments: {'device_id': 'device1'},
         ),
       );
-      await env.client.callTool(
-        const CallToolRequest(name: 'start_recording'),
-      );
+      await env.client.callTool(const CallToolRequest(name: 'start_recording'));
 
       final result = await env.client.readResource(
         const ReadResourceRequest(uri: 'recording://status'),

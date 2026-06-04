@@ -106,10 +106,13 @@ class ScrcpyMcpAdb extends ScrcpyAdbAdapter implements RecordingAdb {
     String remotePath,
     String localPath,
   ) async {
-    final result = await Process.run(
-      _client.adbPath,
-      ['-s', deviceId, 'pull', remotePath, localPath],
-    );
+    final result = await Process.run(_client.adbPath, [
+      '-s',
+      deviceId,
+      'pull',
+      remotePath,
+      localPath,
+    ]);
     if (result.exitCode != 0) {
       throw Exception(
         'adb pull failed (exit ${result.exitCode}): ${result.stderr}',
@@ -119,9 +122,13 @@ class ScrcpyMcpAdb extends ScrcpyAdbAdapter implements RecordingAdb {
 
   @override
   Future<void> removeFile(String deviceId, String remotePath) async {
-    await Process.run(
-      _client.adbPath,
-      ['-s', deviceId, 'shell', 'rm', '-f', remotePath],
-    );
+    await Process.run(_client.adbPath, [
+      '-s',
+      deviceId,
+      'shell',
+      'rm',
+      '-f',
+      remotePath,
+    ]);
   }
 }

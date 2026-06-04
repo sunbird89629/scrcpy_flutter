@@ -497,10 +497,7 @@ class ScrcpyCameraZoomOutMessage extends _ScrcpyEmptyMessage {
 ///
 /// Changes the mirroring resolution to [width]×[height].
 class ScrcpyResizeDisplayMessage extends ScrcpyControlMessage {
-  const ScrcpyResizeDisplayMessage({
-    required this.width,
-    required this.height,
-  });
+  const ScrcpyResizeDisplayMessage({required this.width, required this.height});
 
   final int width;
   final int height;

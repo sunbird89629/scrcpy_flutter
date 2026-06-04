@@ -4,7 +4,7 @@ import 'package:logger_utils/logger_utils.dart';
 
 import 'recording_adb.dart';
 
-final _log = Logger('scrcpy.recording');
+final _log = Logger('scrcpy.mcp.recording');
 
 class RecordingController {
   RecordingController(this._adb);
@@ -18,11 +18,11 @@ class RecordingController {
   bool get isRecording => _process != null;
 
   RecordingStatus get status => RecordingStatus(
-        isRecording: isRecording,
-        deviceId: _deviceId,
-        startTime: _startTime,
-        remotePath: _remotePath,
-      );
+    isRecording: isRecording,
+    deviceId: _deviceId,
+    startTime: _startTime,
+    remotePath: _remotePath,
+  );
 
   Future<String> start(
     String deviceId, {
@@ -57,7 +57,9 @@ class RecordingController {
   }
 
   Future<String> stop({String? savePath}) async {
-    if (!isRecording) throw StateError('stop() called with no active recording');
+    if (!isRecording) {
+      throw StateError('stop() called with no active recording');
+    }
     final process = _process!;
     final deviceId = _deviceId!;
     final remotePath = _remotePath!;

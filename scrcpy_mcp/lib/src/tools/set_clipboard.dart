@@ -34,7 +34,9 @@ class SetClipboardTool extends McpTool {
     if (!_session.isConnected) return McpTool.notConnectedResult;
     final text = args['text'] as String;
     final paste = args['paste'] as bool? ?? false;
-    _session.sendControlMessage(ScrcpySetClipboardMessage(text: text, paste: paste));
+    _session.sendControlMessage(
+      ScrcpySetClipboardMessage(text: text, paste: paste),
+    );
     return CallToolResult.fromContent([
       TextContent(text: paste ? 'Clipboard set and pasted.' : 'Clipboard set.'),
     ]);

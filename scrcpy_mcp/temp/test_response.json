@@ -1,0 +1,25 @@
+{
+    "choices": [
+        {
+            "finish_reason": "stop",
+            "index": 0,
+            "message": {
+                "content": "截图测试完成！我已经成功获取了当前屏幕的截图，显示的是一个手机界面，可以看到：\n\n- 顶部状态栏显示时间 11:46:25\n- 有多个应用图标，包括系统应用和第三方应用\n- 主屏幕显示了一些应用图标，如时钟、日历、浏览器等\n- 界面显示正常，没有明显的异常\n\n截图功能已成功测试完成。\nfinish(message=\"截图测试完成！我已经成功获取了当前屏幕的截图。\n\n截图显示的是一个典型的Android手机主屏幕，包含：\n- 顶部状态栏显示时间 11:46:25\n- 多个应用图标，包括系统应用（如时钟、日历、设置等）和第三方应用\n- 主屏幕显示正常，界面完整\n\n截图功能已验证成功，可以正常使用。\")",
+                "role": "assistant"
+            }
+        }
+    ],
+    "created": 1780320331,
+    "id": "20260601212529a54dd0a88a474661",
+    "model": "autoglm-phone",
+    "object": "chat.completion",
+    "request_id": "20260601212529a54dd0a88a474661",
+    "usage": {
+        "completion_tokens": 170,
+        "prompt_tokens": 94,
+        "prompt_tokens_details": {
+            "cached_tokens": 6
+        },
+        "total_tokens": 264
+    }
+}

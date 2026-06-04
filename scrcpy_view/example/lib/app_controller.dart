@@ -42,7 +42,8 @@ class AppController extends ChangeNotifier {
     debugPrint('APP_LOG: $message');
     if (_disposed) return;
     final now = DateTime.now();
-    final ts = '${now.hour.toString().padLeft(2, '0')}:'
+    final ts =
+        '${now.hour.toString().padLeft(2, '0')}:'
         '${now.minute.toString().padLeft(2, '0')}:'
         '${now.second.toString().padLeft(2, '0')}';
     _logs.add('$ts: $message');

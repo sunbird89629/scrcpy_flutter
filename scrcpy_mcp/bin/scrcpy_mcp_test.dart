@@ -59,15 +59,9 @@ Future<void> main(List<String> args) async {
       final deviceList = jsonDecode(devicesText) as List;
       if (deviceList.isNotEmpty) {
         final deviceId = deviceList.first.toString();
-        stdout.writeln(
-          '\nDevice found: $deviceId — testing mirroring...\n',
-        );
+        stdout.writeln('\nDevice found: $deviceId — testing mirroring...\n');
 
-        await _callTool(
-          client,
-          'start_mirroring',
-          {'device_id': deviceId},
-        );
+        await _callTool(client, 'start_mirroring', {'device_id': deviceId});
         await _callTool(client, 'inject_key', {'keycode': 3}); // Home
         await _callTool(client, 'inject_key', {'keycode': 4}); // Back
         await _callTool(client, 'inject_touch', {
@@ -76,11 +70,7 @@ Future<void> main(List<String> args) async {
           'width': 1080,
           'height': 1920,
         });
-        await _callTool(
-          client,
-          'inject_text',
-          {'text': 'hello from MCP'},
-        );
+        await _callTool(client, 'inject_text', {'text': 'hello from MCP'});
         await _callTool(client, 'inject_scroll', {
           'x': 540,
           'y': 960,
@@ -92,9 +82,7 @@ Future<void> main(List<String> args) async {
         await _callTool(client, 'stop_mirroring');
       }
     } else {
-      stdout.writeln(
-        'No devices connected — skipping mirroring tests.\n',
-      );
+      stdout.writeln('No devices connected — skipping mirroring tests.\n');
     }
 
     // --- Resources ---
@@ -105,11 +93,7 @@ Future<void> main(List<String> args) async {
     // --- Prompts ---
     await _listPrompts(client);
     await _getPrompt(client, 'control_device');
-    await _getPrompt(
-      client,
-      'troubleshoot',
-      {'issue': 'no devices found'},
-    );
+    await _getPrompt(client, 'troubleshoot', {'issue': 'no devices found'});
 
     stdout.writeln('\n=== All tests passed ===');
   } on Exception catch (e, st) {
@@ -156,9 +140,7 @@ Future<void> _listResources(McpClient client) async {
 
 Future<void> _readResource(McpClient client, String uri) async {
   stdout.writeln('>> read $uri');
-  final result = await client.readResource(
-    ReadResourceRequest(uri: uri),
-  );
+  final result = await client.readResource(ReadResourceRequest(uri: uri));
   for (final part in result.contents) {
     if (part is TextResourceContents) {
       stdout.writeln('   ${part.text}');
@@ -180,16 +162,15 @@ Future<void> _getPrompt(
   String name, [
   Map<String, String>? arguments,
 ]) async {
-  stdout.writeln(
-    '>> prompt $name${arguments != null ? " $arguments" : ""}',
-  );
+  stdout.writeln('>> prompt $name${arguments != null ? " $arguments" : ""}');
   final result = await client.getPrompt(
     GetPromptRequest(name: name, arguments: arguments),
   );
   for (final msg in result.messages) {
     final content = msg.content;
-    final text =
-        content is TextContent ? content.text : '[${content.runtimeType}]';
+    final text = content is TextContent
+        ? content.text
+        : '[${content.runtimeType}]';
     stdout.writeln('   [${msg.role}] $text');
   }
 }

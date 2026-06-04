@@ -25,9 +25,7 @@ class StartMirroringTool extends McpTool {
   @override
   final ToolInputSchema inputSchema = JsonSchema.object(
     properties: {
-      'device_id': JsonSchema.string(
-        description: 'The Android device serial',
-      ),
+      'device_id': JsonSchema.string(description: 'The Android device serial'),
     },
     required: ['device_id'],
   );
@@ -38,9 +36,13 @@ class StartMirroringTool extends McpTool {
     RequestHandlerExtra extra,
   ) async {
     final deviceId = args['device_id'] as String;
+    logger.fine('start_mirroring: starting session for device=$deviceId');
     try {
       await _session.start(deviceId);
       _ctx.connectedDeviceId = deviceId;
+      logger.fine(
+        'start_mirroring: connected, video=${_session.videoWidth}x${_session.videoHeight}',
+      );
       return CallToolResult.fromContent([
         TextContent(
           text: jsonEncode({

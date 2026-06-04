@@ -2,7 +2,12 @@
 
 MCP server for [scrcpy](https://github.com/Genymobile/scrcpy) — Android screen mirroring and device control via the [Model Context Protocol](https://modelcontextprotocol.io/).
 
-Built with [dart_mcp](https://pub.dev/packages/dart_mcp).
+Built with [mcp_dart](https://pub.dev/packages/mcp_dart).
+
+Two transports are supported:
+
+- **stdio** — the CLI entry point (`bin/scrcpy_mcp.dart`) for clients that launch the server as a subprocess (Claude Code, Cursor, …).
+- **HTTP (Streamable)** — served by the desktop app's MCP Server panel via `McpHttpServer`, for clients that connect to a running app over HTTP.
 
 ## Features
 
@@ -50,7 +55,7 @@ Built with [dart_mcp](https://pub.dev/packages/dart_mcp).
 
 ## Usage
 
-### As a CLI tool
+### stdio transport (CLI)
 
 ```bash
 # Run with default adb path
@@ -72,6 +77,36 @@ Configure your MCP client to launch this command. For example, in Claude Code's 
   }
 }
 ```
+
+> Set the `OPENAI_*` agent environment variables before launching to additionally
+> enable the `run_task` agent tool (see `AgentConfig.fromEnv` / `OpenAiLlmClient`).
+
+### HTTP (Streamable) transport
+
+The desktop app (`scrcpy_app`) hosts the server over HTTP via its **MCP Server**
+panel (`McpServerController` → `McpHttpServer`). Start the app, open the panel,
+and click start. The server is then reachable at:
+
+```
+http://localhost:7070/mcp
+```
+
+The port defaults to `7070` and can be changed in the panel while the server is
+stopped. Point a Streamable-HTTP MCP client at the URL — for example:
+
+```json
+{
+  "mcpServers": {
+    "scrcpy": {
+      "type": "http",
+      "url": "http://localhost:7070/mcp"
+    }
+  }
+}
+```
+
+This transport reuses the app's live scrcpy session, so the device state is
+shared with what you see mirrored in the app.
 
 ### As a library
 

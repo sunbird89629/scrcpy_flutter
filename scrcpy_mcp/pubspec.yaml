@@ -4,7 +4,7 @@ publish_to: none
 version: 0.2.0
 
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.10.0
 
 resolution: workspace
 
@@ -13,9 +13,11 @@ dependencies:
     path: ../packages/adb_tools
   logger_utils:
     path: ../packages/logger_utils
+  http: ^1.2.0
   mcp_dart: ^2.1.1
   scrcpy_client:
     path: ../packages/scrcpy_client
+  collection: ^1.19.1
 
 dev_dependencies:
   test: any

@@ -38,9 +38,10 @@ class StartAppTool extends McpTool {
   ) async {
     if (!_session.isConnected) return McpTool.notConnectedResult;
     final pkg = args['package'] as String;
+    logger.fine('start_app: launching $pkg');
     _session.sendControlMessage(ScrcpyStartAppMessage(pkg));
-    return CallToolResult.fromContent(
-      [TextContent(text: 'App launched: $pkg')],
-    );
+    return CallToolResult.fromContent([
+      TextContent(text: 'App launched: $pkg'),
+    ]);
   }
 }

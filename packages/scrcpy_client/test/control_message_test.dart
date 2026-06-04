@@ -57,8 +57,11 @@ void main() {
           width: 1,
           height: 1,
         ).toBinary();
-        expect(bytes[1], expected,
-            reason: 'action $action should encode as $expected');
+        expect(
+          bytes[1],
+          expected,
+          reason: 'action $action should encode as $expected',
+        );
       }
     });
 
@@ -146,8 +149,12 @@ void main() {
   group('ScrcpyInjectScrollMessage', () {
     test('binary layout is 21 bytes with i16fp-encoded scroll values', () {
       const msg = ScrcpyInjectScrollMessage(
-        x: 100, y: 200, width: 1080, height: 1920,
-        hScroll: -10, vScroll: 50,
+        x: 100,
+        y: 200,
+        width: 1080,
+        height: 1920,
+        hScroll: -10,
+        vScroll: 50,
       );
 
       final bytes = msg.toBinary();
@@ -166,8 +173,12 @@ void main() {
 
     test('values clamped to max scroll magnitude outside [-16, 16]', () {
       const msg = ScrcpyInjectScrollMessage(
-        x: 0, y: 0, width: 1080, height: 1920,
-        hScroll: -100, vScroll: 100,
+        x: 0,
+        y: 0,
+        width: 1080,
+        height: 1920,
+        hScroll: -100,
+        vScroll: 100,
       );
       final bd = ByteData.sublistView(msg.toBinary());
       expect(bd.getInt16(13), -32767);
@@ -189,14 +200,17 @@ void main() {
       expect(bytes.sublist(14), 'hello'.codeUnits);
     });
 
-    test('Chinese text: text_len reflects UTF-8 byte count, not char count', () {
-      const msg = ScrcpySetClipboardMessage(text: '你好');
-      final bytes = msg.toBinary();
-      final bd = ByteData.sublistView(bytes);
+    test(
+      'Chinese text: text_len reflects UTF-8 byte count, not char count',
+      () {
+        const msg = ScrcpySetClipboardMessage(text: '你好');
+        final bytes = msg.toBinary();
+        final bd = ByteData.sublistView(bytes);
 
-      expect(bytes.length, 14 + 6);
-      expect(bd.getUint32(10), 6);
-    });
+        expect(bytes.length, 14 + 6);
+        expect(bd.getUint32(10), 6);
+      },
+    );
 
     test('paste=false encodes paste byte as 0', () {
       const msg = ScrcpySetClipboardMessage(text: 'x', paste: false);
@@ -214,7 +228,8 @@ void main() {
 
     test('sequence is encoded as uint64 at offset 1', () {
       const msg = ScrcpySetClipboardMessage(
-        text: '', sequence: 0xDEADBEEFCAFEBABE,
+        text: '',
+        sequence: 0xDEADBEEFCAFEBABE,
       );
       final bd = ByteData.sublistView(msg.toBinary());
       expect(bd.getUint64(1), 0xDEADBEEFCAFEBABE);
@@ -223,8 +238,9 @@ void main() {
 
   group('ScrcpyBackOrScreenOnMessage', () {
     test('binary layout is 2 bytes', () {
-      final bytes =
-          const ScrcpyBackOrScreenOnMessage(ScrcpyAction.down).toBinary();
+      final bytes = const ScrcpyBackOrScreenOnMessage(
+        ScrcpyAction.down,
+      ).toBinary();
       expect(bytes.length, 2);
       expect(bytes[0], 4);
       expect(bytes[1], ScrcpyAction.down);
@@ -233,8 +249,7 @@ void main() {
 
   group('ScrcpyExpandNotificationPanelMessage', () {
     test('binary layout is 1 byte containing only type 5', () {
-      final bytes =
-          const ScrcpyExpandNotificationPanelMessage().toBinary();
+      final bytes = const ScrcpyExpandNotificationPanelMessage().toBinary();
       expect(bytes.length, 1);
       expect(bytes[0], 5);
     });
@@ -284,26 +299,23 @@ void main() {
     });
 
     test('copyKey=copy encodes as 1', () {
-      final bytes =
-          const ScrcpyGetClipboardMessage(
-            copyKey: ScrcpyClipboardCopyKey.copy,
-          ).toBinary();
+      final bytes = const ScrcpyGetClipboardMessage(
+        copyKey: ScrcpyClipboardCopyKey.copy,
+      ).toBinary();
       expect(bytes[1], 1);
     });
   });
 
   group('ScrcpySetDisplayPowerMessage', () {
     test('on=true encodes as type=10, byte=1', () {
-      final bytes =
-          const ScrcpySetDisplayPowerMessage(on: true).toBinary();
+      final bytes = const ScrcpySetDisplayPowerMessage(on: true).toBinary();
       expect(bytes.length, 2);
       expect(bytes[0], 10);
       expect(bytes[1], 1);
     });
 
     test('on=false encodes as type=10, byte=0', () {
-      final bytes =
-          const ScrcpySetDisplayPowerMessage(on: false).toBinary();
+      final bytes = const ScrcpySetDisplayPowerMessage(on: false).toBinary();
       expect(bytes[1], 0);
     });
   });
@@ -345,8 +357,7 @@ void main() {
     });
 
     test('defaults: vendorId=0 productId=0 name="" reportDescriptor=[]', () {
-      final bytes =
-          ScrcpyUhidCreateMessage(id: 1).toBinary();
+      final bytes = ScrcpyUhidCreateMessage(id: 1).toBinary();
       final bd = ByteData.sublistView(bytes);
       expect(bytes.length, 10); // header(8) + desc_size(2) + empty desc
       expect(bd.getUint16(3), 0);
@@ -385,8 +396,7 @@ void main() {
 
   group('ScrcpyOpenHardKeyboardSettingsMessage', () {
     test('binary layout is 1 byte containing only type 15', () {
-      final bytes =
-          const ScrcpyOpenHardKeyboardSettingsMessage().toBinary();
+      final bytes = const ScrcpyOpenHardKeyboardSettingsMessage().toBinary();
       expect(bytes.length, 1);
       expect(bytes[0], 15);
     });
@@ -402,8 +412,7 @@ void main() {
 
   group('ScrcpyCameraSetTorchMessage', () {
     test('on=true encodes as type=18, byte=1', () {
-      final bytes =
-          const ScrcpyCameraSetTorchMessage(on: true).toBinary();
+      final bytes = const ScrcpyCameraSetTorchMessage(on: true).toBinary();
       expect(bytes.length, 2);
       expect(bytes[0], 18);
       expect(bytes[1], 1);
@@ -442,10 +451,17 @@ void main() {
 void expectPressure(double input, int expected) {
   final msg = ScrcpyInjectTouchMessage(
     action: ScrcpyAction.down,
-    pointerId: 0, x: 0, y: 0, width: 1, height: 1,
+    pointerId: 0,
+    x: 0,
+    y: 0,
+    width: 1,
+    height: 1,
     pressure: input,
   );
   final bd = ByteData.sublistView(msg.toBinary());
-  expect(bd.getUint16(22), expected,
-      reason: 'pressure $input should encode as $expected');
+  expect(
+    bd.getUint16(22),
+    expected,
+    reason: 'pressure $input should encode as $expected',
+  );
 }

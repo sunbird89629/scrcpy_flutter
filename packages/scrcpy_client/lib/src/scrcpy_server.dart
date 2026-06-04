@@ -2,7 +2,10 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
+import 'package:scrcpy_client/src/messages/device_message.dart';
 import 'package:scrcpy_client/src/messages/scrcpy_control_message.dart';
+import 'package:scrcpy_client/src/scrcpy_device_message_parser.dart';
 import 'package:scrcpy_client/src/scrcpy_device_provisioner.dart';
 import 'package:scrcpy_client/src/scrcpy_logger.dart';
 import 'package:scrcpy_client/src/scrcpy_packet.dart';
@@ -18,10 +21,11 @@ class ScrcpyServer {
     required ScrcpyDeviceProvisioner provisioner,
     ScrcpyLogger logger = const NoOpScrcpyLogger(),
     StreamSink<List<int>>? controlSink,
-  })  : _provisioner = provisioner,
-        _log = logger,
-        _controlSink = controlSink,
-        _parser = ScrcpyStreamParser(logger: logger);
+  }) : _provisioner = provisioner,
+       _log = logger,
+       _controlSink = controlSink,
+       _parser = ScrcpyStreamParser(logger: logger),
+       _deviceParser = ScrcpyDeviceMessageParser(logger: logger);
 
   final ScrcpyDeviceProvisioner _provisioner;
 
@@ -33,6 +37,7 @@ class ScrcpyServer {
 
   final ScrcpyLogger _log;
   final ScrcpyStreamParser _parser;
+  final ScrcpyDeviceMessageParser _deviceParser;
   final StreamSink<List<int>>? _controlSink;
 
   bool _isStarting = false;
@@ -47,6 +52,15 @@ class ScrcpyServer {
 
   /// Stream of scrcpy metadata (device name, codec info).
   Stream<ScrcpyMetadata> get metadata => _parser.metadata;
+
+  /// Stream of parsed device→host messages from the control socket.
+  Stream<ScrcpyDeviceMessage> get deviceMessages => _deviceParser.messages;
+
+  /// Feeds raw bytes directly into the device message parser.
+  ///
+  /// For testing only — in production, bytes come from the control socket.
+  @visibleForTesting
+  void feedDeviceBytes(Uint8List data) => _deviceParser.feed(data);
 
   /// Last parsed metadata, or `null` if the header has not arrived yet.
   ScrcpyMetadata? get currentMetadata => _parser.currentMetadata;
@@ -80,19 +94,16 @@ class ScrcpyServer {
     _videoSocket = await _connectSocket('Video');
 
     var isFirstByteHandled = false;
-    _videoSubscription = _videoSocket!.listen(
-      (data) {
-        if (!isFirstByteHandled) {
-          isFirstByteHandled = true;
-          if (data.isNotEmpty && data[0] == 0) {
-            if (data.length > 1) _parser.feed(Uint8List.sublistView(data, 1));
-            return;
-          }
+    _videoSubscription = _videoSocket!.listen((data) {
+      if (!isFirstByteHandled) {
+        isFirstByteHandled = true;
+        if (data.isNotEmpty && data[0] == 0) {
+          if (data.length > 1) _parser.feed(Uint8List.sublistView(data, 1));
+          return;
         }
-        _parser.feed(data);
-      },
-      onDone: () => _log.warn('[ScrcpyServer] Video socket closed'),
-    );
+      }
+      _parser.feed(data);
+    }, onDone: () => _log.warn('[ScrcpyServer] Video socket closed'));
 
     await Future<void>.delayed(const Duration(milliseconds: 300));
     try {
@@ -106,7 +117,7 @@ class ScrcpyServer {
     }
     _controlSocket!.setOption(SocketOption.tcpNoDelay, true);
     _controlSubscription = _controlSocket!.listen(
-      (data) => _log.debug('[ScrcpyServer] Control data: ${data.length} bytes'),
+      _deviceParser.feed,
       onDone: () => _log.warn('[ScrcpyServer] Control socket closed'),
     );
 
@@ -150,5 +161,6 @@ class ScrcpyServer {
     await _provisioner.depovision();
 
     _parser.close();
+    _deviceParser.close();
   }
 }

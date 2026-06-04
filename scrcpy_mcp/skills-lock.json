@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "hf-cli": {
+      "source": "huggingface/skills",
+      "sourceType": "github",
+      "skillPath": "skills/hf-cli/SKILL.md",
+      "computedHash": "f447645b19efbdd7bd6cfad079ff242a4700a0ef4e84cc5fd8a1de85504b5274"
+    }
+  }
+}
