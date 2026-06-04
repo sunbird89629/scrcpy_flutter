@@ -59,9 +59,9 @@ Lower layers must never import from upper layers.
 
 ## Conventions
 
-- Use `appLogger` from `package:logger_utils` for all logging (never `print`)
+- Logging: call `initLogging()` once at app/server startup, then in each file create a private `final _log = Logger('dotted.name');` (hierarchical names, e.g. `scrcpy.mcp.tool`) — both from `package:logger_utils`. Never use `print`/`debugPrint`. Levels: FINE = debug detail / full payload dumps, INFO = key events & audit lines, WARNING = recoverable errors
 - Use `ScrcpyAdb` interface from `scrcpy_view` for testing without a real device
-- Keep `scrcpy_view` independent from AutoGLM-specific packages; app/MCP entry points own their local adapters from `AdbClient`/`appLogger` to `ScrcpyAdb`/`ScrcpyLogger`
+- Keep `scrcpy_view` independent from AutoGLM-specific packages; app/MCP entry points own their local adapters from `AdbClient`/`Logger` to `ScrcpyAdb`/`ScrcpyLogger`
 - Asset paths in `rootBundle.load()` use `packages/<name>/assets/...` matching the pubspec `name:` field
 - Never add `test` package as a dev_dependency in workspace packages — it conflicts with `flutter_test` from SDK
 - scrcpy macOS apps need `com.apple.security.network.client`/`server` entitlements and sandbox disabled
