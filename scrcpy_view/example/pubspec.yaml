@@ -18,7 +18,9 @@ dependencies:
   scrcpy_view:
     path: ../
   logger_utils:
-    path: ../../packages/logger_utils
+    git:
+      url: https://github.com/sunbird89629/logger_utils.git
+      ref: v0.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
