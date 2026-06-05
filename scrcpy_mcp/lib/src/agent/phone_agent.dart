@@ -1,9 +1,8 @@
-import 'package:collection/collection.dart';
 import 'package:logger_utils/logger_utils.dart';
 
-import 'response_parser.dart';
 import 'agent_config.dart';
 import 'llm_client.dart';
+import 'response_parser.dart';
 
 final _log = Logger('PhoneAgent');
 
@@ -46,6 +45,7 @@ class PhoneAgent {
   ];
 
   Future<AgentResult> run(String message) async {
+    _log.info('task: $message');
     final messages = _buildInitialMessages();
 
     String? prevScreenshot;
@@ -79,14 +79,17 @@ class PhoneAgent {
           // Completion goes through finish(...), which the parser recognizes.
           // A failure here means the output format broke — report it rather
           // than masquerading a format error as success.
+          _log.warning('step $step parse failed: $reason');
+          _log.fine('reply(unparsed):\n${_indent(content)}');
           return AgentResult(
             result: 'Could not parse an action ($reason): ${content.trim()}',
             steps: step + 1,
             success: false,
           );
         case ParsedAction(:final action, :final content):
-          // 3. Record the assistant turn (content already excludes the
-          // <think> block), then dispatch the action.
+          _log.info('step $step  ${actionSummary(action)}');
+          _log.fine('reply:\n${_indent(content)}');
+          // Record the assistant turn (content already excludes <think>).
           messages.add(LlmMessage(role: 'assistant', textContent: content));
           final outcome = await _dispatchAction(
             action,
@@ -94,6 +97,9 @@ class PhoneAgent {
             lastActionSig: lastActionSig,
             repeatedActions: repeatedActions,
           );
+          final resultText =
+              outcome.done?.result ?? outcome.result ?? '(no result)';
+          _log.info('step $step → $resultText');
           if (outcome.done != null) return outcome.done!;
           lastResult = outcome.result;
           lastActionSig = outcome.sig;
@@ -111,16 +117,16 @@ class PhoneAgent {
 
   /// Builds the initial message list: a single system message with today's date
   /// substituted into [AgentConfig.systemPrompt].
-  MessageList _buildInitialMessages() {
+  List<LlmMessage> _buildInitialMessages() {
     final now = DateTime.now();
     final mm = now.month.toString().padLeft(2, '0');
     final dd = now.day.toString().padLeft(2, '0');
     final weekday = _weekdayNames[now.weekday - 1];
     final dateStr = '${now.year}年$mm月$dd日 $weekday';
     final systemPrompt = config.systemPrompt.replaceFirst('{DATE}', dateStr);
-    return MessageList(<LlmMessage>[
+    return <LlmMessage>[
       LlmMessage(role: 'system', textContent: systemPrompt),
-    ]);
+    ];
   }
 
   /// Stall backstop: if the screen is unchanged across consecutive steps, the
@@ -155,7 +161,7 @@ class PhoneAgent {
   /// single concise action before giving up. Mutates [messages] with the turns
   /// it sends.
   Future<ParsedResponse> _requestAction(
-    MessageList messages, {
+    List<LlmMessage> messages, {
     required String userContent,
     required ({String base64, String mimeType}) screenshot,
   }) async {
@@ -167,8 +173,8 @@ class PhoneAgent {
         imageMimeType: screenshot.mimeType,
       ),
     );
-    var response = await llmClient.chat(messages: _trimHistory(messages));
-    _log.fine('rawText:${response.text}');
+    final trimedHistory = _trimHistory(messages);
+    var response = await llmClient.chat(messages: trimedHistory);
     var parsed = ResponseParser.parse(response.text ?? '');
 
     if (parsed is ParseFailure && response.finishReason == 'length') {
@@ -181,7 +187,6 @@ class PhoneAgent {
         ),
       );
       response = await llmClient.chat(messages: _trimHistory(messages));
-      _log.fine('rawText(retry):${response.text}');
       parsed = ResponseParser.parse(response.text ?? '');
     }
     return parsed;
@@ -304,11 +309,44 @@ class PhoneAgent {
   }
 }
 
-class MessageList extends DelegatingList<LlmMessage> {
-  MessageList(super.base);
-  @override
-  void add(LlmMessage value) {
-    _log.fine(value.toLog());
-    super.add(value);
+/// A compact one-line rendering of [action] for the INFO step-index log,
+/// e.g. `Tap(897,939)`, `Swipe(499,702→499,263)`, `Wait(2 seconds)`.
+String actionSummary(PhoneAction action) {
+  String quote(String s) {
+    const max = 20;
+    final flat = s.replaceAll('\n', ' ');
+    final clipped = flat.length > max ? '${flat.substring(0, max)}…' : flat;
+    return '"$clipped"';
+  }
+
+  switch (action) {
+    case FinishAction(:final message):
+      return 'Finish(${quote(message)})';
+    case DoAction():
+      String coord(List<int>? p) => p == null ? '?' : '${p[0]},${p[1]}';
+      switch (action.action) {
+        case 'Tap':
+        case 'Long Press':
+        case 'Double Tap':
+          return '${action.action}(${coord(action.element)})';
+        case 'Swipe':
+          return 'Swipe(${coord(action.start)}→${coord(action.end)})';
+        case 'Type':
+        case 'Type_Name':
+          return '${action.action}(${quote(action.text ?? '')})';
+        case 'Launch':
+          return 'Launch(${action.app ?? '?'})';
+        case 'Wait':
+          return 'Wait(${action.duration ?? '?'})';
+        default:
+          // Back / Home / Interact / Take_over / Note / Call_API …
+          return action.message == null
+              ? action.action
+              : '${action.action}(${quote(action.message!)})';
+      }
   }
 }
+
+/// Indents every line of [text] by two spaces for the FINE `reply:` block.
+String _indent(String text) =>
+    text.trim().split('\n').map((line) => '  $line').join('\n');

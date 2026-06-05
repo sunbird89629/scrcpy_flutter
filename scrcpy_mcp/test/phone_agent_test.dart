@@ -328,4 +328,64 @@ void main() {
     });
 
   });
+
+  group('actionSummary', () {
+    test('Tap shows coordinates', () {
+      expect(
+        actionSummary(const DoAction(action: 'Tap', element: [897, 939])),
+        'Tap(897,939)',
+      );
+    });
+
+    test('Swipe shows start→end', () {
+      expect(
+        actionSummary(
+          const DoAction(action: 'Swipe', start: [499, 702], end: [499, 263]),
+        ),
+        'Swipe(499,702→499,263)',
+      );
+    });
+
+    test('Wait shows the raw duration', () {
+      expect(
+        actionSummary(const DoAction(action: 'Wait', duration: '2 seconds')),
+        'Wait(2 seconds)',
+      );
+    });
+
+    test('Launch shows the app', () {
+      expect(
+        actionSummary(const DoAction(action: 'Launch', app: 'Chrome')),
+        'Launch(Chrome)',
+      );
+    });
+
+    test('Type shows quoted text', () {
+      expect(
+        actionSummary(const DoAction(action: 'Type', text: '张三')),
+        'Type("张三")',
+      );
+    });
+
+    test('long text is truncated with an ellipsis', () {
+      final s = actionSummary(DoAction(action: 'Type', text: '一' * 30));
+      expect(s, startsWith('Type("'));
+      expect(s, contains('…'));
+    });
+
+    test('Back renders without parens', () {
+      expect(actionSummary(const DoAction(action: 'Back')), 'Back');
+    });
+
+    test('Note shows its message', () {
+      expect(
+        actionSummary(const DoAction(action: 'Note', message: 'True')),
+        'Note("True")',
+      );
+    });
+
+    test('Finish shows quoted message', () {
+      expect(actionSummary(const FinishAction('done')), 'Finish("done")');
+    });
+  });
 }

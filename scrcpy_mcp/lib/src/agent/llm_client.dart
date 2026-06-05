@@ -37,9 +37,6 @@ class LlmMessage {
         ')';
   }
 
-  String toLog() {
-    return '$role:$textContent';
-  }
 }
 
 /// Response from the LLM.
