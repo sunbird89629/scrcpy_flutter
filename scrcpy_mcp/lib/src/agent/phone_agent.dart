@@ -1,7 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:logger_utils/logger_utils.dart';
 
-import 'action_parser.dart';
+import 'response_parser.dart';
 import 'agent_config.dart';
 import 'llm_client.dart';
 
@@ -19,7 +19,7 @@ typedef ActionRunner = Future<String> Function(PhoneAction action);
 /// On each step:
 ///   1. Take a screenshot
 ///   2. Send [system + user(message+screenshot) + history] to the LLM
-///   3. Parse the model's text output with [ActionParser]
+///   3. Parse the model's text output with [ResponseParser]
 ///   4. Execute parsed [DoAction] via [actionRunner], or finish
 ///   5. Append to history and loop
 class PhoneAgent {
@@ -68,46 +68,37 @@ class PhoneAgent {
 
       // 2. Ask the model for the next action (handles truncation retry).
       final userContent = _buildUserContent(step, message, lastResult);
-      final reply = await _requestAction(
+      final parsed = await _requestAction(
         messages,
         userContent: userContent,
         screenshot: screenshot,
       );
-      final rawText = reply.rawText;
-      final action = reply.action;
 
-      if (rawText.isEmpty) {
-        return AgentResult(
-          result: 'Model returned empty response at step $step',
-          steps: step + 1,
-          success: false,
-        );
+      switch (parsed) {
+        case ParseFailure(:final reason, :final content):
+          // Completion goes through finish(...), which the parser recognizes.
+          // A failure here means the output format broke — report it rather
+          // than masquerading a format error as success.
+          return AgentResult(
+            result: 'Could not parse an action ($reason): ${content.trim()}',
+            steps: step + 1,
+            success: false,
+          );
+        case ParsedAction(:final action, :final content):
+          // 3. Record the assistant turn (content already excludes the
+          // <think> block), then dispatch the action.
+          messages.add(LlmMessage(role: 'assistant', textContent: content));
+          final outcome = await _dispatchAction(
+            action,
+            step,
+            lastActionSig: lastActionSig,
+            repeatedActions: repeatedActions,
+          );
+          if (outcome.done != null) return outcome.done!;
+          lastResult = outcome.result;
+          lastActionSig = outcome.sig;
+          repeatedActions = outcome.repeats;
       }
-      if (action == null) {
-        // The model must emit a parseable action — completion goes through
-        // finish(...)/screenshot(...), which ActionParser handles. Reaching
-        // here means the output format broke, so report failure instead of
-        // masquerading a format error as success.
-        final cleaned = rawText.replaceAll(RegExp('</?think>'), '').trim();
-        return AgentResult(
-          result: 'Could not parse an action from model output: $cleaned',
-          steps: step + 1,
-          success: false,
-        );
-      }
-
-      // 3. Record the assistant turn, then dispatch the action.
-      _appendAssistantHistory(messages, rawText);
-      final outcome = await _dispatchAction(
-        action,
-        step,
-        lastActionSig: lastActionSig,
-        repeatedActions: repeatedActions,
-      );
-      if (outcome.done != null) return outcome.done!;
-      lastResult = outcome.result;
-      lastActionSig = outcome.sig;
-      repeatedActions = outcome.repeats;
     }
 
     return AgentResult(
@@ -159,11 +150,11 @@ class PhoneAgent {
       : '上一步操作结果：${lastResult ?? '已执行'}。请对照当前截图判断是否生效，并继续完成任务。';
 
   /// Sends a user turn (text + screenshot) and parses the model's reply into a
-  /// [PhoneAction]. On a truncated response (finish_reason="length", usually
+  /// [ParsedResponse]. On a truncated response (finish_reason="length", usually
   /// repetition garbage with no parsable action) it retries once asking for a
   /// single concise action before giving up. Mutates [messages] with the turns
   /// it sends.
-  Future<({String rawText, PhoneAction? action})> _requestAction(
+  Future<ParsedResponse> _requestAction(
     MessageList messages, {
     required String userContent,
     required ({String base64, String mimeType}) screenshot,
@@ -177,11 +168,10 @@ class PhoneAgent {
       ),
     );
     var response = await llmClient.chat(messages: _trimHistory(messages));
-    var rawText = response.text ?? '';
-    _log.fine('rawText:$rawText');
-    var action = rawText.isEmpty ? null : ActionParser.parse(rawText);
+    _log.fine('rawText:${response.text}');
+    var parsed = ResponseParser.parse(response.text ?? '');
 
-    if (action == null && response.finishReason == 'length') {
+    if (parsed is ParseFailure && response.finishReason == 'length') {
       _log.info('output truncated (length); retrying with a concise nudge');
       messages.add(
         const LlmMessage(
@@ -191,26 +181,10 @@ class PhoneAgent {
         ),
       );
       response = await llmClient.chat(messages: _trimHistory(messages));
-      rawText = response.text ?? '';
-      _log.fine('rawText(retry):$rawText');
-      action = rawText.isEmpty ? null : ActionParser.parse(rawText);
+      _log.fine('rawText(retry):${response.text}');
+      parsed = ResponseParser.parse(response.text ?? '');
     }
-    return (rawText: rawText, action: action);
-  }
-
-  /// Appends the assistant reply to history, dropping any `<think>…</think>`
-  /// block to save context. Untagged reasoning is kept on purpose — the model
-  /// often records data there (e.g. items to summarize) without using tags.
-  void _appendAssistantHistory(MessageList messages, String rawText) {
-    final historyText = rawText
-        .replaceAll(RegExp('<think>.*?</think>', dotAll: true), '')
-        .trim();
-    messages.add(
-      LlmMessage(
-        role: 'assistant',
-        textContent: historyText.isEmpty ? rawText : historyText,
-      ),
-    );
+    return parsed;
   }
 
   /// Executes [action] and reports the loop's next state. `done` non-null means

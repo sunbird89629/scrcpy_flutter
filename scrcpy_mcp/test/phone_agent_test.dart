@@ -327,51 +327,6 @@ void main() {
       expect(result.steps, 1);
     });
 
-    test('parses Launch shorthand from model output', () async {
-      final executed = <String>[];
-      final result = await makeAgent(
-        [
-          const LlmResponse(text: 'Launch("Chrome")'),
-          const LlmResponse(text: 'finish(message="Done")'),
-        ],
-        actionRunner: (action) async {
-          executed.add('$action');
-          return 'ok';
-        },
-      ).run('open chrome');
-
-      expect(result.success, isTrue);
-      expect(executed.length, 1);
-      expect(executed.first, contains('Launch'));
-    });
-
-    test('parses Tap shorthand with coordinates', () async {
-      final executed = <String>[];
-      final result = await makeAgent(
-        [
-          const LlmResponse(text: 'Tap([500, 300])'),
-          const LlmResponse(text: 'finish(message="Done")'),
-        ],
-        actionRunner: (action) async {
-          executed.add('$action');
-          return 'ok';
-        },
-      ).run('tap screen');
-
-      expect(result.success, isTrue);
-      expect(executed.length, 1);
-      expect(executed.first, contains('Tap'));
-    });
-
-    test('parses screenshot shorthand as FinishAction', () async {
-      final result = await makeAgent([
-        const LlmResponse(text: 'screenshot(message="Screen captured")'),
-      ]).run('capture');
-
-      expect(result.success, isTrue);
-      expect(result.result, 'Screen captured');
-      expect(result.steps, 1);
-    });
   });
 
   // ── ActionParser unit tests ─────────────────────────────────────────────
