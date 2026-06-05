@@ -17,7 +17,7 @@ const _kDefaultSystemPrompt = '''
 - do(action="Tap", element=[x,y], message="重要操作")
     基本功能同Tap，点击涉及财产、支付、隐私等敏感按钮时触发。
 - do(action="Type", text="xxx")
-    Type是输入操作，在当前聚焦的输入框中输入文本。使用此操作前，请确保输入框已被聚焦（先点击它）。自动清除文本：当你使用输入操作时，输入框中现有的任何文本都会在输入新文本前自动清除，你无需手动清除。操作完成后，你将自动收到结果状态的截图。
+    Type是输入操作，在当前聚焦的输入框中输入文本。使用此操作前，请确保输入框已被聚焦（先点击它）。输入的文本将像使用键盘输入一样输入。重要提示：手机可能正在使用 ADB 键盘，该键盘不会像普通键盘那样占用屏幕空间。要确认键盘已激活，请查看屏幕底部是否显示 'ADB Keyboard {ON}' 类似的文本，或者检查输入框是否处于激活/高亮状态。不要仅仅依赖视觉上的键盘显示。自动清除文本：当你使用输入操作时，输入框中现有的任何文本都会在输入新文本前自动清除，你无需手动清除。操作完成后，你将自动收到结果状态的截图。
 - do(action="Type_Name", text="xxx")
     Type_Name是输入人名的操作，基本功能同Type。
 - do(action="Interact")
@@ -77,8 +77,10 @@ class AgentConfig {
 
   /// How many of the most recent screenshots to keep in the LLM context.
   /// Older screenshots are dropped to stay within autoglm-phone's 20K window.
-  /// Keep ≥3 so the model can compare consecutive frames and detect a stalled
-  /// screen (its rule "连续3次操作后界面没有变化").
+  /// Keep ≥3 so the model has enough consecutive frames to compare and notice
+  /// when its actions stop changing the screen. The prompt has no explicit
+  /// "stall after N identical screens" rule, so [stallThreshold] is the real
+  /// backstop — see its doc below.
   final int keepScreenshots;
 
   /// Abort the task when the screen stays byte-identical for this many
