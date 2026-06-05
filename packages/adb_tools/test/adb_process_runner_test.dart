@@ -68,5 +68,17 @@ void main() {
       expect(line, isNot(contains('Instance of')));
       expect(line.split('\n'), hasLength(1));
     });
+
+    test('multiline stderr is flattened to one line', () {
+      final r = ProcessResult(1, 1, '', 'error: device offline\nWaiting...');
+      final line = AdbProcessRunnerImpl.formatResultLine('adb x', r);
+      expect(line.split('\n'), hasLength(1));
+      expect(line, 'adb x → exit 1 | stderr: error: device offline Waiting...');
+    });
+
+    test('whitespace-only stderr is treated as absent', () {
+      final r = ProcessResult(1, 0, '', '   \n  ');
+      expect(AdbProcessRunnerImpl.formatResultLine('adb x', r), 'adb x → exit 0');
+    });
   });
 }

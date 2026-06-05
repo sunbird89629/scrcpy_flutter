@@ -44,10 +44,18 @@ class AdbProcessRunnerImpl extends AdbProcessRunner {
   }
 
   /// One-line FINE log of a finished ADB process: `<command> → exit <code>`,
-  /// with stderr appended when non-empty. Package-internal (lives in `src/`,
-  /// not exported) but non-private so it can be unit-tested directly.
+  /// with stderr appended when non-empty. Internal newlines in stderr are
+  /// flattened to spaces so the entry stays on one line.
+  ///
+  /// Assumes system-encoding (String) stdout/stderr — the default for
+  /// `Process.run`, which is what [run] uses. Raw-bytes (`List<int>`) stderr
+  /// would stringify as a byte list; not a concern for the current call site.
+  ///
+  /// Package-internal (lives in `src/`, not exported) but non-private so it can
+  /// be unit-tested directly.
   static String formatResultLine(String command, ProcessResult r) {
-    final stderr = (r.stderr as Object?)?.toString().trim() ?? '';
+    final stderr =
+        ((r.stderr as Object?)?.toString() ?? '').trim().replaceAll('\n', ' ');
     return stderr.isEmpty
         ? '$command → exit ${r.exitCode}'
         : '$command → exit ${r.exitCode} | stderr: $stderr';
