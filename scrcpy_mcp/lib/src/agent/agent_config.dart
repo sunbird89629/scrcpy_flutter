@@ -1,5 +1,3 @@
-import 'dart:io';
-
 const _kDefaultSystemPrompt = '''
 今天的日期是: {DATE}
 你是一个智能体分析专家，可以根据操作历史和当前状态图执行一系列操作来完成任务。
@@ -73,12 +71,6 @@ class AgentConfig {
     this.stallThreshold = 3,
     this.repeatedActionThreshold = 10,
   });
-
-  factory AgentConfig.fromEnv() => AgentConfig(
-    maxSteps:
-        int.tryParse(Platform.environment['SCRCPY_AGENT_MAX_STEPS'] ?? '') ??
-        15,
-  );
 
   final int maxSteps;
   final String systemPrompt;
