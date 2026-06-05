@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:adb_tools/src/adb_process_runner.dart';
 import 'package:adb_tools/src/exceptions.dart';
 import 'package:test/test.dart';
@@ -37,6 +39,34 @@ void main() {
         runner.run('/nonexistent/binary', ['--version']),
         throwsA(isA<AdbException>()),
       );
+    });
+  });
+
+  group('AdbProcessRunnerImpl.formatResultLine', () {
+    test('success without stderr → single line with exit code', () {
+      final r = ProcessResult(123, 0, 'ok', '');
+      expect(
+        AdbProcessRunnerImpl.formatResultLine('adb shell input tap 1 2', r),
+        'adb shell input tap 1 2 → exit 0',
+      );
+    });
+
+    test('non-empty stderr is appended', () {
+      final r = ProcessResult(123, 1, '', 'boom');
+      expect(
+        AdbProcessRunnerImpl.formatResultLine('adb x', r),
+        'adb x → exit 1 | stderr: boom',
+      );
+    });
+
+    test('no decorative block or ProcessResult dump', () {
+      final line = AdbProcessRunnerImpl.formatResultLine(
+        'cmd',
+        ProcessResult(1, 0, '', ''),
+      );
+      expect(line, isNot(contains('>>>>')));
+      expect(line, isNot(contains('Instance of')));
+      expect(line.split('\n'), hasLength(1));
     });
   });
 }

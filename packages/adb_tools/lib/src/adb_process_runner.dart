@@ -31,7 +31,7 @@ class AdbProcessRunnerImpl extends AdbProcessRunner {
   }) async {
     try {
       final result = await Process.run(executable, arguments).timeout(timeout);
-      _log.fine(_formatResult([executable, ...arguments].join(' '), result));
+      _log.fine(formatResultLine([executable, ...arguments].join(' '), result));
       return result;
     } on TimeoutException {
       throw AdbException(
@@ -43,13 +43,13 @@ class AdbProcessRunnerImpl extends AdbProcessRunner {
     }
   }
 
-  static String _formatResult(String command, ProcessResult r) {
-    final buf = StringBuffer();
-    buf.writeln();
-    buf.writeln('>' * 20);
-    buf.writeln('command:$command');
-    buf.writeln('result:$r');
-    buf.writeln('<' * 20);
-    return buf.toString();
+  /// One-line FINE log of a finished ADB process: `<command> → exit <code>`,
+  /// with stderr appended when non-empty. Package-internal (lives in `src/`,
+  /// not exported) but non-private so it can be unit-tested directly.
+  static String formatResultLine(String command, ProcessResult r) {
+    final stderr = (r.stderr as Object?)?.toString().trim() ?? '';
+    return stderr.isEmpty
+        ? '$command → exit ${r.exitCode}'
+        : '$command → exit ${r.exitCode} | stderr: $stderr';
   }
 }
