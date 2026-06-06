@@ -1,4 +1,5 @@
 import 'package:scrcpy_mcp/scrcpy_mcp.dart';
+import 'package:scrcpy_mcp/src/agent/action_summary.dart';
 import 'package:test/test.dart';
 
 // Fake that replays a fixed sequence of LlmResponse values.
@@ -386,6 +387,33 @@ void main() {
 
     test('Finish shows quoted message', () {
       expect(actionSummary(const FinishAction('done')), 'Finish("done")');
+    });
+
+    test('Long Press and Double Tap show coordinates', () {
+      expect(
+        actionSummary(const DoAction(action: 'Long Press', element: [1, 2])),
+        'Long Press(1,2)',
+      );
+      expect(
+        actionSummary(const DoAction(action: 'Double Tap', element: [3, 4])),
+        'Double Tap(3,4)',
+      );
+    });
+
+    test('Type_Name shows quoted text', () {
+      expect(
+        actionSummary(const DoAction(action: 'Type_Name', text: '李四')),
+        'Type_Name("李四")',
+      );
+    });
+
+    test('Home renders without parens', () {
+      expect(actionSummary(const DoAction(action: 'Home')), 'Home');
+    });
+
+    test('missing coordinates render as ?', () {
+      expect(actionSummary(const DoAction(action: 'Tap')), 'Tap(?)');
+      expect(actionSummary(const DoAction(action: 'Swipe')), 'Swipe(?→?)');
     });
   });
 }

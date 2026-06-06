@@ -36,7 +36,6 @@ class LlmMessage {
         'imageMimeType: $imageMimeType'
         ')';
   }
-
 }
 
 /// Response from the LLM.
