@@ -33,7 +33,7 @@ void main() {
       final server = ScrcpyMcpServer(
         session: session,
         adb: scrcpyAdb,
-        agentConfig: AgentConfig.fromEnv(),
+        agentConfig: AgentConfig(),
         llmClient: AutoglmLlmClient.fromEnv(),
       );
       (client, close) = await connectMcpPair(server);

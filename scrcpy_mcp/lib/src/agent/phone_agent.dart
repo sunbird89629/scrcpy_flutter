@@ -1,11 +1,11 @@
-import 'package:collection/collection.dart';
 import 'package:logger_utils/logger_utils.dart';
 
-import 'action_parser.dart';
+import 'action_summary.dart';
 import 'agent_config.dart';
 import 'llm_client.dart';
+import 'response_parser.dart';
 
-final _log = Logger('scrcpy.mcp.agent');
+final _log = Logger('PhoneAgent');
 
 /// Callback that takes a screenshot and returns base64-encoded PNG data.
 typedef ScreenshotProvider =
@@ -19,7 +19,7 @@ typedef ActionRunner = Future<String> Function(PhoneAction action);
 /// On each step:
 ///   1. Take a screenshot
 ///   2. Send [system + user(message+screenshot) + history] to the LLM
-///   3. Parse the model's text output with [ActionParser]
+///   3. Parse the model's text output with [ResponseParser]
 ///   4. Execute parsed [DoAction] via [actionRunner], or finish
 ///   5. Append to history and loop
 class PhoneAgent {
@@ -46,16 +46,8 @@ class PhoneAgent {
   ];
 
   Future<AgentResult> run(String message) async {
-    final now = DateTime.now();
-    final mm = now.month.toString().padLeft(2, '0');
-    final dd = now.day.toString().padLeft(2, '0');
-    final weekday = _weekdayNames[now.weekday - 1];
-    final dateStr = '${now.year}年$mm月$dd日 $weekday';
-    final systemPrompt = config.systemPrompt.replaceFirst('{DATE}', dateStr);
-
-    final messages = MessageList(<LlmMessage>[
-      LlmMessage(role: 'system', textContent: systemPrompt),
-    ]);
+    _log.info('task: $message');
+    final messages = _buildInitialMessages();
 
     String? prevScreenshot;
     var stalledSteps = 0;
@@ -64,163 +56,223 @@ class PhoneAgent {
     var repeatedActions = 0;
 
     for (var step = 0; step < config.maxSteps; step++) {
-      // 1. Take screenshot
+      // 1. Take screenshot, then check the stall backstop.
       final screenshot = await takeScreenshot();
-
-      // Stall backstop: if the screen is unchanged across consecutive steps,
-      // the actions are having no effect. Abort instead of burning steps/tokens
-      // re-asking the model (which often keeps guessing). Mirrors the prompt's
-      // own "连续3次操作后界面没有变化" rule, which the model tends to ignore.
       if (prevScreenshot != null && screenshot.base64 == prevScreenshot) {
         stalledSteps++;
       } else {
         stalledSteps = 0;
       }
       prevScreenshot = screenshot.base64;
-      if (stalledSteps >= config.stallThreshold) {
-        return AgentResult(
-          result:
-              'Aborted: screen unchanged for ${stalledSteps + 1} consecutive '
-              'steps — actions are having no visible effect.',
-          steps: step + 1,
-          success: false,
-        );
+      final stall = _stallAbort(stalledSteps, step);
+      if (stall != null) {
+        _log.warning(stall.result);
+        return stall;
       }
 
-      // Feed the previous action's result back instead of a constant prompt.
-      // This gives the model outcome feedback to self-correct, and — because the
-      // text varies each step — avoids the low-temperature repetition collapse
-      // that a fixed "继续执行任务" can trigger.
-      final userContent = step == 0
-          ? message
-          : '上一步操作结果：${lastResult ?? '已执行'}。请对照当前截图判断是否生效，并继续完成任务。';
-
-      final llmMessage = LlmMessage(
-        role: 'user',
-        textContent: userContent,
-        imageBase64: screenshot.base64,
-        imageMimeType: screenshot.mimeType,
+      // 2. Ask the model for the next action (handles truncation retry).
+      final userContent = _buildUserContent(step, message, lastResult);
+      final parsed = await _requestAction(
+        messages,
+        userContent: userContent,
+        screenshot: screenshot,
       );
-      // 2. Send to LLM with screenshot
-      messages.add(llmMessage);
-      var response = await llmClient.chat(messages: _trimHistory(messages));
-      var rawText = response.text ?? '';
-      _log.fine('rawText:$rawText');
-      var action = rawText.isEmpty ? null : ActionParser.parse(rawText);
 
-      // Recover from a truncated response: finish_reason="length" means the
-      // output hit max_tokens and is usually repetition garbage with no parsable
-      // action. Retry once asking for a single, concise action before giving up.
-      if (action == null && response.finishReason == 'length') {
-        _log.info('output truncated (length); retrying with a concise nudge');
-        messages.add(
-          const LlmMessage(
-            role: 'user',
-            textContent:
-                '上次输出过长被截断。请只输出一个动作指令（如 do(action="Tap", element=[x,y]) 或 finish(message="...")），不要输出任何多余内容。',
-          ),
-        );
-        response = await llmClient.chat(messages: _trimHistory(messages));
-        rawText = response.text ?? '';
-        _log.fine('rawText(retry):$rawText');
-        action = rawText.isEmpty ? null : ActionParser.parse(rawText);
-      }
-
-      if (rawText.isEmpty) {
-        return AgentResult(
-          result: 'Model returned empty response at step $step',
-          steps: step + 1,
-          success: false,
-        );
-      }
-
-      if (action == null) {
-        // The model must emit a parseable action — completion goes through
-        // finish(...)/screenshot(...), which ActionParser handles. Reaching
-        // here means the output format broke, so report failure instead of
-        // masquerading a format error as success.
-        final cleaned = rawText.replaceAll(RegExp('</?think>'), '').trim();
-        return AgentResult(
-          result: 'Could not parse an action from model output: $cleaned',
-          steps: step + 1,
-          success: false,
-        );
-      }
-
-      // 4. Add assistant response to history, dropping any <think>…</think>
-      // block to save context. Untagged reasoning is kept on purpose — the model
-      // often records data there (e.g. items to summarize) without using tags.
-      final historyText = rawText
-          .replaceAll(RegExp('<think>.*?</think>', dotAll: true), '')
-          .trim();
-      final assistantMessage = LlmMessage(
-        role: 'assistant',
-        textContent: historyText.isEmpty ? rawText : historyText,
-      );
-      messages.add(assistantMessage);
-
-      switch (action) {
-        case DoAction():
-          // Take_over (login/verification) and Interact (ambiguous choice) both
-          // need a human in the loop, which a headless run_task does not have —
-          // abort with the model's message rather than guess.
-          if (action.action == 'Take_over' || action.action == 'Interact') {
-            return AgentResult(
-              result: 'Task requires human: ${action.message ?? action.action}',
-              steps: step + 1,
-              success: false,
-            );
-          }
-
-          // Action-repeat backstop: the screen-unchanged check above misses
-          // loops where the screen keeps changing but the agent never converges
-          // (e.g. scrolling a long list forever with an identical Swipe). Abort
-          // when the exact same action repeats too many times. The threshold is
-          // looser than stallThreshold because some repetition (scrolling) is
-          // legitimate.
-          final sig = _actionSignature(action);
-          repeatedActions = sig == lastActionSig ? repeatedActions + 1 : 1;
-          lastActionSig = sig;
-          if (repeatedActions >= config.repeatedActionThreshold) {
-            return AgentResult(
-              result:
-                  'Aborted: repeated the same action $repeatedActions times '
-                  'without completing the task: $action',
-              steps: step + 1,
-              success: false,
-            );
-          }
-
-          String result;
-          try {
-            result = await actionRunner(action);
-          } catch (e) {
-            result = 'Error executing $action: $e';
-          }
-          lastResult = result;
-          if (step == config.maxSteps - 1) {
-            return AgentResult(
-              result: 'Max steps reached after executing: $action → $result',
-              steps: step + 1,
-              success: false,
-            );
-          }
-
-        case FinishAction():
+      switch (parsed) {
+        case ParseFailure(:final reason, :final content):
+          // Completion goes through finish(...), which the parser recognizes.
+          // A failure here means the output format broke — report it rather
+          // than masquerading a format error as success.
+          _log.warning('step $step parse failed: $reason');
+          _log.fine('reply(unparsed):\n${_indent(content)}');
           return AgentResult(
-            result: action.message,
+            result: 'Could not parse an action ($reason): ${content.trim()}',
             steps: step + 1,
-            success: true,
+            success: false,
           );
+        case ParsedAction(:final action, :final content):
+          _log.info('step $step  ${actionSummary(action)}');
+          _log.fine('reply:\n${_indent(content)}');
+          // Record the assistant turn (content already excludes <think>).
+          messages.add(LlmMessage(role: 'assistant', textContent: content));
+          final outcome = await _dispatchAction(
+            action,
+            step,
+            lastActionSig: lastActionSig,
+            repeatedActions: repeatedActions,
+          );
+          final resultText =
+              outcome.done?.result ?? outcome.result ?? '(no result)';
+          _log.info('step $step → $resultText');
+          if (outcome.done != null) return outcome.done!;
+          lastResult = outcome.result;
+          lastActionSig = outcome.sig;
+          repeatedActions = outcome.repeats;
       }
     }
 
-    return AgentResult(
+    final exhausted = AgentResult(
       result:
           'Max steps (${config.maxSteps}) reached without completing the task.',
       steps: config.maxSteps,
       success: false,
     );
+    _log.warning(exhausted.result);
+    return exhausted;
+  }
+
+  /// Builds the initial message list: a single system message with today's date
+  /// substituted into [AgentConfig.systemPrompt].
+  List<LlmMessage> _buildInitialMessages() {
+    final now = DateTime.now();
+    final mm = now.month.toString().padLeft(2, '0');
+    final dd = now.day.toString().padLeft(2, '0');
+    final weekday = _weekdayNames[now.weekday - 1];
+    final dateStr = '${now.year}年$mm月$dd日 $weekday';
+    final systemPrompt = config.systemPrompt.replaceFirst('{DATE}', dateStr);
+    return <LlmMessage>[LlmMessage(role: 'system', textContent: systemPrompt)];
+  }
+
+  /// Stall backstop: if the screen is unchanged across consecutive steps, the
+  /// actions are having no effect. Abort instead of burning steps/tokens
+  /// re-asking the model (which often keeps guessing). Mirrors the prompt's own
+  /// "连续3次操作后界面没有变化" rule, which the model tends to ignore. Returns the
+  /// abort result, or null to keep going.
+  AgentResult? _stallAbort(int stalledSteps, int step) {
+    if (stalledSteps < config.stallThreshold) return null;
+    return AgentResult(
+      result:
+          'Aborted: screen unchanged for ${stalledSteps + 1} consecutive '
+          'steps — actions are having no visible effect.',
+      steps: step + 1,
+      success: false,
+    );
+  }
+
+  /// The user turn text for [step]. Step 0 is the task itself; later steps feed
+  /// the previous action's result back instead of a constant prompt. This gives
+  /// the model outcome feedback to self-correct, and — because the text varies
+  /// each step — avoids the low-temperature repetition collapse that a fixed
+  /// "继续执行任务" can trigger.
+  String _buildUserContent(int step, String message, String? lastResult) =>
+      step == 0
+      ? message
+      : '上一步操作结果：${lastResult ?? '已执行'}。请对照当前截图判断是否生效，并继续完成任务。';
+
+  /// Sends a user turn (text + screenshot) and parses the model's reply into a
+  /// [ParsedResponse]. On a truncated response (finish_reason="length", usually
+  /// repetition garbage with no parsable action) it retries once asking for a
+  /// single concise action before giving up. Mutates [messages] with the turns
+  /// it sends.
+  Future<ParsedResponse> _requestAction(
+    List<LlmMessage> messages, {
+    required String userContent,
+    required ({String base64, String mimeType}) screenshot,
+  }) async {
+    messages.add(
+      LlmMessage(
+        role: 'user',
+        textContent: userContent,
+        imageBase64: screenshot.base64,
+        imageMimeType: screenshot.mimeType,
+      ),
+    );
+    final trimmedHistory = _trimHistory(messages);
+    var response = await llmClient.chat(messages: trimmedHistory);
+    var parsed = ResponseParser.parse(response.text ?? '');
+
+    if (parsed is ParseFailure && response.finishReason == 'length') {
+      _log.info('output truncated (length); retrying with a concise nudge');
+      messages.add(
+        const LlmMessage(
+          role: 'user',
+          textContent:
+              '上次输出过长被截断。请只输出一个动作指令（如 do(action="Tap", element=[x,y]) 或 finish(message="...")），不要输出任何多余内容。',
+        ),
+      );
+      response = await llmClient.chat(messages: _trimHistory(messages));
+      parsed = ResponseParser.parse(response.text ?? '');
+    }
+    return parsed;
+  }
+
+  /// Executes [action] and reports the loop's next state. `done` non-null means
+  /// the run should terminate with that result; otherwise `result`/`sig`/
+  /// `repeats` are the updated carry-over state for the next step.
+  Future<({AgentResult? done, String? result, String? sig, int repeats})>
+  _dispatchAction(
+    PhoneAction action,
+    int step, {
+    required String? lastActionSig,
+    required int repeatedActions,
+  }) async {
+    switch (action) {
+      case DoAction():
+        // Take_over (login/verification) and Interact (ambiguous choice) both
+        // need a human in the loop, which a headless run_task does not have —
+        // abort with the model's message rather than guess.
+        if (action.action == 'Take_over' || action.action == 'Interact') {
+          return (
+            done: AgentResult(
+              result: 'Task requires human: ${action.message ?? action.action}',
+              steps: step + 1,
+              success: false,
+            ),
+            result: null,
+            sig: lastActionSig,
+            repeats: repeatedActions,
+          );
+        }
+
+        // Action-repeat backstop: the screen-unchanged check misses loops where
+        // the screen keeps changing but the agent never converges (e.g.
+        // scrolling a long list forever with an identical Swipe). Abort when the
+        // exact same action repeats too many times. The threshold is looser than
+        // stallThreshold because some repetition (scrolling) is legitimate.
+        final sig = _actionSignature(action);
+        final repeats = sig == lastActionSig ? repeatedActions + 1 : 1;
+        if (repeats >= config.repeatedActionThreshold) {
+          return (
+            done: AgentResult(
+              result:
+                  'Aborted: repeated the same action $repeats times '
+                  'without completing the task: $action',
+              steps: step + 1,
+              success: false,
+            ),
+            result: null,
+            sig: sig,
+            repeats: repeats,
+          );
+        }
+
+        String result;
+        try {
+          result = await actionRunner(action);
+        } catch (e) {
+          result = 'Error executing $action: $e';
+        }
+        final done = step == config.maxSteps - 1
+            ? AgentResult(
+                result: 'Max steps reached after executing: $action → $result',
+                steps: step + 1,
+                success: false,
+              )
+            : null;
+        return (done: done, result: result, sig: sig, repeats: repeats);
+
+      case FinishAction():
+        return (
+          done: AgentResult(
+            result: action.message,
+            steps: step + 1,
+            success: true,
+          ),
+          result: null,
+          sig: lastActionSig,
+          repeats: repeatedActions,
+        );
+    }
   }
 
   /// A stable identity for a [DoAction], used to detect consecutive repeats.
@@ -261,11 +313,6 @@ class PhoneAgent {
   }
 }
 
-class MessageList extends DelegatingList<LlmMessage> {
-  MessageList(super.base);
-  @override
-  void add(LlmMessage value) {
-    _log.fine(value.toLog());
-    super.add(value);
-  }
-}
+/// Indents every line of [text] by two spaces for the FINE `reply:` block.
+String _indent(String text) =>
+    text.trim().split('\n').map((line) => '  $line').join('\n');

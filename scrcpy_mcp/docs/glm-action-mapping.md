@@ -75,10 +75,10 @@ GLM 的原始坐标直接传给 scrcpy，并把 `width/height` 都设为 **1000*
 ## 实现位置与测试
 
 - 提示词：`lib/src/agent/agent_config.dart`（`_kDefaultSystemPrompt`，`{DATE}` 占位）。
-- 解析：`lib/src/agent/action_parser.dart`（`<answer>` 抽取 + do()/shorthand 双格式）。
+- 解析：`lib/src/agent/response_parser.dart`（`ResponseParser` → `ParsedResponse`；`<think>`/`<answer>` 抽取，仅支持 `do(...)` / `finish(...)`）。
 - 执行：`lib/src/tools/run_task.dart`（动作 → `ScrcpySession` 控制消息）。
 - 循环/拦截：`lib/src/agent/phone_agent.dart`（ReAct 循环、stall 兜底、`Interact`/`Take_over` 拦截）。
-- 测试：`test/phone_agent_test.dart` 覆盖各动作解析 + `Interact` 中止行为。
+- 测试：`test/response_parser_test.dart` 覆盖解析（do/finish、think/content 分离、未转义引号、各 `ParseFailure` 原因）；`test/phone_agent_test.dart` 覆盖循环编排 + `Interact` 中止行为。
 
 ## 仍可改进（按需）
 

@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 
 import 'adb_agent_runner.dart';
 
-final _log = Logger('youtube.history');
+final _log = Logger('youtube');
 
 // Reusable task: collect the last week's YouTube watch history into a table.
 // The agent records each entry in its reasoning (Note) and returns the table in

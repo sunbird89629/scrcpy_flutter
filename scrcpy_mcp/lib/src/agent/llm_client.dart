@@ -36,10 +36,6 @@ class LlmMessage {
         'imageMimeType: $imageMimeType'
         ')';
   }
-
-  String toLog() {
-    return '$role:$textContent';
-  }
 }
 
 /// Response from the LLM.

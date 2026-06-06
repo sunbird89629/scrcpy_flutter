@@ -1,4 +1,5 @@
 import 'package:scrcpy_mcp/scrcpy_mcp.dart';
+import 'package:scrcpy_mcp/src/agent/action_summary.dart';
 import 'package:test/test.dart';
 
 // Fake that replays a fixed sequence of LlmResponse values.
@@ -327,177 +328,92 @@ void main() {
       expect(result.steps, 1);
     });
 
-    test('parses Launch shorthand from model output', () async {
-      final executed = <String>[];
-      final result = await makeAgent(
-        [
-          const LlmResponse(text: 'Launch("Chrome")'),
-          const LlmResponse(text: 'finish(message="Done")'),
-        ],
-        actionRunner: (action) async {
-          executed.add('$action');
-          return 'ok';
-        },
-      ).run('open chrome');
-
-      expect(result.success, isTrue);
-      expect(executed.length, 1);
-      expect(executed.first, contains('Launch'));
-    });
-
-    test('parses Tap shorthand with coordinates', () async {
-      final executed = <String>[];
-      final result = await makeAgent(
-        [
-          const LlmResponse(text: 'Tap([500, 300])'),
-          const LlmResponse(text: 'finish(message="Done")'),
-        ],
-        actionRunner: (action) async {
-          executed.add('$action');
-          return 'ok';
-        },
-      ).run('tap screen');
-
-      expect(result.success, isTrue);
-      expect(executed.length, 1);
-      expect(executed.first, contains('Tap'));
-    });
-
-    test('parses screenshot shorthand as FinishAction', () async {
-      final result = await makeAgent([
-        const LlmResponse(text: 'screenshot(message="Screen captured")'),
-      ]).run('capture');
-
-      expect(result.success, isTrue);
-      expect(result.result, 'Screen captured');
-      expect(result.steps, 1);
-    });
   });
 
-  // ── ActionParser unit tests ─────────────────────────────────────────────
-
-  group('ActionParser', () {
-    test('parses do() with keywords', () {
-      final action = ActionParser.parse('do(action="Tap", element=[500, 300])');
-      expect(action, isA<DoAction>());
-      final doAction = action! as DoAction;
-      expect(doAction.action, 'Tap');
-      expect(doAction.element, [500, 300]);
-    });
-
-    test('parses Launch shorthand', () {
-      final action = ActionParser.parse('Launch("Chrome")');
-      expect(action, isA<DoAction>());
-      final doAction = action! as DoAction;
-      expect(doAction.action, 'Launch');
-      expect(doAction.app, 'Chrome');
-    });
-
-    test('parses Tap shorthand', () {
-      final action = ActionParser.parse('Tap([500, 300])');
-      expect(action, isA<DoAction>());
-      final doAction = action! as DoAction;
-      expect(doAction.action, 'Tap');
-      expect(doAction.element, [500, 300]);
-    });
-
-    test('parses Back shorthand', () {
-      final action = ActionParser.parse('Back()');
-      expect(action, isA<DoAction>());
-      final doAction = action! as DoAction;
-      expect(doAction.action, 'Back');
-    });
-
-    test('parses Swipe shorthand with two coordinate pairs', () {
-      final action = ActionParser.parse('Swipe([500, 1500], [500, 500])');
-      expect(action, isA<DoAction>());
-      final doAction = action! as DoAction;
-      expect(doAction.action, 'Swipe');
-      expect(doAction.start, [500, 1500]);
-      expect(doAction.end, [500, 500]);
-    });
-
-    test('parses inside <answer> tags', () {
-      final action = ActionParser.parse(
-        '<answer>do(action="Tap", element=[100, 200])</answer>',
+  group('actionSummary', () {
+    test('Tap shows coordinates', () {
+      expect(
+        actionSummary(const DoAction(action: 'Tap', element: [897, 939])),
+        'Tap(897,939)',
       );
-      expect(action, isA<DoAction>());
     });
 
-    test('parses model output with thinking prefix', () {
-      final action = ActionParser.parse(
-        'Let me launch the browser.\nLaunch("Chrome")',
+    test('Swipe shows start→end', () {
+      expect(
+        actionSummary(
+          const DoAction(action: 'Swipe', start: [499, 702], end: [499, 263]),
+        ),
+        'Swipe(499,702→499,263)',
       );
-      expect(action, isA<DoAction>());
     });
 
-    test('finish() tolerates unescaped inner quotes in message', () {
-      // Real autoglm-phone output: natural-language prefix + finish() whose
-      // message contains unescaped inner quotes around 「Twitter（X）的主页」.
-      const content =
-          '否，界面上没有出现"Twitter（X）的主页"。当前显示的是Google的界面。\n'
-          'finish(message="否，界面上没有出现"Twitter（X）的主页"。当前显示的是Google的界面。")';
-      final action = ActionParser.parse(content);
-
-      expect(action, isA<FinishAction>());
-      final finish = action! as FinishAction;
-      // Message is extracted cleanly: no `message="` wrapper leaking in, and
-      // the inner quotes are preserved verbatim.
-      expect(finish.message, startsWith('否，界面上没有出现'));
-      expect(finish.message, isNot(contains('message=')));
-      expect(finish.message, contains('"Twitter（X）的主页"'));
-      expect(finish.message, endsWith('Google的界面。'));
-    });
-
-    test('parses Type_Name do() into text', () {
-      final action = ActionParser.parse('do(action="Type_Name", text="张三")');
-      expect(action, isA<DoAction>());
-      final doAction = action! as DoAction;
-      expect(doAction.action, 'Type_Name');
-      expect(doAction.text, '张三');
-    });
-
-    test('parses Interact do() with no args', () {
-      final action = ActionParser.parse('do(action="Interact")');
-      expect(action, isA<DoAction>());
-      expect((action! as DoAction).action, 'Interact');
-    });
-
-    test('parses Note do() into message', () {
-      final action = ActionParser.parse('do(action="Note", message="True")');
-      expect(action, isA<DoAction>());
-      final doAction = action! as DoAction;
-      expect(doAction.action, 'Note');
-      expect(doAction.message, 'True');
-    });
-
-    test('parses Call_API instruction into message', () {
-      final action = ActionParser.parse(
-        'do(action="Call_API", instruction="总结当前页面")',
+    test('Wait shows the raw duration', () {
+      expect(
+        actionSummary(const DoAction(action: 'Wait', duration: '2 seconds')),
+        'Wait(2 seconds)',
       );
-      expect(action, isA<DoAction>());
-      final doAction = action! as DoAction;
-      expect(doAction.action, 'Call_API');
-      expect(doAction.message, '总结当前页面');
     });
 
-    test('parses sensitive Tap with message', () {
-      final action = ActionParser.parse(
-        'do(action="Tap", element=[10, 20], message="重要操作")',
+    test('Launch shows the app', () {
+      expect(
+        actionSummary(const DoAction(action: 'Launch', app: 'Chrome')),
+        'Launch(Chrome)',
       );
-      expect(action, isA<DoAction>());
-      final doAction = action! as DoAction;
-      expect(doAction.action, 'Tap');
-      expect(doAction.element, [10, 20]);
-      expect(doAction.message, '重要操作');
     });
 
-    test('parses Type_Name shorthand into text', () {
-      final action = ActionParser.parse('Type_Name("李四")');
-      expect(action, isA<DoAction>());
-      final doAction = action! as DoAction;
-      expect(doAction.action, 'Type_Name');
-      expect(doAction.text, '李四');
+    test('Type shows quoted text', () {
+      expect(
+        actionSummary(const DoAction(action: 'Type', text: '张三')),
+        'Type("张三")',
+      );
+    });
+
+    test('long text is truncated with an ellipsis', () {
+      final s = actionSummary(DoAction(action: 'Type', text: '一' * 30));
+      expect(s, startsWith('Type("'));
+      expect(s, contains('…'));
+    });
+
+    test('Back renders without parens', () {
+      expect(actionSummary(const DoAction(action: 'Back')), 'Back');
+    });
+
+    test('Note shows its message', () {
+      expect(
+        actionSummary(const DoAction(action: 'Note', message: 'True')),
+        'Note("True")',
+      );
+    });
+
+    test('Finish shows quoted message', () {
+      expect(actionSummary(const FinishAction('done')), 'Finish("done")');
+    });
+
+    test('Long Press and Double Tap show coordinates', () {
+      expect(
+        actionSummary(const DoAction(action: 'Long Press', element: [1, 2])),
+        'Long Press(1,2)',
+      );
+      expect(
+        actionSummary(const DoAction(action: 'Double Tap', element: [3, 4])),
+        'Double Tap(3,4)',
+      );
+    });
+
+    test('Type_Name shows quoted text', () {
+      expect(
+        actionSummary(const DoAction(action: 'Type_Name', text: '李四')),
+        'Type_Name("李四")',
+      );
+    });
+
+    test('Home renders without parens', () {
+      expect(actionSummary(const DoAction(action: 'Home')), 'Home');
+    });
+
+    test('missing coordinates render as ?', () {
+      expect(actionSummary(const DoAction(action: 'Tap')), 'Tap(?)');
+      expect(actionSummary(const DoAction(action: 'Swipe')), 'Swipe(?→?)');
     });
   });
 }
