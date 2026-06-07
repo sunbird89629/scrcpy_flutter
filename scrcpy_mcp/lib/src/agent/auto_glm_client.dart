@@ -3,26 +3,39 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:logger_utils/logger_utils.dart';
+import 'package:meta/meta.dart';
 
 import 'llm_client.dart';
 
 final _log = Logger('scrcpy.mcp.llm');
 
-class AutoglmLlmClient {
-  AutoglmLlmClient({
+class AutoGLMClient {
+  /// Production constructor — wraps the HTTP layer in a [LoggingClient] so
+  /// request/response logging is always on. Callers don't supply a client.
+  AutoGLMClient({
     required this.baseUrl,
     required this.apiKey,
     required this.model,
-    http.Client? httpClient,
-  }) : _http = httpClient ?? http.Client();
+  }) : _http = LoggingClient(logger: Logger('scrcpy.mcp.llm.http'));
 
-  factory AutoglmLlmClient.fromEnv() => AutoglmLlmClient(
+  /// Test-only seam: inject a [http.Client] (e.g. `MockClient`) to exercise
+  /// [chat] offline. The analyzer flags use of this outside the package's
+  /// tests, so production code can't accidentally bypass logging.
+  @visibleForTesting
+  AutoGLMClient.withClient({
+    required this.baseUrl,
+    required this.apiKey,
+    required this.model,
+    required http.Client httpClient,
+  }) : _http = httpClient;
+
+  factory AutoGLMClient.fromEnv() => AutoGLMClient(
     baseUrl: Platform.environment['AUTOGLM_BASE_URL']!,
     apiKey: Platform.environment['AUTOGLM_API_KEY']!,
     model: Platform.environment['AUTOGLM_MODEL']!,
   );
 
-  factory AutoglmLlmClient.fromTest() => AutoglmLlmClient(
+  factory AutoGLMClient.fromTest() => AutoGLMClient(
     baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
     apiKey: 'dc45fcec2e1743f1ae732cf3b6e6ad17.tMejaXqUvJbJ5zZO',
     model: 'autoglm-phone',

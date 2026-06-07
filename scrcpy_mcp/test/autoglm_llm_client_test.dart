@@ -2,13 +2,13 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:scrcpy_mcp/src/agent/auto_glm_client.dart';
 import 'package:scrcpy_mcp/src/agent/llm_client.dart';
-import 'package:scrcpy_mcp/src/agent/autoglm_llm_client.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('AutoglmLlmClient', () {
-    AutoglmLlmClient makeClient(http.Client mockHttp) => AutoglmLlmClient(
+    AutoGLMClient makeClient(http.Client mockHttp) => AutoGLMClient.withClient(
       baseUrl: 'https://api.openai.com/v1',
       apiKey: 'sk-test',
       model: 'gpt-4o',
@@ -34,7 +34,7 @@ void main() {
         }),
       );
 
-      await client.chat(messages: []);
+      await client.chat(messages: <LlmMessage>[]);
 
       expect(captured.headers['Authorization'], 'Bearer sk-test');
       final body = jsonDecode(captured.body) as Map<String, dynamic>;
@@ -58,7 +58,7 @@ void main() {
         ),
       );
 
-      final response = await client.chat(messages: []);
+      final response = await client.chat(messages: <LlmMessage>[]);
 
       expect(response.text, 'Task complete');
     });
@@ -108,7 +108,7 @@ void main() {
       );
 
       await expectLater(
-        client.chat(messages: []),
+        client.chat(messages: <LlmMessage>[]),
         throwsA(isA<LlmException>()),
       );
     });

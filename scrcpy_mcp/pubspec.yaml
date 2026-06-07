@@ -17,6 +17,7 @@ dependencies:
     #   ref: v0.1.0
     path: ../../logger_utils
   http: ^1.2.0
+  meta: ^1.15.0
   mcp_dart: ^2.1.1
   scrcpy_client:
     path: ../packages/scrcpy_client

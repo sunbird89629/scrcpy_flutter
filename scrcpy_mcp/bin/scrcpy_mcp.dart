@@ -14,7 +14,7 @@ void main(List<String> args) async {
 
   final session = await ScrcpySessionImpl.create(adb: scrcpyAdb);
 
-  final llmClient = AutoglmLlmClient.fromTest();
+  final llmClient = AutoGLMClient.fromTest();
 
   final server = ScrcpyMcpServer(
     session: session,

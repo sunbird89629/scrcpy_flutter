@@ -31,7 +31,7 @@ Future<AgentResult> runAgentTask({
   final (screenWidth, screenHeight) = await adb.getDeviceScreenInfo(device);
   final agent = PhoneAgent(
     config: AgentConfig(maxSteps: maxSteps),
-    llmClient: AutoglmLlmClient.fromTest().chat,
+    llmClient: AutoGLMClient.fromTest().chat,
     takeScreenshot: blankRetryingScreenshot(() => adb.takeScreenshot(device)),
     actionRunner: (action) => _runAction(ScrcpyMcpAdb(adb), device, (
       screenWidth.toInt(),
