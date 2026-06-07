@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:mcp_dart/mcp_dart.dart';
 import 'package:scrcpy_client/scrcpy_client.dart';
 
@@ -7,6 +5,7 @@ import '../agent/response_parser.dart';
 import '../agent/agent_config.dart';
 import '../agent/llm_client.dart';
 import '../agent/phone_agent.dart';
+import '../agent/screenshot_util.dart';
 import '../mcp_tool.dart';
 import '../session_context.dart';
 
@@ -16,11 +15,6 @@ import '../session_context.dart';
 /// coordinate with a 1000×1000 frame lands at the correct device pixel,
 /// independent of the actual device resolution.
 const _kCoordSpace = 1000;
-
-/// A real 1080-wide screencap is tens to hundreds of KB; a FLAG_SECURE / blank
-/// screen encodes to a near-empty PNG. Below this byte size we treat the
-/// screenshot as blank and retry rather than feed the model a black frame.
-const _kBlankScreenshotBytes = 20000;
 
 // Android KeyEvent constants for clearing a text field before typing.
 const _keycodeA = 29; // KEYCODE_A
@@ -105,16 +99,9 @@ class RunTaskTool extends McpTool {
     final agent = PhoneAgent(
       config: _config,
       llmClient: _llmClient,
-      takeScreenshot: () async {
-        var bytes = await _adb.takeScreenshot(deviceId);
-        // Blank/secure screens screencap to a near-empty PNG. Wait and retry
-        // rather than feed the model a black frame it will misread.
-        for (var i = 0; i < 2 && bytes.length < _kBlankScreenshotBytes; i++) {
-          await Future<void>.delayed(const Duration(seconds: 1));
-          bytes = await _adb.takeScreenshot(deviceId);
-        }
-        return (base64: base64Encode(bytes), mimeType: 'image/png');
-      },
+      takeScreenshot: blankRetryingScreenshot(
+        () => _adb.takeScreenshot(deviceId),
+      ),
       actionRunner: (action) => _executeAction(action, deviceId),
     );
 

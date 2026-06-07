@@ -6,7 +6,7 @@ import 'package:logger_utils/logger_utils.dart';
 import 'package:scrcpy_mcp/scrcpy_mcp.dart';
 import 'package:test/test.dart';
 
-import 'visual_assertion.dart';
+import 'utils/visual_assertion.dart';
 
 const _deviceId = '39111FDJH00D47';
 

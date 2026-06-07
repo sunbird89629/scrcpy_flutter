@@ -7,8 +7,7 @@
 // autoglm-phone emits [0,1000] normalized coordinates, so we resolve the
 // device's pixel resolution once (`wm size`) and convert each coordinate.
 
-import 'dart:convert';
-
+import 'package:adb_tools/adb_tools.dart';
 import 'package:scrcpy_mcp/scrcpy_mcp.dart';
 
 const _appMap = {
@@ -23,40 +22,33 @@ const _appMap = {
 /// through `adb shell`. If [deviceId] is null, the first connected device is
 /// used. Returns the agent's [AgentResult].
 Future<AgentResult> runAgentTask({
-  required ScrcpyMcpAdb adb,
+  required AdbClient adb,
   required String task,
-  String? deviceId,
+  required String deviceId,
   int maxSteps = 15,
 }) async {
-  final device = deviceId ?? (await adb.getDevices()).first;
-  final size = await _deviceSize(adb, device);
-
+  final device = deviceId;
+  final (screenWidth, screenHeight) = await adb.getDeviceScreenInfo(device);
   final agent = PhoneAgent(
     config: AgentConfig(maxSteps: maxSteps),
     llmClient: AutoglmLlmClient.fromTest(),
-    takeScreenshot: () async {
-      var bytes = await adb.takeScreenshot(device);
-      // Blank/secure screens screencap to a near-empty PNG; wait and retry
-      // instead of feeding the model a black frame (mirrors run_task.dart).
-      for (var i = 0; i < 2 && bytes.length < 20000; i++) {
-        await Future<void>.delayed(const Duration(seconds: 1));
-        bytes = await adb.takeScreenshot(device);
-      }
-      return (base64: base64Encode(bytes), mimeType: 'image/png');
-    },
-    actionRunner: (action) => _runAction(adb, device, size, action),
+    takeScreenshot: blankRetryingScreenshot(() => adb.takeScreenshot(device)),
+    actionRunner: (action) => _runAction(ScrcpyMcpAdb(adb), device, (
+      screenWidth.toInt(),
+      screenHeight.toInt(),
+    ), action),
   );
   return agent.run(task);
 }
 
 /// Device pixel resolution from `wm size` (e.g. "Physical size: 1080x2400").
-Future<(int, int)> _deviceSize(ScrcpyMcpAdb adb, String deviceId) async {
-  final r = await adb.shell(['wm', 'size'], deviceId: deviceId);
-  final m = RegExp(r'(\d+)x(\d+)').firstMatch(r.stdout as String);
-  return m != null
-      ? (int.parse(m.group(1)!), int.parse(m.group(2)!))
-      : (1080, 2400);
-}
+// Future<(int, int)> _deviceSize(ScrcpyMcpAdb adb, String deviceId) async {
+//   final r = await adb.shell(['wm', 'size'], deviceId: deviceId);
+//   final m = RegExp(r'(\d+)x(\d+)').firstMatch(r.stdout as String);
+//   return m != null
+//       ? (int.parse(m.group(1)!), int.parse(m.group(2)!))
+//       : (1080, 2400);
+// }
 
 /// Convert an autoglm [0,1000] coordinate pair to device pixels.
 (int, int) _toPx(List<int> e, (int, int) size) =>

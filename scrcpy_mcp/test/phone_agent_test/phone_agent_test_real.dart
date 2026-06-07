@@ -6,8 +6,8 @@ import 'package:logger_utils/logger_utils.dart';
 import 'package:scrcpy_mcp/scrcpy_mcp.dart';
 import 'package:test/test.dart';
 
-import 'adb_agent_runner.dart';
-import 'visual_assertion.dart';
+import 'utils/adb_agent_runner.dart';
+import 'utils/visual_assertion.dart';
 
 const _task = '''
   帮我通过 chrome 打开 twitter 的官网,具体步骤如下：
@@ -22,7 +22,8 @@ const _task = '''
 void main() {
   test('e2e: open twitter with chrome', () async {
     initLogging();
-    final adb = ScrcpyMcpAdb(AdbClient());
+    final adbClient = AdbClient();
+    final adb = ScrcpyMcpAdb(adbClient);
     final devices = await adb.getDevices();
     if (devices.isEmpty) {
       markTestSkipped('No Android device connected via ADB');
@@ -31,7 +32,7 @@ void main() {
     final deviceId = devices.first;
 
     final result = await runAgentTask(
-      adb: adb,
+      adb: adbClient,
       deviceId: deviceId,
       task: _task,
       maxSteps: 10,

@@ -3,10 +3,9 @@ library;
 
 import 'package:adb_tools/adb_tools.dart';
 import 'package:logger_utils/logger_utils.dart';
-import 'package:scrcpy_mcp/scrcpy_mcp.dart';
 import 'package:test/test.dart';
 
-import 'adb_agent_runner.dart';
+import 'utils/adb_agent_runner.dart';
 
 final _log = Logger('youtube');
 
@@ -34,18 +33,21 @@ const _task = '''
 ''';
 
 void main() {
+  initLogging();
   test(
     'e2e: collect YouTube watch history into a table',
+    timeout: const Timeout(Duration(minutes: 12)),
     () async {
-      initLogging();
-      final adb = ScrcpyMcpAdb(AdbClient());
-      if ((await adb.getDevices()).isEmpty) {
+      final adbClient = AdbClient();
+      final devices = await adbClient.getDevices();
+      if (devices.isEmpty) {
         markTestSkipped('No Android device connected via ADB');
         return;
       }
 
       final result = await runAgentTask(
-        adb: adb,
+        adb: adbClient,
+        deviceId: devices.first,
         task: _task,
         // History tasks spend many steps just navigating in + scrolling.
         maxSteps: 40,
@@ -59,6 +61,5 @@ void main() {
       // could not be produced). Content is inspected from the logged result.
       expect(result.result, isNotEmpty);
     },
-    timeout: const Timeout(Duration(minutes: 12)),
   );
 }

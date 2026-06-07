@@ -3,6 +3,7 @@ export 'src/agent/agent_config.dart';
 export 'src/agent/llm_client.dart';
 export 'src/agent/autoglm_llm_client.dart';
 export 'src/agent/phone_agent.dart';
+export 'src/agent/screenshot_util.dart';
 export 'src/mcp_http_server.dart';
 export 'src/recording_adb.dart';
 export 'src/scrcpy_mcp_adapters.dart';

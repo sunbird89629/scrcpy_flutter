@@ -1,7 +1,7 @@
 import 'package:scrcpy_mcp/scrcpy_mcp.dart';
 import 'package:test/test.dart';
 
-import 'visual_assertion.dart';
+import 'utils/visual_assertion.dart';
 
 void main() {
   group('parseScreenCheckResponse', () {
