@@ -38,14 +38,22 @@ final class FinishAction extends PhoneAction {
 
 /// Structured result of parsing one autoglm-phone model reply.
 sealed class ParsedResponse {
-  const ParsedResponse({required this.think, required this.content});
+  const ParsedResponse({
+    required this.think,
+    required this.content,
+    required this.memory,
+  });
 
   /// Reasoning captured inside `<think></think>`, or '' when absent.
   final String think;
 
-  /// Everything outside the `<think></think>` block: any untagged reasoning
-  /// plus the action token. This is what gets stored in assistant history.
+  /// Everything outside the `<think></think>` block with the `<think>` and
+  /// `<memory>` blocks removed and `<answer>` unwrapped. This is what gets
+  /// stored in assistant history.
   final String content;
+
+  /// Content of the optional `<memory>` block, or '' when absent.
+  final String memory;
 }
 
 /// A parseable action was found.
@@ -53,6 +61,7 @@ final class ParsedAction extends ParsedResponse {
   const ParsedAction({
     required super.think,
     required super.content,
+    required super.memory,
     required this.action,
   });
 
@@ -64,6 +73,7 @@ final class ParseFailure extends ParsedResponse {
   const ParseFailure({
     required super.think,
     required super.content,
+    required super.memory,
     required this.reason,
   });
 
@@ -77,12 +87,13 @@ final class ParseFailure extends ParsedResponse {
 /// `<answer>…</answer>` and possibly preceded by natural-language text.
 class ResponseParser {
   static ParsedResponse parse(String text) {
-    final (think, content) = _split(text);
+    final (think, content, memory) = _split(text);
 
     if (content.trim().isEmpty) {
       return ParseFailure(
         think: think,
         content: content,
+        memory: memory,
         reason: 'empty/think-only response',
       );
     }
@@ -97,6 +108,7 @@ class ResponseParser {
       return ParsedAction(
         think: think,
         content: content,
+        memory: memory,
         action: FinishAction(_unescape(finishMatch.group(1)!)),
       );
     }
@@ -112,23 +124,26 @@ class ResponseParser {
         return ParseFailure(
           think: think,
           content: content,
+          memory: memory,
           reason: 'malformed do(): could not extract action type',
         );
       }
-      return ParsedAction(think: think, content: content, action: action);
+      return ParsedAction(think: think, content: content, memory: memory, action: action);
     }
 
     return ParseFailure(
       think: think,
       content: content,
+      memory: memory,
       reason: 'no action token',
     );
   }
 
-  /// Splits the raw reply into `(think, content)`: pulls the `<think></think>`
-  /// block out as `think`, and in the remainder unwraps `<answer></answer>` if
-  /// present. `content` is that remainder, trimmed.
-  static (String think, String content) _split(String text) {
+  /// Splits the raw reply into `(think, content, memory)`: pulls the
+  /// `<think></think>` block out as `think`, pulls `<memory></memory>` as
+  /// `memory`, and in the remainder unwraps `<answer></answer>` if present.
+  /// `content` is that remainder, trimmed.
+  static (String think, String content, String memory) _split(String text) {
     var think = '';
     final thinkMatch = RegExp(
       '<think>(.*?)</think>',
@@ -141,13 +156,26 @@ class ResponseParser {
       '',
     );
 
+    var memory = '';
+    final memoryMatch = RegExp(
+      '<memory>(.*?)</memory>',
+      dotAll: true,
+    ).firstMatch(content);
+    if (memoryMatch != null) {
+      memory = memoryMatch.group(1)!.trim();
+      content = content.replaceAll(
+        RegExp('<memory>.*?</memory>', dotAll: true),
+        '',
+      );
+    }
+
     final answerMatch = RegExp(
       r'<answer>\s*(.*?)\s*</answer>',
       dotAll: true,
     ).firstMatch(content);
     if (answerMatch != null) content = answerMatch.group(1)!;
 
-    return (think, content.trim());
+    return (think, content.trim(), memory);
   }
 
   /// Parses the inside of a `do(...)` call into a [DoAction], or null if the
