@@ -30,6 +30,20 @@ class AgentEvalRunner {
   final EvalScreenshotProvider screenshotProvider;
   final ActionRunner actionRunner;
 
+  (int, int)? _screenSize;
+
+  Future<(int, int)> _getScreenSize() async {
+    if (_screenSize != null) return _screenSize!;
+    final result = await adb.shell(['wm', 'size'], deviceId: deviceId);
+    final m = RegExp(
+      r'(\d+)x(\d+)',
+    ).firstMatch((result.stdout as String).trim());
+    if (m != null) {
+      _screenSize = (int.parse(m.group(1)!), int.parse(m.group(2)!));
+    }
+    return _screenSize ?? (1080, 2340);
+  }
+
   Future<AgentEvalResult> runCase(AgentEvalCase evalCase) async {
     final watch = Stopwatch()..start();
     final caseDir = Directory('${outputRoot.path}/${evalCase.id}');
@@ -107,8 +121,17 @@ class AgentEvalRunner {
 
     AgentResult agentResult;
     try {
+      final size = await _getScreenSize();
+      final config = AgentConfig(
+        maxSteps: evalCase.config.maxSteps,
+        systemPrompt: evalCase.config.systemPrompt,
+        keepScreenshots: evalCase.config.keepScreenshots,
+        stallThreshold: evalCase.config.stallThreshold,
+        repeatedActionThreshold: evalCase.config.repeatedActionThreshold,
+        screenSize: size,
+      );
       final agent = PhoneAgent(
-        config: evalCase.config,
+        config: config,
         llmClient: tracedChat,
         takeScreenshot: tracedScreenshot,
         actionRunner: tracedActionRunner,

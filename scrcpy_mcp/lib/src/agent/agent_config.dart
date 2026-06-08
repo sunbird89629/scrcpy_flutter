@@ -1,5 +1,6 @@
 const _kDefaultSystemPrompt = '''
 今天的日期是: {DATE}
+设备屏幕: {SCREEN_SIZE}px，坐标空间 [0,1000]
 你是一个智能体分析专家，可以根据操作历史和当前状态图执行一系列操作来完成任务。
 你必须严格按照要求输出以下格式：
 <think>{think}</think>
@@ -84,10 +85,12 @@ class AgentConfig {
     this.keepScreenshots = 3,
     this.stallThreshold = 3,
     this.repeatedActionThreshold = 10,
+    this.screenSize,
   });
 
   final int maxSteps;
   final String systemPrompt;
+  final (int, int)? screenSize;
 
   /// How many of the most recent screenshots to keep in the LLM context.
   /// Older screenshots are dropped to stay within autoglm-phone's 20K window.

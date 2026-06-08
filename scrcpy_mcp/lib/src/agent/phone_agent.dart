@@ -72,7 +72,12 @@ class PhoneAgent {
       }
 
       // 2. Ask the model for the next action (handles truncation retry).
-      final userContent = _buildUserContent(step, message, lastResult, memories);
+      final userContent = _buildUserContent(
+        step,
+        message,
+        lastResult,
+        memories,
+      );
       final parsed = await _requestAction(
         messages,
         userContent: userContent,
@@ -131,7 +136,12 @@ class PhoneAgent {
     final dd = now.day.toString().padLeft(2, '0');
     final weekday = _weekdayNames[now.weekday - 1];
     final dateStr = '${now.year}年$mm月$dd日 $weekday';
-    final systemPrompt = config.systemPrompt.replaceFirst('{DATE}', dateStr);
+    var systemPrompt = config.systemPrompt.replaceFirst('{DATE}', dateStr);
+    final size = config.screenSize;
+    systemPrompt = systemPrompt.replaceFirst(
+      '{SCREEN_SIZE}',
+      size != null ? '${size.$1}x${size.$2}' : '未知',
+    );
     return <LlmMessage>[LlmMessage(role: 'system', textContent: systemPrompt)];
   }
 
@@ -156,8 +166,12 @@ class PhoneAgent {
   /// the model outcome feedback to self-correct, and — because the text varies
   /// each step — avoids the low-temperature repetition collapse that a fixed
   /// "继续执行任务" can trigger.
-  String _buildUserContent(int step, String message, String? lastResult,
-      List<String> memories) {
+  String _buildUserContent(
+    int step,
+    String message,
+    String? lastResult,
+    List<String> memories,
+  ) {
     if (step == 0) return message;
     final memoryBlock = memories.isEmpty
         ? ''
