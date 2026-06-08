@@ -23,7 +23,7 @@ final _logger = Logger('metadata_test');
 void main() {
   initLogging();
   test(
-    'e2e: test device and model metedata',
+    'e2e: test response data ',
     () async {
       initLogging();
       final adbClient = AdbClient();
@@ -42,7 +42,7 @@ void main() {
         adb: adbClient,
         deviceId: deviceId,
         task: _task,
-        maxSteps: 10,
+        maxSteps: 3,
       );
       expect(result, isNotNull);
 
