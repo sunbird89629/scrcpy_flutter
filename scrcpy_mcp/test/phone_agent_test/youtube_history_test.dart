@@ -8,18 +8,18 @@ import 'package:test/test.dart';
 
 final _log = Logger('youtube');
 
-// Reusable task: collect the last week's YouTube watch history into a table.
+// Reusable task: collect today's YouTube watch history into a table.
 // The agent records each entry in its reasoning (Note) and returns the table in
-// finish(message=...). NB: the date range is relative — update it before a run,
-// or rely on the agent's injected {DATE} for "最近一周".
+// finish(message=...). The agent's system prompt injects today's date via
+// {DATE}, so "今天" resolves at runtime.
 const _task = '''
-在 YouTube 应用中查看我最近一周（2026年5月27日 至 2026年6月3日）的观看历史，并整理成表格。具体步骤如下：
+在 YouTube 应用中查看我今天的观看历史，并整理成表格。具体步骤如下：
 
 1. 如果当前不在 YouTube，先 Launch 打开 YouTube 应用。
 2. 进入观看历史页面：点击右下角的头像/「你」(You) 标签，进入个人页后找到「观看记录 / History」，点击「查看全部 / View all」进入完整历史列表。
 3. 历史记录按日期分组（今天、昨天、具体日期）。每滑动到新的一屏，先在 think 中把当前屏可见的每条记录列出来（视频标题、频道名称、观看日期或所在日期分组），再继续。
-4. 通过 Swipe 向上滑动加载更多记录。满足以下任一条件就停止滑动：出现早于 2026年5月27日 的记录；或者已经累计滑动 8 次。早于 2026年5月27日 的记录不要计入。
-5. 停止滑动后，立即把已看到的、属于 2026-05-27 至 2026-06-03 的记录整理成表格，通过 finish 返回（不要继续滑动）。表格包含以下列：
+4. 通过 Swipe 向上滑动加载更多记录。满足以下任一条件就停止滑动：出现早于 今天 的记录；或者已经累计滑动 8 次。早于 今天 的记录不要计入。
+5. 停止滑动后，立即把已看到的、属于 今天 的记录整理成表格，通过 finish 返回（不要继续滑动）。表格包含以下列：
    | 序号 | 视频标题 | 频道 | 观看日期 |
    按时间从近到远排列。如果一条记录都没收集到，也用 finish 说明原因。
 
@@ -39,25 +39,25 @@ void main() {
     () async {
       final adbClient = AdbClient();
       final devices = await adbClient.getDevices();
-      final targetDevice = devices.first;
       if (devices.isEmpty) {
         markTestSkipped('No Android device connected via ADB');
         return;
       }
+      final targetDevice = devices.first;
 
       final (screenWidth, screenHeight) = await adbClient.getDeviceScreenInfo(
         targetDevice,
       );
       final runner = AdbActionRunner(
         adb: ScrcpyMcpAdb(adbClient),
-        deviceId: devices.first,
+        deviceId: targetDevice,
         size: (screenWidth.toInt(), screenHeight.toInt()),
       );
       final agent = PhoneAgent(
         config: AgentConfig(),
         llmClient: AutoGLMClient.fromTest().chat,
         takeScreenshot: blankRetryingScreenshot(
-          () => adbClient.takeScreenshot(devices.first),
+          () => adbClient.takeScreenshot(targetDevice),
         ),
         actionRunner: runner.run,
       );
