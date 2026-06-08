@@ -22,12 +22,6 @@ void main() {
       markTestSkipped('Set SCRCPY_RUN_AGENT_EVAL=1 to run agent eval cases.');
       return;
     }
-    if (Platform.environment['AUTOGLM_BASE_URL'] == null ||
-        Platform.environment['AUTOGLM_API_KEY'] == null ||
-        Platform.environment['AUTOGLM_MODEL'] == null) {
-      markTestSkipped('AUTOGLM_BASE_URL/API_KEY/MODEL env vars are required.');
-      return;
-    }
 
     final adbClient = AdbClient();
     final adb = ScrcpyMcpAdb(adbClient);
@@ -49,7 +43,7 @@ void main() {
       ),
       deviceId: deviceId,
       adb: adb,
-      chat: AutoGLMClient.fromEnv().chat,
+      chat: AutoGLMClient.fromTest().chat,
       screenshotProvider: () => adb.takeScreenshot(deviceId),
       actionRunner: actionRunner.run,
     );
