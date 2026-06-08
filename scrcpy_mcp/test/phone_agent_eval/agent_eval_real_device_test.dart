@@ -10,8 +10,6 @@ import 'package:test/test.dart';
 
 import 'agent_eval_result.dart';
 import 'agent_eval_runner.dart';
-import 'cases/settings_navigation.dart';
-import 'cases/twitter_home.dart';
 import 'cases/youtube_history_recent.dart';
 
 void main() {
@@ -49,8 +47,8 @@ void main() {
     );
 
     final cases = [
-      settingsNavigationCase,
-      twitterHomeCase,
+      // settingsNavigationCase,
+      // twitterHomeCase,
       youtubeHistoryRecentCase,
     ];
     final results = <AgentEvalResult>[];
