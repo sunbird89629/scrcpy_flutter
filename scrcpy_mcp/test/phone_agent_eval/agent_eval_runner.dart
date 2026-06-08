@@ -21,6 +21,7 @@ class AgentEvalRunner {
     required this.chat,
     required this.screenshotProvider,
     required this.actionRunner,
+    this.deepLocate = false,
   });
 
   final Directory outputRoot;
@@ -29,6 +30,7 @@ class AgentEvalRunner {
   final ChatFn chat;
   final EvalScreenshotProvider screenshotProvider;
   final ActionRunner actionRunner;
+  final bool deepLocate;
 
   (int, int)? _screenSize;
 
@@ -130,11 +132,17 @@ class AgentEvalRunner {
         repeatedActionThreshold: evalCase.config.repeatedActionThreshold,
         screenSize: size,
       );
+      final deepLocateRunner = DeepLocateActionRunner(
+        inner: tracedActionRunner,
+        screenshotProvider: screenshotProvider,
+        chat: chat,
+        enabled: deepLocate,
+      );
       final agent = PhoneAgent(
         config: config,
         llmClient: tracedChat,
         takeScreenshot: tracedScreenshot,
-        actionRunner: tracedActionRunner,
+        actionRunner: deepLocateRunner.run,
       );
       agentResult = await agent.run(evalCase.task);
     } catch (e) {

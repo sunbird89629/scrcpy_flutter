@@ -44,6 +44,7 @@ void main() {
       chat: AutoGLMClient.fromTest().chat,
       screenshotProvider: () => adb.takeScreenshot(deviceId),
       actionRunner: actionRunner.run,
+      deepLocate: true,
     );
 
     final cases = [

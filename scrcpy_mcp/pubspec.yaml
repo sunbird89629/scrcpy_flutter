@@ -22,6 +22,7 @@ dependencies:
   scrcpy_client:
     path: ../packages/scrcpy_client
   collection: ^1.19.1
+  image: ^4.3.0
 
 dev_dependencies:
   test: any
