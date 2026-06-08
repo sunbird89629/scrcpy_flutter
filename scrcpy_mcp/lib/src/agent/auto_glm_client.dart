@@ -72,21 +72,17 @@ class AutoGLMClient {
     }
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
-
-    // devLogger.log(Level.FINE, prettyResponse(response));
-    // devLogger.log(Level.FINE, () {
-    //   final StringBuffer sb = StringBuffer();
-    //   sb.writeln(json.toString());
-    // });
     final choice = (json['choices'] as List).first as Map<String, dynamic>;
+    devLogger.log(Level.INFO, prettyJson(response));
 
-    devLogger.log(Level.INFO, () {
-      final StringBuffer sb = StringBuffer();
-      sb.writeln('===>');
-      sb.writeln(choice['message']['content']);
-      sb.writeln('===>');
-      return sb.toString();
-    });
+    // devLogger.log(Level.INFO, () {
+    //   final StringBuffer sb = StringBuffer();
+    //   sb.writeln();
+    //   sb.writeln('===>');
+    //   sb.writeln(choice['message']['content']);
+    //   sb.writeln('===>');
+    //   return sb.toString();
+    // });
 
     // A finish_reason other than "stop" means the output is not a clean,
     // complete answer — "length" = truncated by max_tokens (the trailing
