@@ -42,6 +42,15 @@ void main() {
       }
       final deviceId = devices.first;
 
+      // ── 0. Get screen size ──
+      final sizeResult = await adb.shell(['wm', 'size'], deviceId: deviceId);
+      final sizeMatch = RegExp(
+        r'(\d+)x(\d+)',
+      ).firstMatch((sizeResult.stdout as String).trim());
+      final screenWidth = int.parse(sizeMatch!.group(1)!);
+      final screenHeight = int.parse(sizeMatch.group(2)!);
+      _log.info('Screen: ${screenWidth}x$screenHeight');
+
       // ── 1. Open Settings (stable, predictable UI) ──
       await adb.shell([
         'am',
@@ -57,13 +66,12 @@ void main() {
         'dump',
         '/sdcard/calib_ui.xml',
       ], deviceId: deviceId);
-      // Pull the dump (adb pull via shell is messy; use file read)
       final dumpResult = await adb.shell([
         'cat',
         '/sdcard/calib_ui.xml',
       ], deviceId: deviceId);
       final xml = (dumpResult.stdout as String).trim();
-      final groundTruth = _parseElements(xml);
+      final groundTruth = _parseElements(xml, screenWidth, screenHeight);
       _log.info('uiautomator found ${groundTruth.length} labeled elements');
 
       // ── 3. Take screenshot ──
@@ -91,11 +99,18 @@ void main() {
         );
 
         final modelCoord = _parseTapCoord(response.text ?? '');
+        // Convert model [0,1000] → pixel space before comparing
+        final modelPxX = modelCoord != null
+            ? _toPx(modelCoord.x, screenWidth)
+            : -1;
+        final modelPxY = modelCoord != null
+            ? _toPx(modelCoord.y, screenHeight)
+            : -1;
         final deviationX = modelCoord != null
-            ? (modelCoord.x - element.cx).abs()
+            ? (modelPxX - element.cx).abs()
             : -1;
         final deviationY = modelCoord != null
-            ? (modelCoord.y - element.cy).abs()
+            ? (modelPxY - element.cy).abs()
             : -1;
 
         results.add({
@@ -104,29 +119,53 @@ void main() {
               '[${element.x1},${element.y1}][${element.x2},${element.y2}]',
           'actual_center_px': '(${element.cx}, ${element.cy})',
           'actual_center_model':
-              '(${_toModelX(element.cx)}, ${_toModelY(element.cy)})',
+              '(${_toModel(element.cx, screenWidth)}, ${_toModel(element.cy, screenHeight)})',
           'model_raw': response.text,
           'model_coord': modelCoord != null
               ? '(${modelCoord.x}, ${modelCoord.y})'
               : '(parse error)',
+          'model_px': '($modelPxX, $modelPxY)',
           'deviation_px': '($deviationX, $deviationY)',
         });
 
         _log.info(
-          '${element.text}: actual=(${element.cx},${element.cy}) '
-          'model=$modelCoord → Δ=($deviationX, $deviationY)px',
+          '${element.text}: actual=(${element.cx},${element.cy})px '
+          'model=($modelPxX,$modelPxY)px → Δ=($deviationX,$deviationY)px',
         );
       }
 
       // ── 5. Print summary table ──
+      final allX = results.where((r) => r['deviation_px'] != '(-1, -1)').map((
+        r,
+      ) {
+        final parts = (r['deviation_px'] as String)
+            .replaceAll(RegExp(r'[()]'), '')
+            .split(', ');
+        return (dx: int.parse(parts[0]), dy: int.parse(parts[1]));
+      }).toList();
+
       _log.info('');
       _log.info('═══════════════════════════════════════════════════');
       _log.info('  COORDINATE CALIBRATION RESULTS');
+      _log.info('  Screen: ${screenWidth}x$screenHeight');
       _log.info('═══════════════════════════════════════════════════');
       for (final r in results) {
         _log.info(
-          '  ${r['element']}: actual_center=${r['actual_center_px']} '
-          'model=${r['model_coord']} Δ=${r['deviation_px']}',
+          '  ${r['element']}: actual=${r['actual_center_px']} '
+          'model=${r['model_px']} Δ=${r['deviation_px']}',
+        );
+      }
+      if (allX.isNotEmpty) {
+        final avgDx =
+            (allX.map((e) => e.dx).reduce((a, b) => a + b) / allX.length)
+                .round();
+        final avgDy =
+            (allX.map((e) => e.dy).reduce((a, b) => a + b) / allX.length)
+                .round();
+        _log.info('─────────────────────────────────────────────────');
+        _log.info('  Average deviation: X=${avgDx}px, Y=${avgDy}px');
+        _log.info(
+          '  (model → pixel: X*${screenWidth}/1000, Y*$screenHeight/1000)',
         );
       }
       _log.info('═══════════════════════════════════════════════════');
@@ -137,24 +176,32 @@ void main() {
   );
 }
 
-int _toModelX(int px) => (px * 1000 / 1080).round();
-int _toModelY(int py) => (py * 1000 / 2340).round();
+/// Convert model [0,1000] → pixel coordinate.
+int _toPx(int model, int screenSize) => (model * screenSize / 1000).round();
 
-/// Parse clickable elements with text from uiautomator XML using regex.
-List<_UiElement> _parseElements(String xml) {
+/// Convert pixel → model [0,1000].
+int _toModel(int px, int screenSize) => (px * 1000 / screenSize).round();
+
+/// Parse elements with text from uiautomator XML.
+/// Uses the text node's own bounds (narrower than the clickable row).
+/// Model estimates the ROW center, so X deviation reflects text width, not error.
+List<_UiElement> _parseElements(String xml, int screenW, int screenH) {
   final elements = <_UiElement>[];
   final seen = <String>{};
-  // Match each <node .../> with text and bounds
   final nodeRe = RegExp(
-    r'<node[^>]*\stext="([^"]+)"[^>]*\sclickable="true"[^>]*\sbounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"[^>]*/?>',
+    r'<node[^>]*\stext="([^"]+)"[^>]*\sbounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"[^>]*/?>',
   );
 
   for (final m in nodeRe.allMatches(xml)) {
     final text = m.group(1)!;
+    if (text.length > 30) continue;
     final x1 = int.parse(m.group(2)!);
     final y1 = int.parse(m.group(3)!);
     final x2 = int.parse(m.group(4)!);
     final y2 = int.parse(m.group(5)!);
+
+    if (x1 == 0 && y1 == 0 && x2 == screenW && y2 == screenH) continue;
+
     final cx = (x1 + x2) ~/ 2;
     final cy = (y1 + y2) ~/ 2;
 
