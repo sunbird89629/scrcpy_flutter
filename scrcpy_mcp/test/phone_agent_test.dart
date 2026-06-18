@@ -398,6 +398,31 @@ void main() {
       expect(assistantTurns, ['do(action="Tap", element=[100,200])']);
     });
 
+    test('returns action trajectory and injects guidance', () async {
+      final seen = <String>[];
+      var i = 0;
+      final client = FakeModelClient(({required messages}) async {
+        // capture the step-0 user text to assert guidance injection
+        for (final m in messages) {
+          if (m.role == 'user' && m.textContent != null) seen.add(m.textContent!);
+        }
+        return i++ == 0
+            ? const LlmResponse(text: 'do(action="Tap", element=[1,2])')
+            : const LlmResponse(text: 'finish(message="done")');
+      });
+      final agent = PhoneAgent(
+        config: const AgentConfig(maxSteps: 5),
+        client: client,
+        takeScreenshot: () async => (base64: 'AAA$i', mimeType: 'image/png'),
+        actionRunner: (a) async => 'ok',
+      );
+      final result = await agent.run('开门', guidance: '参考：先点首页');
+      expect(result.success, isTrue);
+      expect(result.trajectory, isNotEmpty);
+      expect(result.trajectory.first, contains('Tap'));
+      expect(seen.any((t) => t.contains('参考：先点首页')), isTrue);
+    });
+
   });
 
   group('actionSummary', () {

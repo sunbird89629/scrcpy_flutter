@@ -46,10 +46,12 @@ class PhoneAgent {
     '星期日',
   ];
 
-  Future<AgentResult> run(String message) async {
+  Future<AgentResult> run(String message, {String? guidance}) async {
     _log.info('task: $message');
     final messages = _buildInitialMessages();
     final memories = <String>[];
+    final trajectory = <String>[];
+    AgentResult done(AgentResult r) => r.copyWith(trajectory: List.of(trajectory));
 
     String? prevScreenshot;
     var stalledSteps = 0;
@@ -69,7 +71,7 @@ class PhoneAgent {
       final stall = _stallAbort(stalledSteps, step);
       if (stall != null) {
         _log.warning(stall.result);
-        return stall;
+        return done(stall);
       }
 
       // 2. Ask the model for the next action (handles truncation retry).
@@ -78,6 +80,7 @@ class PhoneAgent {
         message,
         lastResult,
         memories,
+        guidance,
       );
       final parsed = await _requestAction(
         messages,
@@ -91,13 +94,14 @@ class PhoneAgent {
           // A failure here means the output format broke — report it rather
           // than masquerading a format error as success.
           _log.warning('step $step parse failed: $reason');
-          return AgentResult(
+          return done(AgentResult(
             result: 'Could not parse an action ($reason): ${content.trim()}',
             steps: step + 1,
             success: false,
-          );
+          ));
         case ParsedAction(:final action, :final content, :final memory):
           _log.info('step $step  ${actionSummary(action)}');
+          trajectory.add(actionSummary(action));
           _log.fine('reply:\n${_indent(content)}');
           // Record the assistant turn, keeping only the executable action call —
           // strips any prose the model (e.g. hosted autoglm-phone) emits before
@@ -115,7 +119,7 @@ class PhoneAgent {
           final resultText =
               outcome.done?.result ?? outcome.result ?? '(no result)';
           _log.info('step $step → $resultText');
-          if (outcome.done != null) return outcome.done!;
+          if (outcome.done != null) return done(outcome.done!);
           lastResult = outcome.result;
           lastActionSig = outcome.sig;
           repeatedActions = outcome.repeats;
@@ -129,7 +133,7 @@ class PhoneAgent {
       success: false,
     );
     _log.warning(exhausted.result);
-    return exhausted;
+    return done(exhausted);
   }
 
   /// Builds the initial message list: a single system message with today's date
@@ -178,8 +182,13 @@ class PhoneAgent {
     String message,
     String? lastResult,
     List<String> memories,
+    String? guidance,
   ) {
-    if (step == 0) return message;
+    if (step == 0) {
+      return guidance == null || guidance.isEmpty
+          ? message
+          : '参考经验：\n$guidance\n\n任务：$message';
+    }
     // Keep only the most recent entries: the cross-step memory block is rebuilt
     // every turn and otherwise grows unbounded with step count, bloating the
     // prompt and pushing autoglm into low-temperature repetition collapse.

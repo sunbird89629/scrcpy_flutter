@@ -36,9 +36,20 @@ class AgentResult {
     required this.result,
     required this.steps,
     required this.success,
+    this.trajectory = const [],
   });
 
   final String result;
   final int steps;
   final bool success;
+
+  /// One-line summaries of the actions taken, oldest first. Used by SopWriter.
+  final List<String> trajectory;
+
+  AgentResult copyWith({List<String>? trajectory}) => AgentResult(
+    result: result,
+    steps: steps,
+    success: success,
+    trajectory: trajectory ?? this.trajectory,
+  );
 }
