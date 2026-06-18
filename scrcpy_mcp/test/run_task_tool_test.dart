@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:mcp_dart/mcp_dart.dart';
 import 'package:scrcpy_client/scrcpy_client.dart';
@@ -28,6 +29,26 @@ ChatFn _typeThenFinishChat() {
   return ({required List<LlmMessage> messages}) async => i++ == 0
       ? const LlmResponse(text: 'do(action="Type", text="hello")')
       : const LlmResponse(text: 'finish(message="done")');
+}
+
+// Fake ADB that returns a foreground package for dumpsys calls.
+class _ResumedActivityAdb extends MockAdb {
+  @override
+  Future<ProcessResult> shell(
+    List<String> arguments, {
+    String? deviceId,
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    if (arguments.contains('activities')) {
+      return ProcessResult(
+        0,
+        0,
+        'mResumedActivity: ActivityRecord{x u0 com.demo.app/.Main t1}',
+        '',
+      );
+    }
+    return super.shell(arguments, deviceId: deviceId, timeout: timeout);
+  }
 }
 
 // Records an ordered log of control messages (ScrcpyControlMessage) and
@@ -163,6 +184,44 @@ void main() {
         isTrue,
         reason: 'expected Del to clear the field before typing',
       );
+    });
+  });
+
+  group('run_task SOP memory', () {
+    test('writes a SOP after a successful run', () async {
+      final dir = Directory.systemTemp.createTempSync('sop_rt');
+      addTearDown(() => dir.deleteSync(recursive: true));
+
+      final server = ScrcpyMcpServer(
+        session: MockScrcpySession(),
+        adb: _ResumedActivityAdb(),
+        agentConfig: AgentConfig(maxSteps: 5, sopDir: dir.path),
+        client: FakeModelClient(({required List<LlmMessage> messages}) async {
+          // If the writer's summary prompt is detected, return JSON.
+          final isSummary = messages.any(
+            (m) => (m.textContent ?? '').contains('请总结成 JSON'),
+          );
+          return isSummary
+              ? const LlmResponse(
+                  text: '{"intent":"打开应用","steps":["点图标"],"pitfall":null}',
+                )
+              : const LlmResponse(text: 'finish(message="done")');
+        }),
+      );
+
+      final (c, closeFn) = await connectMcpPair(server);
+      addTearDown(closeFn);
+
+      await c.callTool(
+        const CallToolRequest(
+          name: 'run_task',
+          arguments: {'device_id': 'device1', 'message': '打开应用'},
+        ),
+      );
+
+      final f = File('${dir.path}/sop/com.demo.app.jsonl');
+      expect(f.existsSync(), isTrue);
+      expect(f.readAsStringSync(), contains('"intent":"打开应用"'));
     });
   });
 }

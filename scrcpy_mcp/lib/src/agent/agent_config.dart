@@ -5,10 +5,15 @@ class AgentConfig {
     this.stallThreshold = 3,
     this.repeatedActionThreshold = 10,
     this.screenSize,
+    this.sopDir,
   });
 
   final int maxSteps;
   final (int, int)? screenSize;
+
+  /// Base directory for the SOP memory store.
+  /// Null disables the SOP feature entirely.
+  final String? sopDir;
 
   /// How many of the most recent screenshots to keep in the LLM context.
   /// Older screenshots are dropped to stay within autoglm-phone's 20K window.

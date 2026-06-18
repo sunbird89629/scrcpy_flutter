@@ -6,6 +6,11 @@ import '../agent/agent_model_client.dart';
 import '../agent/phone_agent.dart';
 import '../agent/scrcpy_action_runner.dart';
 import '../agent/screenshot_util.dart';
+import '../agent/sop/foreground_package.dart';
+import '../agent/sop/sop_record.dart';
+import '../agent/sop/sop_retriever.dart';
+import '../agent/sop/sop_store.dart';
+import '../agent/sop/sop_writer.dart';
 import '../mcp_tool.dart';
 import '../session_context.dart';
 
@@ -79,11 +84,45 @@ class RunTaskTool extends McpTool {
       actionRunner: runner.run,
     );
 
+    final sopDir = _config.sopDir;
+    SopStore? store;
+    String? package;
+    String? guidance;
+    if (sopDir != null) {
+      try {
+        store = SopStore(sopDir);
+        package = await foregroundPackage(_adb, deviceId);
+        if (package != null) {
+          final picked = await SopRetriever(_client).select(
+            taskText: message,
+            candidates: await store.load(package),
+          );
+          if (picked.isNotEmpty) guidance = _formatGuidance(picked);
+        }
+      } catch (e) {
+        logger.warning('sop retrieve failed: $e');
+      }
+    }
+
     try {
-      final result = await agent.run(message);
+      final result = await agent.run(message, guidance: guidance);
       logger.fine(
         'run_task: completed, steps=${result.steps}, success=${result.success}',
       );
+
+      if (store != null && package != null) {
+        try {
+          await SopWriter(_client, store).write(
+            package: package,
+            taskText: message,
+            success: result.success,
+            trajectory: result.trajectory,
+          );
+        } catch (e) {
+          logger.warning('sop writeback failed: $e');
+        }
+      }
+
       return CallToolResult.fromStructuredContent({
         'result': result.result,
         'steps': result.steps,
@@ -97,4 +136,21 @@ class RunTaskTool extends McpTool {
       });
     }
   }
+}
+
+String _formatGuidance(List<SopRecord> sops) {
+  final pos = sops.where((s) => s.polarity == SopPolarity.positive);
+  final neg = sops.where((s) => s.polarity == SopPolarity.negative);
+  final b = StringBuffer();
+  if (pos.isNotEmpty) {
+    b.writeln('可参考以下成功流程：');
+    for (final s in pos) b.writeln('- ${s.intent}：${s.steps.join(' → ')}');
+  }
+  if (neg.isNotEmpty) {
+    b.writeln('注意避免以下坑：');
+    for (final s in neg) {
+      b.writeln('- ${s.intent}：${s.pitfall ?? s.steps.join(' → ')}');
+    }
+  }
+  return b.toString().trim();
 }
