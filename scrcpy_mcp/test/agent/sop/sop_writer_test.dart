@@ -14,9 +14,11 @@ void main() {
   test('writes a positive SOP from a successful run', () async {
     final store = SopStore(dir.path);
     final writer = SopWriter(
-      FakeModelClient(({required messages}) async => const LlmResponse(
-        text: '{"intent":"转账","steps":["进聊天","点+"],"pitfall":null}',
-      )),
+      FakeModelClient(
+        ({required messages}) async => const LlmResponse(
+          text: '{"intent":"转账","steps":["进聊天","点+"],"pitfall":null}',
+        ),
+      ),
       store,
     );
     await writer.write(
@@ -35,9 +37,11 @@ void main() {
   test('writes a negative SOP with pitfall from a failed run', () async {
     final store = SopStore(dir.path);
     final writer = SopWriter(
-      FakeModelClient(({required messages}) async => const LlmResponse(
-        text: '{"intent":"转账","steps":["进聊天"],"pitfall":"被引导蒙层挡住"}',
-      )),
+      FakeModelClient(
+        ({required messages}) async => const LlmResponse(
+          text: '{"intent":"转账","steps":["进聊天"],"pitfall":"被引导蒙层挡住"}',
+        ),
+      ),
       store,
     );
     await writer.write(

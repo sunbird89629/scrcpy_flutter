@@ -51,7 +51,8 @@ class PhoneAgent {
     final messages = _buildInitialMessages();
     final memories = <String>[];
     final trajectory = <String>[];
-    AgentResult done(AgentResult r) => r.copyWith(trajectory: List.of(trajectory));
+    AgentResult done(AgentResult r) =>
+        r.copyWith(trajectory: List.of(trajectory));
 
     String? prevScreenshot;
     var stalledSteps = 0;
@@ -94,11 +95,13 @@ class PhoneAgent {
           // A failure here means the output format broke — report it rather
           // than masquerading a format error as success.
           _log.warning('step $step parse failed: $reason');
-          return done(AgentResult(
-            result: 'Could not parse an action ($reason): ${content.trim()}',
-            steps: step + 1,
-            success: false,
-          ));
+          return done(
+            AgentResult(
+              result: 'Could not parse an action ($reason): ${content.trim()}',
+              steps: step + 1,
+              success: false,
+            ),
+          );
         case ParsedAction(:final action, :final content, :final memory):
           _log.info('step $step  ${actionSummary(action)}');
           trajectory.add(actionSummary(action));

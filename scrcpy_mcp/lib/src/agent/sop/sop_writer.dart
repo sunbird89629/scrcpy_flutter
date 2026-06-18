@@ -24,11 +24,10 @@ class SopWriter {
     String? deviceHint,
   }) async {
     final outcome = success ? '成功' : '失败';
+    final pitfall = success ? 'null（成功可为 null）' : '失败的关键坑点';
     final prompt =
         '任务：$taskText\n执行结果：$outcome\n动作轨迹：\n${trajectory.join('\n')}\n\n'
-        '请总结成 JSON：{"intent":"意图标题","steps":["意图级步骤"],'
-        '"pitfall":"${success ? 'null（成功可为 null）' : '失败的关键坑点'}"}。'
-        '只输出 JSON。';
+        '请总结成 JSON：{"intent":"意图标题","steps":["意图级步骤"],"pitfall":"$pitfall"}。只输出 JSON。';
     final resp = await _client.chat(
       messages: [LlmMessage(role: 'user', textContent: prompt)],
     );
@@ -49,7 +48,9 @@ class SopWriter {
       deviceHint: deviceHint,
     );
     await _store.append(record);
-    _log.info('wrote ${record.polarity.name} SOP for $package: ${record.intent}');
+    _log.info(
+      'wrote ${record.polarity.name} SOP for $package: ${record.intent}',
+    );
   }
 
   Map<String, dynamic>? _extractJson(String text) {

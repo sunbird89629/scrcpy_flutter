@@ -22,39 +22,35 @@ final _logger = Logger('metadata_test');
 
 void main() {
   initLogging();
-  test(
-    'e2e: test response data ',
-    () async {
-      initLogging();
-      final adbClient = AdbClient();
-      final adb = ScrcpyMcpAdb(adbClient);
-      final devices = await adb.getDevices();
-      if (devices.isEmpty) {
-        markTestSkipped('No Android device connected via ADB');
-        return;
-      }
-      final deviceId = devices.first;
+  test('e2e: test response data ', () async {
+    initLogging();
+    final adbClient = AdbClient();
+    final adb = ScrcpyMcpAdb(adbClient);
+    final devices = await adb.getDevices();
+    if (devices.isEmpty) {
+      markTestSkipped('No Android device connected via ADB');
+      return;
+    }
+    final deviceId = devices.first;
 
-      final deviceInfo = await adbClient.getDeviceInfo(deviceId);
-      _logger.info('deviceInfo.screenWidth:${deviceInfo.screenWidth}');
-      _logger.info('deviceInfo.screenHeight:${deviceInfo.screenHeight}');
-      final result = await runAgentTask(
-        adb: adbClient,
-        deviceId: deviceId,
-        task: _task,
-        maxSteps: 3,
-      );
-      expect(result, isNotNull);
+    final deviceInfo = await adbClient.getDeviceInfo(deviceId);
+    _logger.info('deviceInfo.screenWidth:${deviceInfo.screenWidth}');
+    _logger.info('deviceInfo.screenHeight:${deviceInfo.screenHeight}');
+    final result = await runAgentTask(
+      adb: adbClient,
+      deviceId: deviceId,
+      task: _task,
+      maxSteps: 3,
+    );
+    expect(result, isNotNull);
 
-      // Verify the agent actually reached the Twitter homepage.
-      final check = await checkDeviceScreenContains(
-        chat: AutoGLMOfficialClient.fromTest().chat,
-        adb: adb,
-        deviceId: deviceId,
-        expectation: 'Twitter（X）的主页',
-      );
-      expect(check.matched, isTrue, reason: check.reason);
-    },
-    timeout: const Timeout(Duration(minutes: 3)),
-  );
+    // Verify the agent actually reached the Twitter homepage.
+    final check = await checkDeviceScreenContains(
+      chat: AutoGLMOfficialClient.fromTest().chat,
+      adb: adb,
+      deviceId: deviceId,
+      expectation: 'Twitter（X）的主页',
+    );
+    expect(check.matched, isTrue, reason: check.reason);
+  }, timeout: const Timeout(Duration(minutes: 3)));
 }

@@ -10,8 +10,13 @@ void main() {
       }
     });
     test('keeps the do() action vocabulary and coordinate space', () {
-      for (final a in ['do(action="Launch"', 'do(action="Tap"',
-          'do(action="Swipe"', 'finish(message=', '(999,999)']) {
+      for (final a in [
+        'do(action="Launch"',
+        'do(action="Tap"',
+        'do(action="Swipe"',
+        'finish(message=',
+        '(999,999)',
+      ]) {
         expect(kOfficialPrompt.contains(a), isTrue, reason: a);
       }
     });

@@ -97,8 +97,9 @@ class DeepLocateActionRunner {
 
       // Upscale the crop to the model's preferred input size so it reasons on
       // a high-res view rather than a ~200px patch. Only enlarge, never shrink.
-      final longSide =
-          cropped.width > cropped.height ? cropped.width : cropped.height;
+      final longSide = cropped.width > cropped.height
+          ? cropped.width
+          : cropped.height;
       if (upscaleTo > 0 && longSide < upscaleTo) {
         final scale = upscaleTo / longSide;
         cropped = img.copyResize(

@@ -17,7 +17,9 @@ void main() {
         );
 
     test('carries the official (no-tag) prompt and no cross-step memory', () {
-      final client = makeClient(MockClient((_) async => http.Response('', 200)));
+      final client = makeClient(
+        MockClient((_) async => http.Response('', 200)),
+      );
       expect(client.memoryEnabled, isFalse);
       expect(client.systemPromptTemplate.contains('<think>'), isFalse);
       expect(client.systemPromptTemplate.contains('<answer>'), isFalse);

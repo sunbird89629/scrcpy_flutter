@@ -47,7 +47,9 @@ void main() {
     });
 
     test('parses inside <answer> tags', () {
-      final a = expectDo('<answer>do(action="Tap", element=[100, 200])</answer>');
+      final a = expectDo(
+        '<answer>do(action="Tap", element=[100, 200])</answer>',
+      );
       expect(a.action, 'Tap');
       expect(a.element, [100, 200]);
     });

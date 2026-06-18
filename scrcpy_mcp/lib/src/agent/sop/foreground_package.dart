@@ -15,10 +15,11 @@ String? parseForegroundPackage(String dumpsysOutput) {
 /// Best-effort foreground package via adb. Returns null on any failure.
 Future<String?> foregroundPackage(ScrcpyAdb adb, String deviceId) async {
   try {
-    final r = await adb.shell(
-      ['dumpsys', 'activity', 'activities'],
-      deviceId: deviceId,
-    );
+    final r = await adb.shell([
+      'dumpsys',
+      'activity',
+      'activities',
+    ], deviceId: deviceId);
     return parseForegroundPackage(r.stdout as String);
   } catch (e) {
     _log.warning('foreground package lookup failed: $e');

@@ -93,10 +93,9 @@ class RunTaskTool extends McpTool {
         store = SopStore(sopDir);
         package = await foregroundPackage(_adb, deviceId);
         if (package != null) {
-          final picked = await SopRetriever(_client).select(
-            taskText: message,
-            candidates: await store.load(package),
-          );
+          final picked = await SopRetriever(
+            _client,
+          ).select(taskText: message, candidates: await store.load(package));
           if (picked.isNotEmpty) guidance = _formatGuidance(picked);
         }
       } catch (e) {
@@ -144,7 +143,9 @@ String _formatGuidance(List<SopRecord> sops) {
   final b = StringBuffer();
   if (pos.isNotEmpty) {
     b.writeln('可参考以下成功流程：');
-    for (final s in pos) b.writeln('- ${s.intent}：${s.steps.join(' → ')}');
+    for (final s in pos) {
+      b.writeln('- ${s.intent}：${s.steps.join(' → ')}');
+    }
   }
   if (neg.isNotEmpty) {
     b.writeln('注意避免以下坑：');

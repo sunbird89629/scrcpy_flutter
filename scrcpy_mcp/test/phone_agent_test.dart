@@ -12,8 +12,10 @@ ChatFn _fakeChat(List<LlmResponse> responses) {
 
 /// Returns a [ChatFn] that replays responses and records every call's messages
 /// into [capturedMessages].
-ChatFn _capturingChat(List<LlmResponse> responses,
-    List<List<LlmMessage>> capturedMessages) {
+ChatFn _capturingChat(
+  List<LlmResponse> responses,
+  List<List<LlmMessage>> capturedMessages,
+) {
   var i = 0;
   return ({required List<LlmMessage> messages}) async {
     capturedMessages.add(List.from(messages));
@@ -122,7 +124,8 @@ void main() {
     test(
       'feeds the previous action result into the next user message',
       () async {
-        final captured = <List<LlmMessage>>[]; final chatFn = _capturingChat([
+        final captured = <List<LlmMessage>>[];
+        final chatFn = _capturingChat([
           const LlmResponse(text: 'do(action="Tap", element=[500,300])'),
           const LlmResponse(text: 'finish(message="done")'),
         ], captured);
@@ -172,7 +175,8 @@ void main() {
     );
 
     test('strips <think> blocks from assistant history', () async {
-      final captured = <List<LlmMessage>>[]; final chatFn = _capturingChat([
+      final captured = <List<LlmMessage>>[];
+      final chatFn = _capturingChat([
         const LlmResponse(
           text:
               '<think>这里是冗长的推理过程</think>'
@@ -198,7 +202,8 @@ void main() {
     });
 
     test('keeps only the last keepScreenshots screenshots in history', () async {
-      final captured = <List<LlmMessage>>[]; final chatFn = _capturingChat([
+      final captured = <List<LlmMessage>>[];
+      final chatFn = _capturingChat([
         const LlmResponse(text: 'do(action="Tap", element=[500,300])'),
         const LlmResponse(text: 'do(action="Tap", element=[600,400])'),
         const LlmResponse(text: 'do(action="Tap", element=[700,500])'),
@@ -327,7 +332,8 @@ void main() {
     });
 
     test('injects memory into user messages', () async {
-      final captured = <List<LlmMessage>>[]; final chatFn = _capturingChat([
+      final captured = <List<LlmMessage>>[];
+      final chatFn = _capturingChat([
         const LlmResponse(
           text:
               '<think>t</think><memory>视频1: A - 1万</memory>do(action="Tap", element=[1,2])',
@@ -351,52 +357,57 @@ void main() {
       expect(lastUser.textContent, contains('视频1: A - 1万'));
     });
 
-    test('uses the client systemPromptTemplate as the system message', () async {
-      final captured = <List<LlmMessage>>[];
-      final agent = PhoneAgent(
-        config: const AgentConfig(maxSteps: 1, screenSize: (1080, 2400)),
-        client: FakeModelClient(
-          _capturingChat(
-            [const LlmResponse(text: 'finish(message="done")')],
-            captured,
+    test(
+      'uses the client systemPromptTemplate as the system message',
+      () async {
+        final captured = <List<LlmMessage>>[];
+        final agent = PhoneAgent(
+          config: const AgentConfig(maxSteps: 1, screenSize: (1080, 2400)),
+          client: FakeModelClient(
+            _capturingChat([
+              const LlmResponse(text: 'finish(message="done")'),
+            ], captured),
+            systemPromptTemplate: 'HELLO {SCREEN_SIZE}',
           ),
-          systemPromptTemplate: 'HELLO {SCREEN_SIZE}',
-        ),
-        takeScreenshot: _fakeScreenshot,
-        actionRunner: (_) async => 'ok',
-      );
+          takeScreenshot: _fakeScreenshot,
+          actionRunner: (_) async => 'ok',
+        );
 
-      await agent.run('task');
+        await agent.run('task');
 
-      final system = captured.first.first;
-      expect(system.role, 'system');
-      expect(system.textContent, 'HELLO 1080x2400');
-    });
+        final system = captured.first.first;
+        expect(system.role, 'system');
+        expect(system.textContent, 'HELLO 1080x2400');
+      },
+    );
 
-    test('stores only the do() action line in history, stripping prose', () async {
-      final captured = <List<LlmMessage>>[];
-      final agent = PhoneAgent(
-        config: const AgentConfig(maxSteps: 2),
-        client: FakeModelClient(
-          _capturingChat([
-            const LlmResponse(
-              text: '好的，我需要点击。\ndo(action="Tap", element=[100,200])',
-            ),
-            const LlmResponse(text: 'finish(message="done")'),
-          ], captured),
-        ),
-        takeScreenshot: _fakeScreenshot,
-        actionRunner: (_) async => 'ok',
-      );
+    test(
+      'stores only the do() action line in history, stripping prose',
+      () async {
+        final captured = <List<LlmMessage>>[];
+        final agent = PhoneAgent(
+          config: const AgentConfig(maxSteps: 2),
+          client: FakeModelClient(
+            _capturingChat([
+              const LlmResponse(
+                text: '好的，我需要点击。\ndo(action="Tap", element=[100,200])',
+              ),
+              const LlmResponse(text: 'finish(message="done")'),
+            ], captured),
+          ),
+          takeScreenshot: _fakeScreenshot,
+          actionRunner: (_) async => 'ok',
+        );
 
-      await agent.run('task');
+        await agent.run('task');
 
-      final assistantTurns = captured[1]
-          .where((m) => m.role == 'assistant')
-          .map((m) => m.textContent)
-          .toList();
-      expect(assistantTurns, ['do(action="Tap", element=[100,200])']);
-    });
+        final assistantTurns = captured[1]
+            .where((m) => m.role == 'assistant')
+            .map((m) => m.textContent)
+            .toList();
+        expect(assistantTurns, ['do(action="Tap", element=[100,200])']);
+      },
+    );
 
     test('returns action trajectory and injects guidance', () async {
       final seen = <String>[];
@@ -404,7 +415,9 @@ void main() {
       final client = FakeModelClient(({required messages}) async {
         // capture the step-0 user text to assert guidance injection
         for (final m in messages) {
-          if (m.role == 'user' && m.textContent != null) seen.add(m.textContent!);
+          if (m.role == 'user' && m.textContent != null) {
+            seen.add(m.textContent!);
+          }
         }
         return i++ == 0
             ? const LlmResponse(text: 'do(action="Tap", element=[1,2])')
@@ -422,7 +435,6 @@ void main() {
       expect(result.trajectory.first, contains('Tap'));
       expect(seen.any((t) => t.contains('参考：先点首页')), isTrue);
     });
-
   });
 
   group('actionSummary', () {

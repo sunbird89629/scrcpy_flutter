@@ -78,7 +78,10 @@ void main() {
 
     test('whitespace-only stderr is treated as absent', () {
       final r = ProcessResult(1, 0, '', '   \n  ');
-      expect(AdbProcessRunnerImpl.formatResultLine('adb x', r), 'adb x → exit 0');
+      expect(
+        AdbProcessRunnerImpl.formatResultLine('adb x', r),
+        'adb x → exit 0',
+      );
     });
   });
 }
