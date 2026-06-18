@@ -36,13 +36,20 @@ class SopWriter {
       _log.warning('SOP summary not parseable; skip write');
       return;
     }
+    // Normalize pitfall: treat null, empty, or literal "null" string as null
+    var normalizedPitfall = parsed['pitfall'] as String?;
+    if (normalizedPitfall != null &&
+        (normalizedPitfall.trim().isEmpty ||
+            normalizedPitfall.trim() == 'null')) {
+      normalizedPitfall = null;
+    }
     final record = SopRecord(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       package: package,
       intent: parsed['intent'] as String? ?? taskText,
       polarity: success ? SopPolarity.positive : SopPolarity.negative,
       steps: (parsed['steps'] as List?)?.cast<String>() ?? const [],
-      pitfall: parsed['pitfall'] as String?,
+      pitfall: normalizedPitfall,
       sourceTask: taskText,
       createdAt: DateTime.now().toUtc(),
       deviceHint: deviceHint,

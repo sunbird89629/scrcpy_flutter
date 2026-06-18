@@ -54,4 +54,26 @@ void main() {
     expect(loaded.first.polarity, SopPolarity.negative);
     expect(loaded.first.pitfall, '被引导蒙层挡住');
   });
+
+  test('normalizes literal "null" string to null for positive SOP', () async {
+    final store = SopStore(dir.path);
+    final writer = SopWriter(
+      FakeModelClient(
+        ({required messages}) async => const LlmResponse(
+          text: '{"intent":"转账","steps":["进聊天","点+"],"pitfall":"null"}',
+        ),
+      ),
+      store,
+    );
+    await writer.write(
+      package: 'com.app',
+      taskText: '给张三转账',
+      success: true,
+      trajectory: const ['Tap(1,2)', 'Finish("done")'],
+    );
+    final loaded = await store.load('com.app');
+    expect(loaded, hasLength(1));
+    expect(loaded.first.polarity, SopPolarity.positive);
+    expect(loaded.first.pitfall, isNull);
+  });
 }
