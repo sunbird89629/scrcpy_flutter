@@ -64,7 +64,10 @@ abstract class OpenAiChatClient implements AgentModelClient {
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     final choice = (json['choices'] as List).first as Map<String, dynamic>;
-    devLogger.log(Level.INFO, prettyResponse(response));
+    devLogger.log(
+      Level.INFO,
+      prettyResponse(response, logHeader: false, maxStringLen: 80),
+    );
 
     // GLM finish_reason enum: "stop" (clean), "length" (hit max_tokens),
     // "tool_calls" (function call — unused here), "sensitive" (safety
