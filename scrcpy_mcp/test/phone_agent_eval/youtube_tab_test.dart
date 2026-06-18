@@ -102,7 +102,7 @@ void main() {
 
       // ── 3. Take screenshot, ask model ──
       final screenshot = await adb.takeScreenshot(deviceId);
-      final chat = AutoGLMClient.fromTest().chat;
+      final chat = AutoGLMOfficialClient.fromTest().chat;
 
       final prompt = [
         '截图中是 YouTube 应用的首页。',

@@ -14,14 +14,14 @@ void main(List<String> args) async {
 
   final session = await ScrcpySessionImpl.create(adb: scrcpyAdb);
 
-  final llmClient = AutoGLMClient.fromTest();
+  final client = AutoGLMOfficialClient.fromTest();
 
   final server = ScrcpyMcpServer(
     session: session,
     adb: scrcpyAdb,
     recordingAdb: scrcpyAdb,
     agentConfig: AgentConfig(),
-    llmClient: llmClient.chat,
+    client: client,
   );
 
   final transport = StdioServerTransport();

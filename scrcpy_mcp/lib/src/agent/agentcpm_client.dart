@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'agent_model_client.dart';
 import 'llm_client.dart';
 
 /// Client for AgentCPM-GUI (Tsinghua OpenBMB) on ModelScope or any
@@ -9,7 +10,7 @@ import 'llm_client.dart';
 ///
 /// Output format: compact JSON, e.g. `{"POINT":[729,69]}`
 /// Coordinate space: 0-1000, top-left origin.
-class AgentCPMGuiClient {
+class AgentCPMGuiClient implements AgentModelClient {
   AgentCPMGuiClient({
     required this.baseUrl,
     required this.apiKey,
@@ -22,8 +23,15 @@ class AgentCPMGuiClient {
   final String model;
   final http.Client _http;
 
-  /// Standard [ChatFn] so this can be passed directly as
-  /// `PhoneAgent(llmClient: client.chat)` after format adaptation.
+  @override
+  String get systemPromptTemplate => _systemPrompt;
+
+  @override
+  bool get memoryEnabled => false;
+
+  /// Adapts AgentCPM-GUI's JSON output into AutoGLM `do(...)` text so the shared
+  /// `ResponseParser` can handle it unchanged.
+  @override
   Future<LlmResponse> chat({required List<LlmMessage> messages}) async {
     // AgentCPM-GUI expects a specific format:
     // System: role/rule/schema (injected into user message as per the paper)

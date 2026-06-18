@@ -76,7 +76,7 @@ void main() {
 
       // ── 3. Take screenshot ──
       final screenshot = await adb.takeScreenshot(deviceId);
-      final chat = AutoGLMClient.fromTest().chat;
+      final chat = AutoGLMOfficialClient.fromTest().chat;
 
       // ── 4. Ask model for each element's center ──
       final results = <Map<String, Object?>>[];

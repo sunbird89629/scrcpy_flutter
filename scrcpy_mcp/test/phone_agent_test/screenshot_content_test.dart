@@ -16,7 +16,7 @@ void main() {
     () async {
       initLogging();
       final adb = ScrcpyMcpAdb(AdbClient());
-      final chat = AutoGLMClient.fromTest().chat;
+      final chat = AutoGLMOfficialClient.fromTest().chat;
 
       final r = await checkDeviceScreenContains(
         chat: chat,
@@ -36,7 +36,7 @@ void main() {
     () async {
       initLogging();
       final adb = ScrcpyMcpAdb(AdbClient());
-      final chat = AutoGLMClient.fromTest().chat;
+      final chat = AutoGLMOfficialClient.fromTest().chat;
 
       // Desktop should not contain a calculator app specifically.
       final r = await checkDeviceScreenContains(

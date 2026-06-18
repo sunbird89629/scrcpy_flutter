@@ -10,6 +10,7 @@ import 'agent_eval_failure.dart';
 import 'agent_eval_result.dart';
 import 'agent_eval_runner.dart';
 import 'utils/eval_fakes.dart';
+import '../utils/fake_model_client.dart';
 
 void main() {
   group('AgentEvalFailureKind', () {
@@ -115,14 +116,14 @@ void main() {
         outputRoot: temp,
         deviceId: 'device1',
         adb: FakeScrcpyMcpAdb(),
-        chat: ({required messages}) async {
+        client: FakeModelClient(({required List<LlmMessage> messages}) async {
           if (messages.length == 2) {
             return const LlmResponse(
               text: 'do(action="Tap", element=[500,300])',
             );
           }
           return const LlmResponse(text: 'finish(message="done")');
-        },
+        }),
         screenshotProvider: () async {
           screenshotCount++;
           return Uint8List.fromList([screenshotCount]);

@@ -4,6 +4,8 @@ export 'src/agent/scrcpy_action_runner.dart';
 export 'src/agent/response_parser.dart';
 export 'src/agent/agent_config.dart';
 export 'src/agent/llm_client.dart';
+export 'src/agent/agent_model_client.dart';
+export 'src/agent/openai_chat_client.dart';
 export 'src/agent/auto_glm_client.dart';
 export 'src/agent/agentcpm_client.dart';
 export 'src/agent/deep_locate_runner.dart';

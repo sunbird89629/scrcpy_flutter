@@ -2,7 +2,7 @@ import 'package:mcp_dart/mcp_dart.dart';
 import 'package:scrcpy_client/scrcpy_client.dart';
 
 import '../agent/agent_config.dart';
-import '../agent/llm_client.dart';
+import '../agent/agent_model_client.dart';
 import '../agent/phone_agent.dart';
 import '../agent/scrcpy_action_runner.dart';
 import '../agent/screenshot_util.dart';
@@ -12,18 +12,18 @@ import '../session_context.dart';
 class RunTaskTool extends McpTool {
   RunTaskTool({
     required AgentConfig config,
-    required ChatFn llmClient,
+    required AgentModelClient client,
     required ScrcpyAdb adb,
     required ScrcpySession session,
     required SessionContext ctx,
   }) : _config = config,
-       _llmClient = llmClient,
+       _client = client,
        _adb = adb,
        _session = session,
        _ctx = ctx;
 
   final AgentConfig _config;
-  final ChatFn _llmClient;
+  final AgentModelClient _client;
   final ScrcpyAdb _adb;
   final ScrcpySession _session;
   final SessionContext _ctx;
@@ -72,7 +72,7 @@ class RunTaskTool extends McpTool {
     );
     final agent = PhoneAgent(
       config: _config,
-      llmClient: _llmClient,
+      client: _client,
       takeScreenshot: blankRetryingScreenshot(
         () => _adb.takeScreenshot(deviceId),
       ),

@@ -55,7 +55,7 @@ void main() {
       );
       final agent = PhoneAgent(
         config: AgentConfig(),
-        llmClient: AutoGLMClient.fromTest().chat,
+        client: AutoGLMOfficialClient.fromTest(),
         takeScreenshot: blankRetryingScreenshot(
           () => adbClient.takeScreenshot(targetDevice),
         ),

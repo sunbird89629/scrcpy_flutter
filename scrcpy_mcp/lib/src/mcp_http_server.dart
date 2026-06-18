@@ -1,7 +1,7 @@
 import 'package:mcp_dart/mcp_dart.dart';
 import 'package:scrcpy_client/scrcpy_client.dart';
 import 'package:scrcpy_mcp/src/agent/agent_config.dart';
-import 'package:scrcpy_mcp/src/agent/llm_client.dart';
+import 'package:scrcpy_mcp/src/agent/agent_model_client.dart';
 import 'package:scrcpy_mcp/src/recording_adb.dart';
 import 'package:scrcpy_mcp/src/scrcpy_mcp_server.dart';
 
@@ -17,7 +17,7 @@ class McpHttpServer {
     required ScrcpyAdb adb,
     RecordingAdb? recordingAdb,
     AgentConfig? agentConfig,
-    ChatFn? llmClient,
+    AgentModelClient? client,
   }) async {
     _server = StreamableMcpServer(
       serverFactory: (_) => ScrcpyMcpServer(
@@ -25,7 +25,7 @@ class McpHttpServer {
         adb: adb,
         recordingAdb: recordingAdb,
         agentConfig: agentConfig,
-        llmClient: llmClient,
+        client: client,
       ).mcpServer,
       port: port,
       enableDnsRebindingProtection: false,

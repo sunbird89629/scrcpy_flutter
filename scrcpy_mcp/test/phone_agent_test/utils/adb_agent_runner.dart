@@ -25,7 +25,7 @@ Future<AgentResult> runAgentTask({
   );
   final agent = PhoneAgent(
     config: AgentConfig(maxSteps: maxSteps),
-    llmClient: AutoGLMClient.fromTest().chat,
+    client: AutoGLMOfficialClient.fromTest(),
     takeScreenshot: blankRetryingScreenshot(() => adb.takeScreenshot(deviceId)),
     actionRunner: runner.run,
   );

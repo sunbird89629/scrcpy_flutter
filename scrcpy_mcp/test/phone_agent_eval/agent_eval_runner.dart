@@ -7,6 +7,7 @@ import 'package:collection/collection.dart';
 import 'package:scrcpy_mcp/scrcpy_mcp.dart';
 
 import '../phone_agent_test/utils/visual_assertion.dart';
+import '../utils/fake_model_client.dart';
 import 'agent_eval_case.dart';
 import 'agent_eval_failure.dart';
 import 'agent_eval_result.dart';
@@ -18,7 +19,7 @@ class AgentEvalRunner {
     required this.outputRoot,
     required this.deviceId,
     required this.adb,
-    required this.chat,
+    required this.client,
     required this.screenshotProvider,
     required this.actionRunner,
     this.deepLocate = false,
@@ -27,7 +28,7 @@ class AgentEvalRunner {
   final Directory outputRoot;
   final String deviceId;
   final ScrcpyMcpAdb adb;
-  final ChatFn chat;
+  final AgentModelClient client;
   final EvalScreenshotProvider screenshotProvider;
   final ActionRunner actionRunner;
   final bool deepLocate;
@@ -111,7 +112,7 @@ class AgentEvalRunner {
     }
 
     Future<LlmResponse> tracedChat({required List<LlmMessage> messages}) async {
-      final response = await chat(messages: messages);
+      final response = await client.chat(messages: messages);
       writeEvent({
         'type': 'llm_response',
         'step': step,
@@ -126,7 +127,6 @@ class AgentEvalRunner {
       final size = await _getScreenSize();
       final config = AgentConfig(
         maxSteps: evalCase.config.maxSteps,
-        systemPrompt: evalCase.config.systemPrompt,
         keepScreenshots: evalCase.config.keepScreenshots,
         stallThreshold: evalCase.config.stallThreshold,
         repeatedActionThreshold: evalCase.config.repeatedActionThreshold,
@@ -135,12 +135,16 @@ class AgentEvalRunner {
       final deepLocateRunner = DeepLocateActionRunner(
         inner: tracedActionRunner,
         screenshotProvider: screenshotProvider,
-        chat: chat,
+        chat: client.chat,
         enabled: deepLocate,
       );
       final agent = PhoneAgent(
         config: config,
-        llmClient: tracedChat,
+        client: FakeModelClient(
+          tracedChat,
+          systemPromptTemplate: client.systemPromptTemplate,
+          memoryEnabled: client.memoryEnabled,
+        ),
         takeScreenshot: tracedScreenshot,
         actionRunner: deepLocateRunner.run,
       );
@@ -211,7 +215,7 @@ class AgentEvalRunner {
       case VisualContainsAssertion(:final expectation):
         try {
           final check = await checkDeviceScreenContains(
-            chat: chat,
+            chat: client.chat,
             adb: adb,
             deviceId: deviceId,
             expectation: expectation,

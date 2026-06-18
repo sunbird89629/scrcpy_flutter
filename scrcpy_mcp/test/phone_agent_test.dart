@@ -2,6 +2,8 @@ import 'package:scrcpy_mcp/scrcpy_mcp.dart';
 import 'package:scrcpy_mcp/src/agent/action_summary.dart';
 import 'package:test/test.dart';
 
+import 'utils/fake_model_client.dart';
+
 /// Returns a [ChatFn] that replays a fixed sequence of [LlmResponse] values.
 ChatFn _fakeChat(List<LlmResponse> responses) {
   var i = 0;
@@ -35,7 +37,7 @@ void main() {
       int maxSteps = 10,
     }) => PhoneAgent(
       config: AgentConfig(maxSteps: maxSteps),
-      llmClient: _fakeChat(responses),
+      client: FakeModelClient(_fakeChat(responses)),
       takeScreenshot: _fakeScreenshot,
       actionRunner: actionRunner ?? (_) async => 'ok',
     );
@@ -96,7 +98,7 @@ void main() {
 
       final capturingAgent = PhoneAgent(
         config: const AgentConfig(maxSteps: 5),
-        llmClient: chatFn,
+        client: FakeModelClient(chatFn),
         takeScreenshot: _fakeScreenshot,
         actionRunner: (_) async => 'ok',
       );
@@ -127,7 +129,7 @@ void main() {
 
         final agent = PhoneAgent(
           config: const AgentConfig(maxSteps: 5),
-          llmClient: chatFn,
+          client: FakeModelClient(chatFn),
           takeScreenshot: _fakeScreenshot,
           actionRunner: (_) async => 'Tapped (540, 1200)',
         );
@@ -181,7 +183,7 @@ void main() {
 
       final agent = PhoneAgent(
         config: const AgentConfig(maxSteps: 5),
-        llmClient: chatFn,
+        client: FakeModelClient(chatFn),
         takeScreenshot: _fakeScreenshot,
         actionRunner: (_) async => 'ok',
       );
@@ -212,7 +214,7 @@ void main() {
 
       final agent = PhoneAgent(
         config: const AgentConfig(maxSteps: 6, keepScreenshots: 2),
-        llmClient: chatFn,
+        client: FakeModelClient(chatFn),
         takeScreenshot: distinctScreenshot,
         actionRunner: (_) async => 'ok',
       );
@@ -264,11 +266,13 @@ void main() {
 
       final agent = PhoneAgent(
         config: const AgentConfig(maxSteps: 30),
-        llmClient: _fakeChat(
-          List.generate(
-            30,
-            (_) => const LlmResponse(
-              text: 'do(action="Swipe", start=[499,614], end=[499,263])',
+        client: FakeModelClient(
+          _fakeChat(
+            List.generate(
+              30,
+              (_) => const LlmResponse(
+                text: 'do(action="Swipe", start=[499,614], end=[499,263])',
+              ),
             ),
           ),
         ),
@@ -333,7 +337,7 @@ void main() {
 
       final agent = PhoneAgent(
         config: const AgentConfig(maxSteps: 5),
-        llmClient: chatFn,
+        client: FakeModelClient(chatFn, memoryEnabled: true),
         takeScreenshot: _fakeScreenshot,
         actionRunner: (_) async => 'ok',
       );
@@ -345,6 +349,53 @@ void main() {
       final lastUser = secondCall.lastWhere((m) => m.role == 'user');
       expect(lastUser.textContent, contains('跨步记录'));
       expect(lastUser.textContent, contains('视频1: A - 1万'));
+    });
+
+    test('uses the client systemPromptTemplate as the system message', () async {
+      final captured = <List<LlmMessage>>[];
+      final agent = PhoneAgent(
+        config: const AgentConfig(maxSteps: 1, screenSize: (1080, 2400)),
+        client: FakeModelClient(
+          _capturingChat(
+            [const LlmResponse(text: 'finish(message="done")')],
+            captured,
+          ),
+          systemPromptTemplate: 'HELLO {SCREEN_SIZE}',
+        ),
+        takeScreenshot: _fakeScreenshot,
+        actionRunner: (_) async => 'ok',
+      );
+
+      await agent.run('task');
+
+      final system = captured.first.first;
+      expect(system.role, 'system');
+      expect(system.textContent, 'HELLO 1080x2400');
+    });
+
+    test('stores only the do() action line in history, stripping prose', () async {
+      final captured = <List<LlmMessage>>[];
+      final agent = PhoneAgent(
+        config: const AgentConfig(maxSteps: 2),
+        client: FakeModelClient(
+          _capturingChat([
+            const LlmResponse(
+              text: '好的，我需要点击。\ndo(action="Tap", element=[100,200])',
+            ),
+            const LlmResponse(text: 'finish(message="done")'),
+          ], captured),
+        ),
+        takeScreenshot: _fakeScreenshot,
+        actionRunner: (_) async => 'ok',
+      );
+
+      await agent.run('task');
+
+      final assistantTurns = captured[1]
+          .where((m) => m.role == 'assistant')
+          .map((m) => m.textContent)
+          .toList();
+      expect(assistantTurns, ['do(action="Tap", element=[100,200])']);
     });
 
   });

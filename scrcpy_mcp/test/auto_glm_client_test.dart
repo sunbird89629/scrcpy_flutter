@@ -7,13 +7,32 @@ import 'package:scrcpy_mcp/src/agent/llm_client.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('AutoglmLlmClient', () {
-    AutoGLMClient makeClient(http.Client mockHttp) => AutoGLMClient.withClient(
-      baseUrl: 'https://api.openai.com/v1',
-      apiKey: 'sk-test',
-      model: 'gpt-4o',
-      httpClient: mockHttp,
-    );
+  group('AutoGLMOfficialClient', () {
+    AutoGLMOfficialClient makeClient(http.Client mockHttp) =>
+        AutoGLMOfficialClient.withClient(
+          baseUrl: 'https://api.openai.com/v1',
+          apiKey: 'sk-test',
+          model: 'gpt-4o',
+          httpClient: mockHttp,
+        );
+
+    test('carries the official (no-tag) prompt and no cross-step memory', () {
+      final client = makeClient(MockClient((_) async => http.Response('', 200)));
+      expect(client.memoryEnabled, isFalse);
+      expect(client.systemPromptTemplate.contains('<think>'), isFalse);
+      expect(client.systemPromptTemplate.contains('<answer>'), isFalse);
+    });
+
+    test('open-source client carries the tag prompt and cross-step memory', () {
+      final client = AutoGLMOpenSourceClient.withClient(
+        baseUrl: 'https://x/api',
+        apiKey: 'k',
+        model: 'AutoGLM-Phone-9B',
+        httpClient: MockClient((_) async => http.Response('', 200)),
+      );
+      expect(client.memoryEnabled, isTrue);
+      expect(client.systemPromptTemplate.contains('<answer>'), isTrue);
+    });
 
     test('sends correct Authorization header and model', () async {
       late http.Request captured;

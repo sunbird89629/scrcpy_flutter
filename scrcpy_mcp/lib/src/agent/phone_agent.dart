@@ -2,6 +2,7 @@ import 'package:logger_utils/logger_utils.dart';
 
 import 'action_summary.dart';
 import 'agent_config.dart';
+import 'agent_model_client.dart';
 import 'llm_client.dart';
 import 'response_parser.dart';
 
@@ -25,13 +26,13 @@ typedef ActionRunner = Future<String> Function(PhoneAction action);
 class PhoneAgent {
   const PhoneAgent({
     required this.config,
-    required this.llmClient,
+    required this.client,
     required this.takeScreenshot,
     required this.actionRunner,
   });
 
   final AgentConfig config;
-  final ChatFn llmClient;
+  final AgentModelClient client;
   final ScreenshotProvider takeScreenshot;
   final ActionRunner actionRunner;
 
@@ -90,7 +91,6 @@ class PhoneAgent {
           // A failure here means the output format broke — report it rather
           // than masquerading a format error as success.
           _log.warning('step $step parse failed: $reason');
-          _log.fine('reply(unparsed):\n${_indent(content)}');
           return AgentResult(
             result: 'Could not parse an action ($reason): ${content.trim()}',
             steps: step + 1,
@@ -99,9 +99,13 @@ class PhoneAgent {
         case ParsedAction(:final action, :final content, :final memory):
           _log.info('step $step  ${actionSummary(action)}');
           _log.fine('reply:\n${_indent(content)}');
-          // Record the assistant turn (content already excludes <think>).
-          messages.add(LlmMessage(role: 'assistant', textContent: content));
-          if (memory.isNotEmpty) memories.add(memory);
+          // Record the assistant turn, keeping only the executable action call —
+          // strips any prose the model (e.g. hosted autoglm-phone) emits before
+          // the do()/finish() call.
+          messages.add(
+            LlmMessage(role: 'assistant', textContent: _actionLine(content)),
+          );
+          if (client.memoryEnabled && memory.isNotEmpty) memories.add(memory);
           final outcome = await _dispatchAction(
             action,
             step,
@@ -129,14 +133,17 @@ class PhoneAgent {
   }
 
   /// Builds the initial message list: a single system message with today's date
-  /// substituted into [AgentConfig.systemPrompt].
+  /// and screen size substituted into the client's `systemPromptTemplate`.
   List<LlmMessage> _buildInitialMessages() {
     final now = DateTime.now();
     final mm = now.month.toString().padLeft(2, '0');
     final dd = now.day.toString().padLeft(2, '0');
     final weekday = _weekdayNames[now.weekday - 1];
     final dateStr = '${now.year}年$mm月$dd日 $weekday';
-    var systemPrompt = config.systemPrompt.replaceFirst('{DATE}', dateStr);
+    var systemPrompt = client.systemPromptTemplate.replaceFirst(
+      '{DATE}',
+      dateStr,
+    );
     final size = config.screenSize;
     systemPrompt = systemPrompt.replaceFirst(
       '{SCREEN_SIZE}',
@@ -206,7 +213,7 @@ class PhoneAgent {
       ),
     );
     final trimmedHistory = _trimHistory(messages);
-    var response = await llmClient(messages: trimmedHistory);
+    var response = await client.chat(messages: trimmedHistory);
     var parsed = ResponseParser.parse(response.text ?? '');
 
     if (parsed is ParseFailure && response.finishReason == 'length') {
@@ -218,10 +225,17 @@ class PhoneAgent {
               '上次输出过长被截断。请只输出一个动作指令（如 do(action="Tap", element=[x,y]) 或 finish(message="...")），不要输出任何多余内容。',
         ),
       );
-      response = await llmClient(messages: _trimHistory(messages));
+      response = await client.chat(messages: _trimHistory(messages));
       parsed = ResponseParser.parse(response.text ?? '');
     }
     return parsed;
+  }
+
+  /// Keep only the executable action call in history — strips any prose the
+  /// model (e.g. hosted autoglm-phone) emits before the do()/finish() call.
+  static String _actionLine(String content) {
+    final m = RegExp(r'(do\(|finish\()').firstMatch(content);
+    return m == null ? content.trim() : content.substring(m.start).trim();
   }
 
   /// Executes [action] and reports the loop's next state. `done` non-null means

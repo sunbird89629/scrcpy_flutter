@@ -8,6 +8,7 @@ import 'package:scrcpy_mcp/src/scrcpy_mcp_server.dart';
 import 'package:test/test.dart';
 
 import 'real_device_test_utils.dart';
+import 'utils/fake_model_client.dart';
 
 // Fake chat that immediately completes the task with a finish() action.
 Future<LlmResponse> _doneChat({required List<LlmMessage> messages}) async =>
@@ -57,7 +58,7 @@ void main() {
         session: MockScrcpySession(),
         adb: MockAdb(),
         agentConfig: const AgentConfig(maxSteps: 5),
-        llmClient: _doneChat,
+        client: FakeModelClient(_doneChat),
       );
       (client, close) = await connectMcpPair(server);
     });
@@ -103,7 +104,7 @@ void main() {
         session: session,
         adb: MockAdb(),
         agentConfig: const AgentConfig(maxSteps: 5),
-        llmClient: _tapThenFinishChat(),
+        client: FakeModelClient(_tapThenFinishChat()),
       );
       final (c, closeFn) = await connectMcpPair(server);
       addTearDown(closeFn);
@@ -131,7 +132,7 @@ void main() {
         session: session,
         adb: MockAdb(),
         agentConfig: const AgentConfig(maxSteps: 5),
-        llmClient: _typeThenFinishChat(),
+        client: FakeModelClient(_typeThenFinishChat()),
       );
       final (c, closeFn) = await connectMcpPair(server);
       addTearDown(closeFn);
