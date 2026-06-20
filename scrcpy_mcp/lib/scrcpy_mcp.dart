@@ -8,6 +8,7 @@ export 'src/agent/clients/agent_model_client.dart';
 export 'src/agent/clients/openai_chat_client.dart';
 export 'src/agent/clients/auto_glm_client.dart';
 export 'src/agent/clients/agentcpm_client.dart';
+export 'src/agent/clients/doubao_seed_client.dart';
 export 'src/agent/deep_locate_runner.dart';
 export 'src/agent/phone_agent.dart';
 export 'src/agent/screenshot_util.dart';
