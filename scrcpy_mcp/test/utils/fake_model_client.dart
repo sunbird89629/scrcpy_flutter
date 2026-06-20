@@ -1,5 +1,5 @@
-import 'package:scrcpy_mcp/src/agent/agent_model_client.dart';
-import 'package:scrcpy_mcp/src/agent/llm_client.dart';
+import 'package:scrcpy_mcp/src/agent/clients/agent_model_client.dart';
+import 'package:scrcpy_mcp/src/agent/clients/llm_client.dart';
 
 /// Wraps a [ChatFn] as an [AgentModelClient] for PhoneAgent/RunTaskTool tests.
 class FakeModelClient implements AgentModelClient {

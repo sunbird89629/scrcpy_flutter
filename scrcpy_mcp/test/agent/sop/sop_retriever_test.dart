@@ -1,4 +1,4 @@
-import 'package:scrcpy_mcp/src/agent/llm_client.dart';
+import 'package:scrcpy_mcp/src/agent/clients/llm_client.dart';
 import 'package:scrcpy_mcp/src/agent/sop/sop_record.dart';
 import 'package:scrcpy_mcp/src/agent/sop/sop_retriever.dart';
 import 'package:test/test.dart';

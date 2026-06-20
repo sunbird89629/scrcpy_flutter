@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:meta/meta.dart';
 
-import 'agent_prompts.dart';
+import '../agent_prompts.dart';
 import 'openai_chat_client.dart';
 
 /// bigmodel-hosted autoglm-phone. Emits inline prose + a bare `do(...)` line;

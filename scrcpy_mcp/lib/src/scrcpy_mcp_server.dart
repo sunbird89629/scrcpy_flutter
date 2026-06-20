@@ -4,7 +4,7 @@ import 'package:mcp_dart/mcp_dart.dart';
 import 'package:scrcpy_client/scrcpy_client.dart';
 
 import 'agent/agent_config.dart';
-import 'agent/agent_model_client.dart';
+import 'agent/clients/agent_model_client.dart';
 import 'recording_adb.dart';
 import 'recording_controller.dart';
 import 'session_context.dart';

@@ -2,8 +2,8 @@ import 'package:logger_utils/logger_utils.dart';
 
 import 'action_summary.dart';
 import 'agent_config.dart';
-import 'agent_model_client.dart';
-import 'llm_client.dart';
+import 'clients/agent_model_client.dart';
+import 'clients/llm_client.dart';
 import 'response_parser.dart';
 
 final _log = Logger('PhoneAgent');

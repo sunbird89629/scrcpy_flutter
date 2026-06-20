@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
 
-import 'llm_client.dart';
+import 'clients/llm_client.dart';
 import 'response_parser.dart';
 
 /// Wraps an `ActionRunner` with two-pass deep-locate refinement for Tap actions

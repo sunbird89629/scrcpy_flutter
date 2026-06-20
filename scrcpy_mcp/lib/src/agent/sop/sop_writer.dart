@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:logger_utils/logger_utils.dart';
 
-import '../agent_model_client.dart';
-import '../llm_client.dart';
+import '../clients/agent_model_client.dart';
+import '../clients/llm_client.dart';
 import 'sop_record.dart';
 import 'sop_store.dart';
 

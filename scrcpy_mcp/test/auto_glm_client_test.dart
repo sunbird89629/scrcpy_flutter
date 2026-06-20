@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:scrcpy_mcp/src/agent/auto_glm_client.dart';
-import 'package:scrcpy_mcp/src/agent/llm_client.dart';
+import 'package:scrcpy_mcp/src/agent/clients/auto_glm_client.dart';
+import 'package:scrcpy_mcp/src/agent/clients/llm_client.dart';
 import 'package:test/test.dart';
 
 void main() {

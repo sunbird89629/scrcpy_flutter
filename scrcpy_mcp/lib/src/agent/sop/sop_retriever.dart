@@ -1,7 +1,7 @@
 import 'package:logger_utils/logger_utils.dart';
 
-import '../agent_model_client.dart';
-import '../llm_client.dart';
+import '../clients/agent_model_client.dart';
+import '../clients/llm_client.dart';
 import 'sop_record.dart';
 
 final _log = Logger('scrcpy.mcp.sop.retriever');

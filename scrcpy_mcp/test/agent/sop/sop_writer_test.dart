@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:scrcpy_mcp/src/agent/llm_client.dart';
+import 'package:scrcpy_mcp/src/agent/clients/llm_client.dart';
 import 'package:scrcpy_mcp/src/agent/sop/sop_record.dart';
 import 'package:scrcpy_mcp/src/agent/sop/sop_store.dart';
 import 'package:scrcpy_mcp/src/agent/sop/sop_writer.dart';

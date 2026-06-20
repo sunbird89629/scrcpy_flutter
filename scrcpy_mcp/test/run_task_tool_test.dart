@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:mcp_dart/mcp_dart.dart';
 import 'package:scrcpy_client/scrcpy_client.dart';
 import 'package:scrcpy_mcp/src/agent/agent_config.dart';
-import 'package:scrcpy_mcp/src/agent/llm_client.dart';
+import 'package:scrcpy_mcp/src/agent/clients/llm_client.dart';
 import 'package:scrcpy_mcp/src/scrcpy_mcp_server.dart';
 import 'package:test/test.dart';
 

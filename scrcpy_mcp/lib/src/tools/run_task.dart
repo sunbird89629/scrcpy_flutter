@@ -2,7 +2,7 @@ import 'package:mcp_dart/mcp_dart.dart';
 import 'package:scrcpy_client/scrcpy_client.dart';
 
 import '../agent/agent_config.dart';
-import '../agent/agent_model_client.dart';
+import '../agent/clients/agent_model_client.dart';
 import '../agent/phone_agent.dart';
 import '../agent/scrcpy_action_runner.dart';
 import '../agent/screenshot_util.dart';
