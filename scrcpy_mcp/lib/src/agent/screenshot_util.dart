@@ -24,6 +24,17 @@ ScreenshotProvider blankRetryingScreenshot(
       await Future<void>.delayed(const Duration(seconds: 1));
       bytes = await takeRaw();
     }
+    // `adb exec-out screencap` exits 0 with empty stdout when the foreground
+    // screen is FLAG_SECURE (e.g. DRM video). Encoding that yields an empty
+    // base64, which strict vision APIs reject ("Invalid base64 image_url").
+    // Fail loudly instead of sending a malformed request.
+    if (bytes.isEmpty) {
+      throw StateError(
+        'screencap returned no data after ${maxRetries + 1} attempt(s); the '
+        'foreground screen is likely FLAG_SECURE (e.g. DRM video) and cannot '
+        'be captured via adb.',
+      );
+    }
     return (base64: base64Encode(bytes), mimeType: 'image/png');
   };
 }
