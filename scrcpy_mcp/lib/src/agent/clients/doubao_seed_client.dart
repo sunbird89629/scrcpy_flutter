@@ -26,8 +26,12 @@ class DoubaoSeedClient extends OpenAiChatClient {
   }) : super.withHttp();
 
   /// Default Volcano Ark endpoint; override with `DOUBAO_BASE_URL`.
-  static const defaultBaseUrl =
-      'https://ark.cn-beijing.volces.com/api/coding/v3';
+  ///
+  /// Must be the standard `/api/v3` endpoint, NOT the Coding Plan
+  /// `/api/coding/v3` one: the Coding Plan endpoint rejects image input with a
+  /// generic `InvalidParameter` 400, and the phone agent sends a screenshot
+  /// every step.
+  static const defaultBaseUrl = 'https://ark.cn-beijing.volces.com/api/v3';
 
   /// `DOUBAO_MODEL` must be the full versioned Model ID (e.g.
   /// `doubao-seed-2-0-lite-260428`) — the short name returns HTTP 404.
@@ -38,7 +42,7 @@ class DoubaoSeedClient extends OpenAiChatClient {
   );
 
   factory DoubaoSeedClient.fromTest() => DoubaoSeedClient(
-    baseUrl: 'https://ark.cn-beijing.volces.com/api/coding/v3',
+    baseUrl: defaultBaseUrl,
     apiKey: 'ark-71cf1e4a-1520-47aa-aa62-f5a5f6ff652b-12721',
     model: 'doubao-seed-2-0-lite-260428',
   );
