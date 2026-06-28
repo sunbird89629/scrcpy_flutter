@@ -200,6 +200,27 @@ class AdbClient {
     }
   }
 
+  /// Returns user-installed package names (excludes system apps).
+  Future<List<String>> listUserPackages(String deviceId) async {
+    final result = await runner.run(adbPath, [
+      '-s',
+      deviceId,
+      'shell',
+      'pm',
+      'list',
+      'packages',
+      '-3',
+    ]);
+    return result.stdout
+        .toString()
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.startsWith('package:'))
+        .map((l) => l.substring('package:'.length))
+        .toList()
+      ..sort();
+  }
+
   static Map<String, String> _parseGetprop(String output) {
     final regex = RegExp(r'\[([^\]]+)\]:\s*\[([^\]]*)\]');
     final result = <String, String>{};

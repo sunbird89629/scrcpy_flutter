@@ -13,13 +13,17 @@ final _log = Logger('mcp.controller');
 /// Streamable HTTP MCP endpoint. Startup failures are captured into
 /// [errorMessage] rather than thrown, so the tray app keeps running.
 class McpServerController {
-  McpServerController({required AdbClient adb, ScrcpySession? session})
-    : _adb = ScrcpyMcpAdb(adb),
-      _injectedSession = session;
+  McpServerController({
+    required AdbClient adb,
+    this.sopDir,
+    ScrcpySession? session,
+  }) : _adb = ScrcpyMcpAdb(adb),
+       _injectedSession = session;
 
   final ScrcpyMcpAdb _adb;
   final McpHttpServer _server = McpHttpServer();
   final ScrcpySession? _injectedSession;
+  final String? sopDir;
 
   String? _errorMessage;
 
@@ -34,11 +38,12 @@ class McpServerController {
     try {
       final session = _injectedSession ?? await _createSession();
 
-      final agentConfig = AgentConfig();
+      final agentConfig = AgentConfig(sopDir: sopDir);
       final llmClient = AutoGLMOfficialClient.fromTest();
       _log.info(
         'Agent enabled: model=${llmClient.model}, '
-        'maxSteps=${agentConfig.maxSteps}',
+        'maxSteps=${agentConfig.maxSteps}, '
+        'sopDir=${sopDir ?? 'disabled'}',
       );
 
       await _server.start(

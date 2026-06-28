@@ -55,8 +55,16 @@ class DeviceManager {
       final entries = <DeviceEntry>[];
       for (final serial in serials) {
         try {
-          final info = await adb.getDeviceInfo(serial);
-          entries.add(DeviceEntry(info: info));
+          final results = await Future.wait([
+            adb.getDeviceInfo(serial),
+            adb.listUserPackages(serial),
+          ]);
+          entries.add(
+            DeviceEntry(
+              info: results[0] as DeviceInfo,
+              packages: results[1] as List<String>,
+            ),
+          );
         } catch (e) {
           appLogger.warning('Failed to get info for $serial: $e');
           entries.add(

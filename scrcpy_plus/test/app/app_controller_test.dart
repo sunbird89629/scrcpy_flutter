@@ -15,5 +15,21 @@ void main() {
         'ABCD',
       );
     });
+
+    test('isFlexLaunchAction identifies flex keys', () {
+      expect(AppController.isFlexLaunchAction('flex|serial|pkg'), true);
+      expect(AppController.isFlexLaunchAction('launch_serial'), false);
+    });
+
+    test('flexPartsFromKey parses serial and package', () {
+      final parts = AppController.flexPartsFromKey(
+        'flex|192.168.1.1:5555|com.tencent.mm',
+      );
+      expect(parts, ('192.168.1.1:5555', 'com.tencent.mm'));
+    });
+
+    test('flexPartsFromKey returns null for non-flex key', () {
+      expect(AppController.flexPartsFromKey('launch_serial'), null);
+    });
   });
 }

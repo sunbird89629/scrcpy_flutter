@@ -22,7 +22,10 @@ class AppController implements TrayListener {
       pairingService = PairingService(adb: adb ?? const AdbClient()) {
     deviceManager = DeviceManager(adb: this.adb);
     launcher = ScrcpyLauncher();
-    mcpController = McpServerController(adb: this.adb);
+    mcpController = McpServerController(
+      adb: this.adb,
+      sopDir: settingsManager.configDir,
+    );
   }
 
   final SettingsManager settingsManager;
@@ -37,9 +40,20 @@ class AppController implements TrayListener {
       key.startsWith(MenuBuilder.launchPrefix);
   static bool isDisconnectAction(String key) =>
       key.startsWith(MenuBuilder.disconnectPrefix);
+  static bool isFlexLaunchAction(String key) =>
+      key.startsWith(MenuBuilder.flexLaunchPrefix);
   static String? serialFromAction(String key, String prefix) {
     if (!key.startsWith(prefix)) return null;
     return key.substring(prefix.length);
+  }
+
+  /// Parses `flex|<serial>|<package>` → (serial, package), or null.
+  static (String, String)? flexPartsFromKey(String key) {
+    if (!key.startsWith(MenuBuilder.flexLaunchPrefix)) return null;
+    final rest = key.substring(MenuBuilder.flexLaunchPrefix.length);
+    final sep = rest.indexOf('|');
+    if (sep < 0) return null;
+    return (rest.substring(0, sep), rest.substring(sep + 1));
   }
 
   /// Initialize the app: load settings, start polling, set up tray.
@@ -99,6 +113,9 @@ class AppController implements TrayListener {
       _showSettingsDialog();
     } else if (key == MenuBuilder.copyMcpKey) {
       _copyMcpUrl();
+    } else if (isFlexLaunchAction(key)) {
+      final parts = flexPartsFromKey(key);
+      if (parts != null) _launchFlexApp(parts.$1, parts.$2);
     } else if (isLaunchAction(key)) {
       final serial = serialFromAction(key, MenuBuilder.launchPrefix);
       if (serial != null) _launchScrcpy(serial);
@@ -113,6 +130,14 @@ class AppController implements TrayListener {
       await launcher.launch(serial);
     } catch (e) {
       appLogger.severe('Failed to launch scrcpy: $e');
+    }
+  }
+
+  Future<void> _launchFlexApp(String serial, String package) async {
+    try {
+      await launcher.launchFlex(serial, package);
+    } catch (e) {
+      appLogger.severe('Failed to launch flex app $package: $e');
     }
   }
 

@@ -2,10 +2,11 @@ import 'package:adb_tools/adb_tools.dart';
 
 /// Extended device model with battery and display info for menu display.
 class DeviceEntry {
-  DeviceEntry({required this.info, this.battery});
+  DeviceEntry({required this.info, this.battery, this.packages = const []});
 
   final DeviceInfo info;
   final int? battery; // percentage, null if unknown
+  final List<String> packages;
 
   bool get isWifi => info.isWifi;
   String get displayName => info.displayName;

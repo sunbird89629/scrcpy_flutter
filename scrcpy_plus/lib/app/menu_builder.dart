@@ -7,6 +7,7 @@ class MenuBuilder {
   static const String launchPrefix = 'launch_';
   static const String disconnectPrefix = 'disconnect_';
   static const String infoPrefix = 'info_';
+  static const String flexLaunchPrefix = 'flex|';
 
   /// Key for the "copy MCP address" menu item.
   static const String copyMcpKey = 'mcp_copy';
@@ -52,6 +53,22 @@ class MenuBuilder {
             label: 'Launch scrcpy: ${device.menuLabel}',
           ),
         );
+        if (device.packages.isNotEmpty) {
+          items.add(
+            MenuItem.submenu(
+              label: '  Launch App (flex display)…',
+              submenu: Menu(
+                items: [
+                  for (final pkg in device.packages)
+                    MenuItem(
+                      key: '$flexLaunchPrefix${device.serial}|$pkg',
+                      label: pkg,
+                    ),
+                ],
+              ),
+            ),
+          );
+        }
         items.add(
           MenuItem(
             key: '$disconnectPrefix${device.serial}',

@@ -38,6 +38,36 @@ class ScrcpyLauncher {
     }
   }
 
+  /// Launch scrcpy with flex virtual display for the given app package.
+  /// Uses `--new-display -x --start-app=<package>` (requires scrcpy 4.0+).
+  Future<void> launchFlex(String serial, String package) async {
+    if (_process != null) {
+      _log.warning('scrcpy already running, killing previous instance');
+      await kill();
+    }
+
+    final args = [
+      '--serial',
+      serial,
+      '--new-display',
+      '-x',
+      '--start-app=$package',
+    ];
+    _log.info('Launching flex: ${config.scrcpyPath} ${args.join(' ')}');
+
+    try {
+      _process = await Process.start(config.scrcpyPath, args);
+      _process!.exitCode.then((code) {
+        _log.info('scrcpy flex exited with code $code');
+        _process = null;
+      });
+    } catch (e) {
+      _process = null;
+      _log.severe('Failed to launch flex scrcpy: $e');
+      rethrow;
+    }
+  }
+
   /// Kill the running scrcpy process.
   Future<void> kill() async {
     _process?.kill();

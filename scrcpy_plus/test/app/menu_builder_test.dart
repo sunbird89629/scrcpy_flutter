@@ -60,5 +60,29 @@ void main() {
       final keys = menu.items!.map((i) => i.key).toList();
       expect(keys, isNot(contains(MenuBuilder.copyMcpKey)));
     });
+
+    test('buildMenu shows flex submenu when device has packages', () {
+      final entry = DeviceEntry(
+        info: const DeviceInfo(serial: 'ABCD1234', status: DeviceStatus.online),
+        packages: ['com.tencent.mm', 'org.mozilla.firefox'],
+      );
+      final menu = MenuBuilder.buildMenu(devices: [entry]);
+      final submenuItem = menu.items!.firstWhere(
+        (i) => i.submenu != null,
+        orElse: () => throw TestFailure('no submenu found'),
+      );
+      final subKeys = submenuItem.submenu!.items!.map((i) => i.key).toList();
+      expect(subKeys, contains('flex|ABCD1234|com.tencent.mm'));
+      expect(subKeys, contains('flex|ABCD1234|org.mozilla.firefox'));
+    });
+
+    test('buildMenu omits flex submenu when device has no packages', () {
+      final entry = DeviceEntry(
+        info: const DeviceInfo(serial: 'ABCD1234', status: DeviceStatus.online),
+      );
+      final menu = MenuBuilder.buildMenu(devices: [entry]);
+      final hasSubmenu = menu.items!.any((i) => i.submenu != null);
+      expect(hasSubmenu, false);
+    });
   });
 }
