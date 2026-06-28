@@ -1,25 +1,22 @@
 import 'package:tray_manager/tray_manager.dart';
-import 'package:scrcpy_plus/device/device_entry.dart';
+
+import '../device/device_group.dart';
 
 /// Builds the tray context menu from current app state.
 class MenuBuilder {
-  /// Key prefixes used for menu item identification.
   static const String launchPrefix = 'launch_';
   static const String disconnectPrefix = 'disconnect_';
   static const String infoPrefix = 'info_';
   static const String flexLaunchPrefix = 'flex|';
-
-  /// Key for the "copy MCP address" menu item.
   static const String copyMcpKey = 'mcp_copy';
 
   static Menu buildMenu({
-    required List<DeviceEntry> devices,
+    required List<DeviceGroup> groups,
     String? mcpUrl,
     String? mcpError,
   }) {
     final items = <MenuItem>[];
 
-    // MCP server status section (top).
     if (mcpUrl != null) {
       items.add(
         MenuItem(key: 'mcp_header', label: 'MCP server', disabled: true),
@@ -37,7 +34,7 @@ class MenuBuilder {
       items.add(MenuItem.separator());
     }
 
-    if (devices.isEmpty) {
+    if (groups.isEmpty) {
       items.add(
         MenuItem(
           key: 'no_devices',
@@ -46,45 +43,12 @@ class MenuBuilder {
         ),
       );
     } else {
-      for (final device in devices) {
-        items.add(
-          MenuItem(
-            key: '$launchPrefix${device.serial}',
-            label: 'Launch scrcpy: ${device.menuLabel}',
-          ),
-        );
-        if (device.packages.isNotEmpty) {
-          items.add(
-            MenuItem.submenu(
-              label: '  Launch App (flex display)…',
-              submenu: Menu(
-                items: [
-                  for (final pkg in device.packages)
-                    MenuItem(
-                      key: '$flexLaunchPrefix${device.serial}|$pkg',
-                      label: pkg,
-                    ),
-                ],
-              ),
-            ),
-          );
-        }
-        items.add(
-          MenuItem(
-            key: '$disconnectPrefix${device.serial}',
-            label: '  Disconnect ${device.displayName}',
-          ),
-        );
-        if (device.detailLine != null) {
-          items.add(
-            MenuItem(
-              key: '$infoPrefix${device.serial}',
-              label: '  ${device.detailLine}',
-              disabled: true,
-            ),
-          );
-        }
+      for (final group in groups) {
+        items.addAll(_groupItems(group));
+        items.add(MenuItem.separator());
       }
+      // Remove the trailing separator before the action items.
+      if (items.last.type == 'separator') items.removeLast();
     }
 
     items.add(MenuItem.separator());
@@ -95,5 +59,74 @@ class MenuBuilder {
     items.add(MenuItem(key: 'quit', label: 'Quit'));
 
     return Menu(items: items);
+  }
+
+  static List<MenuItem> _groupItems(DeviceGroup group) {
+    final multi = group.hasMultipleConnections;
+    final items = <MenuItem>[];
+
+    if (multi) {
+      items.add(
+        MenuItem(
+          key: 'group_${group.physicalSerial}',
+          label: group.displayName,
+          disabled: true,
+        ),
+      );
+    }
+
+    for (final conn in group.connections) {
+      final suffix = multi ? ' · ${conn.connectionLabel}' : '';
+      final launchLabel = multi
+          ? '  Launch scrcpy$suffix'
+          : 'Launch scrcpy: ${conn.displayName} (${conn.connectionLabel})';
+
+      items.add(
+        MenuItem(key: '$launchPrefix${conn.serial}', label: launchLabel),
+      );
+
+      if (conn.packages.isNotEmpty) {
+        final flexLabel = multi
+            ? '  Launch App (flex display)$suffix…'
+            : '  Launch App (flex display)…';
+        items.add(
+          MenuItem.submenu(
+            label: flexLabel,
+            submenu: Menu(
+              items: [
+                for (final pkg in conn.packages)
+                  MenuItem(
+                    key: '$flexLaunchPrefix${conn.serial}|$pkg',
+                    label: pkg,
+                  ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      final disconnectLabel = multi
+          ? '  Disconnect$suffix'
+          : '  Disconnect ${conn.displayName}';
+      items.add(
+        MenuItem(
+          key: '$disconnectPrefix${conn.serial}',
+          label: disconnectLabel,
+        ),
+      );
+    }
+
+    final detail = group.connections.first.detailLine;
+    if (detail != null) {
+      items.add(
+        MenuItem(
+          key: '$infoPrefix${group.physicalSerial}',
+          label: '  $detail',
+          disabled: true,
+        ),
+      );
+    }
+
+    return items;
   }
 }

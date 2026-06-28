@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:adb_tools/adb_tools.dart';
 import 'package:logger_utils/logger_utils.dart';
 import 'package:scrcpy_plus/device/device_entry.dart';
+import 'package:scrcpy_plus/device/device_group.dart';
 
 /// Application-wide logger instance.
 final appLogger = Logger('scrcpy_plus');
@@ -18,6 +19,22 @@ class DeviceManager {
 
   List<DeviceEntry> get devices => List.unmodifiable(_devices);
   bool get hasConnected => _devices.isNotEmpty;
+
+  /// Devices grouped by physical hardware, USB-first within each group.
+  List<DeviceGroup> get deviceGroups {
+    final map = <String, List<DeviceEntry>>{};
+    for (final d in _devices) {
+      map.putIfAbsent(d.info.physicalSerial, () => []).add(d);
+    }
+    return [
+      for (final entry in map.entries)
+        DeviceGroup(
+          physicalSerial: entry.key,
+          displayName: entry.value.first.displayName,
+          connections: entry.value,
+        ),
+    ];
+  }
 
   void addListener(VoidCallback listener) => _listeners.add(listener);
   void removeListener(VoidCallback listener) => _listeners.remove(listener);

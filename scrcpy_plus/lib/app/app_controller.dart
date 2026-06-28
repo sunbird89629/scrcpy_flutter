@@ -80,7 +80,7 @@ class AppController implements TrayListener {
 
   Future<void> _updateTrayMenu() async {
     final menu = MenuBuilder.buildMenu(
-      devices: deviceManager.devices,
+      groups: deviceManager.deviceGroups,
       mcpUrl: mcpController.serverUrl,
       mcpError: mcpController.errorMessage,
     );

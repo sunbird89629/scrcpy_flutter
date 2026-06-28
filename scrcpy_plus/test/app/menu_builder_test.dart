@@ -1,18 +1,25 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:adb_tools/adb_tools.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:scrcpy_plus/app/menu_builder.dart';
 import 'package:scrcpy_plus/device/device_entry.dart';
+import 'package:scrcpy_plus/device/device_group.dart';
+
+DeviceGroup _group(DeviceEntry entry) => DeviceGroup(
+  physicalSerial: entry.info.physicalSerial,
+  displayName: entry.displayName,
+  connections: [entry],
+);
 
 void main() {
   group('MenuBuilder', () {
     test('buildMenu returns quit item', () {
-      final menu = MenuBuilder.buildMenu(devices: []);
+      final menu = MenuBuilder.buildMenu(groups: []);
       final keys = menu.items!.map((i) => i.key).toList();
       expect(keys, contains('quit'));
     });
 
     test('buildMenu returns pair item when no devices', () {
-      final menu = MenuBuilder.buildMenu(devices: []);
+      final menu = MenuBuilder.buildMenu(groups: []);
       final keys = menu.items!.map((i) => i.key).toList();
       expect(keys, contains('pair'));
     });
@@ -25,20 +32,20 @@ void main() {
           model: 'Pixel 7',
         ),
       );
-      final menu = MenuBuilder.buildMenu(devices: [entry]);
+      final menu = MenuBuilder.buildMenu(groups: [_group(entry)]);
       final keys = menu.items!.map((i) => i.key).toList();
       expect(keys, contains('launch_ABCD1234'));
     });
 
     test('buildMenu includes refresh item', () {
-      final menu = MenuBuilder.buildMenu(devices: []);
+      final menu = MenuBuilder.buildMenu(groups: []);
       final keys = menu.items!.map((i) => i.key).toList();
       expect(keys, contains('refresh'));
     });
 
     test('buildMenu shows mcp url and copy item when running', () {
       final menu = MenuBuilder.buildMenu(
-        devices: [],
+        groups: [],
         mcpUrl: 'http://localhost:7070/mcp',
       );
       final copyItem = menu.items!.firstWhere(
@@ -48,7 +55,7 @@ void main() {
     });
 
     test('buildMenu shows mcp error line when error present', () {
-      final menu = MenuBuilder.buildMenu(devices: [], mcpError: 'port in use');
+      final menu = MenuBuilder.buildMenu(groups: [], mcpError: 'port in use');
       final labels = menu.items!.map((i) => i.label).toList();
       expect(labels.any((l) => l != null && l.contains('port in use')), true);
       final keys = menu.items!.map((i) => i.key).toList();
@@ -56,7 +63,7 @@ void main() {
     });
 
     test('buildMenu omits mcp section when no url and no error', () {
-      final menu = MenuBuilder.buildMenu(devices: []);
+      final menu = MenuBuilder.buildMenu(groups: []);
       final keys = menu.items!.map((i) => i.key).toList();
       expect(keys, isNot(contains(MenuBuilder.copyMcpKey)));
     });
@@ -66,7 +73,7 @@ void main() {
         info: const DeviceInfo(serial: 'ABCD1234', status: DeviceStatus.online),
         packages: ['com.tencent.mm', 'org.mozilla.firefox'],
       );
-      final menu = MenuBuilder.buildMenu(devices: [entry]);
+      final menu = MenuBuilder.buildMenu(groups: [_group(entry)]);
       final submenuItem = menu.items!.firstWhere(
         (i) => i.submenu != null,
         orElse: () => throw TestFailure('no submenu found'),
@@ -80,9 +87,33 @@ void main() {
       final entry = DeviceEntry(
         info: const DeviceInfo(serial: 'ABCD1234', status: DeviceStatus.online),
       );
-      final menu = MenuBuilder.buildMenu(devices: [entry]);
+      final menu = MenuBuilder.buildMenu(groups: [_group(entry)]);
       final hasSubmenu = menu.items!.any((i) => i.submenu != null);
       expect(hasSubmenu, false);
+    });
+
+    test('single group with two connections shows connection labels', () {
+      final usb = DeviceEntry(
+        info: const DeviceInfo(serial: 'ABCD1234', status: DeviceStatus.online),
+      );
+      final wireless = DeviceEntry(
+        info: const DeviceInfo(
+          serial: 'adb-ABCD1234-xXxXxX._adb-tls-connect._tcp',
+          status: DeviceStatus.online,
+        ),
+      );
+      final group = DeviceGroup(
+        physicalSerial: 'ABCD1234',
+        displayName: 'Pixel 7',
+        connections: [usb, wireless],
+      );
+      final menu = MenuBuilder.buildMenu(groups: [group]);
+      final labels = menu.items!
+          .where((i) => i.label != null)
+          .map((i) => i.label!)
+          .toList();
+      expect(labels.any((l) => l.contains('· USB')), true);
+      expect(labels.any((l) => l.contains('· Wireless')), true);
     });
   });
 }

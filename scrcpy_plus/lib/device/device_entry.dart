@@ -1,24 +1,33 @@
 import 'package:adb_tools/adb_tools.dart';
 
-/// Extended device model with battery and display info for menu display.
+enum ConnectionType { usb, wifiAdb, wirelessDebug }
+
+/// Extended device model with connection type and app list for menu display.
 class DeviceEntry {
   DeviceEntry({required this.info, this.battery, this.packages = const []});
 
   final DeviceInfo info;
-  final int? battery; // percentage, null if unknown
+  final int? battery;
   final List<String> packages;
 
-  bool get isWifi => info.isWifi;
-  String get displayName => info.displayName;
   String get serial => info.serial;
+  String get displayName => info.displayName;
+  bool get isWifi => info.isWifi;
+  String get menuLabel => '$displayName ($connectionLabel)';
 
-  String get connectionLabel => isWifi ? 'WiFi' : 'USB';
-
-  /// Menu label: "Pixel 7 (WiFi)" or "ABCD1234 (USB)"
-  String get menuLabel {
-    final conn = connectionLabel;
-    return '$displayName ($conn)';
+  ConnectionType get connectionType {
+    if (info.serial.contains('._adb-tls-connect._tcp')) {
+      return ConnectionType.wirelessDebug;
+    }
+    if (info.isWifi) return ConnectionType.wifiAdb;
+    return ConnectionType.usb;
   }
+
+  String get connectionLabel => switch (connectionType) {
+    ConnectionType.usb => 'USB',
+    ConnectionType.wifiAdb => 'WiFi',
+    ConnectionType.wirelessDebug => 'Wireless',
+  };
 
   /// Detail line: "Battery: 85% | Android 14 | 1080x2400"
   String? get detailLine {

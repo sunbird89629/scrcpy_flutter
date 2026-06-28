@@ -1,46 +1,54 @@
 import 'dart:io';
 
-import 'package:flutter_test/flutter_test.dart';
 import 'package:adb_tools/adb_tools.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:scrcpy_plus/app/menu_builder.dart';
 import 'package:scrcpy_plus/device/device_entry.dart';
+import 'package:scrcpy_plus/device/device_group.dart';
 import 'package:scrcpy_plus/scrcpy/scrcpy_config.dart';
 import 'package:scrcpy_plus/settings/settings_manager.dart';
+
+DeviceGroup _group(DeviceEntry e) => DeviceGroup(
+  physicalSerial: e.info.physicalSerial,
+  displayName: e.displayName,
+  connections: [e],
+);
 
 void main() {
   group('Integration: full flow', () {
     test('menu builds correctly with mixed devices', () {
-      final devices = [
-        DeviceEntry(
-          info: const DeviceInfo(
-            serial: '192.168.1.100:5555',
-            status: DeviceStatus.online,
-            model: 'Pixel 7',
-            androidVersion: '14',
-            screenWidth: 1080,
-            screenHeight: 2400,
+      final groups = [
+        _group(
+          DeviceEntry(
+            info: const DeviceInfo(
+              serial: '192.168.1.100:5555',
+              status: DeviceStatus.online,
+              model: 'Pixel 7',
+              androidVersion: '14',
+              screenWidth: 1080,
+              screenHeight: 2400,
+            ),
+            battery: 85,
           ),
-          battery: 85,
         ),
-        DeviceEntry(
-          info: const DeviceInfo(
-            serial: 'ABCD1234',
-            status: DeviceStatus.online,
-            model: 'Samsung S23',
+        _group(
+          DeviceEntry(
+            info: const DeviceInfo(
+              serial: 'ABCD1234',
+              status: DeviceStatus.online,
+              model: 'Samsung S23',
+            ),
           ),
         ),
       ];
 
-      final menu = MenuBuilder.buildMenu(devices: devices);
+      final menu = MenuBuilder.buildMenu(groups: groups);
       final keys = menu.items!.map((i) => i.key).toList();
 
-      // Should have launch items for both devices
       expect(keys, contains('launch_192.168.1.100:5555'));
       expect(keys, contains('launch_ABCD1234'));
-      // Should have disconnect items
       expect(keys, contains('disconnect_192.168.1.100:5555'));
       expect(keys, contains('disconnect_ABCD1234'));
-      // Should have standard items
       expect(keys, contains('pair'));
       expect(keys, contains('refresh'));
       expect(keys, contains('settings'));

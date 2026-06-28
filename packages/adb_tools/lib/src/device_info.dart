@@ -23,9 +23,22 @@ class DeviceInfo {
   final double screenWidth;
   final double screenHeight;
 
-  /// True when the serial contains ':' (wireless ADB address:port format).
-  bool get isWifi => serial.contains(':');
+  /// True when the serial is an IP:port wireless ADB address.
+  bool get isWifi => RegExp(r'^\d{1,3}(\.\d{1,3}){3}:\d+$').hasMatch(serial);
 
   /// Human-readable title: model name if available, serial otherwise.
   String get displayName => model ?? serial;
+
+  /// Physical device serial used to group connections to the same hardware.
+  ///
+  /// Android 11+ wireless debugging produces an mDNS serial in the form
+  /// `adb-<USB_SERIAL>-<RANDOM>._adb-tls-connect._tcp`. This getter extracts
+  /// the underlying USB serial so USB and wireless entries can be grouped.
+  /// For all other serial formats the serial itself is returned.
+  String get physicalSerial {
+    final m = RegExp(
+      r'^adb-(\w+)-\w+\._adb-tls-connect\._tcp$',
+    ).firstMatch(serial);
+    return m?.group(1) ?? serial;
+  }
 }
