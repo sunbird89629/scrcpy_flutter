@@ -13,9 +13,10 @@ dependencies:
   adb_tools:
     path: ../packages/adb_tools
   logger_utils:
-    git:
-      url: https://github.com/sunbird89629/logger_utils.git
-      ref: v0.1.0
+    # git:
+    #   url: https://github.com/sunbird89629/logger_utils.git
+    #   ref: v0.1.0
+    path: ../../logger_utils
   scrcpy_mcp:
     path: ../scrcpy_mcp
   scrcpy_client:

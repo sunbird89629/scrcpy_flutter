@@ -5,7 +5,7 @@
 
 涉及两件事：**(1) 0–999 归一化坐标 → scrcpy 真实像素；(2) GLM 动作 DSL → MCP 工具调用。**
 来源：AutoGLM-GUI `agents/glm/prompts_zh.py` 系统提示词，已集成到本仓
-`lib/src/agent/agent_config.dart`（提示词）+ `lib/src/agent/action_parser.dart`（解析）
+`lib/src/agent/agent_config.dart`（提示词）+ `lib/src/agent/response_parser.dart`（解析）
 + `lib/src/tools/run_task.dart`（执行）。
 相关：[multi-agent-adapter-pattern.md](./multi-agent-adapter-pattern.md)、[hybrid-agent-routing.md](./hybrid-agent-routing.md)。
 
@@ -71,6 +71,46 @@ GLM 的原始坐标直接传给 scrcpy，并把 `width/height` 都设为 **1000*
 2. **敏感操作 / 接管需回调**：`message="重要操作"` 与 `Take_over` 必须由编排层接住
    （对应 AutoGLM-GUI 的 `confirmation_callback` / `takeover_callback`）。
    若不实现，这两类动作将静默失去保护。
+
+## 与 midscene 实现对照
+
+[web-infra-dev/midscene](https://github.com/web-infra-dev/midscene) 同样接 AutoGLM（其提示词改编自智谱 Open-AutoGLM，与本仓同源），其坐标换算 + 动作映射在
+`packages/core/src/ai-model/models/auto-glm/actions.ts` 的 `transformAutoGLMAction`（commit `784ce3a`）。
+对照备份见 [midscene-autoglm-prompts.md](../../docs/midscene-autoglm-prompts.md)。结论：**架构一致，两处实现策略不同**。
+
+### 坐标换算：等价
+
+midscene：`AUTO_GLM_COORDINATE_MAX = 1000`，`round(coord / 1000 * size)`（在 TS 侧算出像素）。
+本仓：`_kCoordSpace = 1000`，把 `x,y` + `width=height=1000` 交 scrcpy server **在设备端**做同样的线性缩放；
+ADB runner（测试）则用同一公式 `round(e * size / 1000)`。**数学上一致**，只差 ≤1px 的取整。
+
+关于「提示词写 0–999、却 `÷1000`」的疑问——**不是 bug**：
+
+- 两种算法（`÷1000` vs `÷999`）最大差 ~1px（高值端），中部亚像素，可忽略。
+- `÷1000` 反而**边界安全**：`round(999×1080/1000)=1079` 正好落在 1080 宽屏最后一个有效像素；
+  `÷999` 会得 1080 → 越界。
+- `÷1000` 是 GLM/AutoGLM 的**训练约定**（midscene `normalizedBy: 1000` 一致）。提示词的「999」是在描述
+  模型吐出的整数取值范围，不是断言「999 = 最后一个物理像素」。改成 `÷999` 反而偏离训练语义。
+- 结论：**代码 `÷1000` 保持不变**；若只想让提示词文案自洽可改措辞为「0–1000」，但属可选、且有让模型偏离分布的风险。
+
+### 动作映射：多数固定，仅 Back/Home 查 actionSpace
+
+midscene 把动作映射到**固定**的 midscene 动作类型，与 actionSpace 无关：Tap→`Tap`、Double Tap→`DoubleClick`、
+Type→`Input`、Long Press→`LongPress`、Wait→`Sleep`、Launch→`Launch`、finish→`Finished`。
+**只有 Back/Home 查 actionSpace**（`findActionName`，在 `AndroidBackButton`/`HarmonyBackButton` 等里选），
+用于同一份输出在 **Android / 鸿蒙**上自动选对动作名——若本仓将来要支持鸿蒙，可参考这套查名做法。
+
+`Interact` / `Call_API` / `Take_over` / `Note`：midscene **直接 `throw "not supported"`**（提示词禁用 + transform 抛异常）。
+本仓相反：解析层启用了这 4 个，并各自给了处理（`Interact`/`Take_over` 中止待人工，`Note`/`Call_API` 回执续跑）。
+
+### Swipe：两边都不是「原始触摸拖拽」，但机制不同 ⚠️
+
+- midscene：把 Swipe 换算成 `Scroll(direction, distance)`——按 `|dy|>|dx|` 判方向，
+  `distance = round(|delta| * size / 1000)`（像素距离），方向是「内容滚入屏幕的方向」语义。
+- 本仓 ADB runner（测试）：`input swipe x1 y1 x2 y2 300`，**真实像素手指拖拽**（你日志里看到的那种）。
+- 本仓 production（`run_task.dart`）：`ScrcpyInjectScrollMessage`，**鼠标滚轮语义** + 把 0–1000 的 delta
+  直接当 `hScroll/vScroll`（未按像素缩放）。滚轮事件与手指拖拽在某些列表/应用里行为不同——
+  production 滑动若不灵，根因可能在此（待查项）。
 
 ## 实现位置与测试
 

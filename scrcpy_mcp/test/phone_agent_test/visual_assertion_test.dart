@@ -1,7 +1,7 @@
 import 'package:scrcpy_mcp/scrcpy_mcp.dart';
 import 'package:test/test.dart';
 
-import 'visual_assertion.dart';
+import 'utils/visual_assertion.dart';
 
 void main() {
   group('parseScreenCheckResponse', () {
@@ -54,9 +54,9 @@ void main() {
 
   group('checkScreenContains', () {
     test('wires messages and parses 是', () async {
-      final fake = _FakeLlmClient('是\n有图标');
+      final fake = _AssertionChat('是\n有图标');
       final r = await checkScreenContains(
-        client: fake,
+        chat: fake.chat,
         base64Screenshot: 'AAAA',
         expectation: '应用图标',
       );
@@ -74,7 +74,7 @@ void main() {
 
     test('parses 否 as not matched', () async {
       final r = await checkScreenContains(
-        client: _FakeLlmClient('否'),
+        chat: _AssertionChat('否').chat,
         base64Screenshot: 'AAAA',
         expectation: '计算器',
       );
@@ -84,7 +84,7 @@ void main() {
     test('empty model reply throws LlmException', () async {
       await expectLater(
         () => checkScreenContains(
-          client: _FakeLlmClient(''),
+          chat: _AssertionChat('').chat,
           base64Screenshot: 'AAAA',
           expectation: 'x',
         ),
@@ -94,15 +94,13 @@ void main() {
   });
 }
 
-class _FakeLlmClient implements LlmClient {
-  _FakeLlmClient(this.reply);
-
+/// Lightweight ChatFn holder that captures received messages into [captured].
+class _AssertionChat {
+  _AssertionChat(this.reply);
   final String reply;
   List<LlmMessage>? captured;
-
-  @override
-  Future<LlmResponse> chat({required List<LlmMessage> messages}) async {
+  ChatFn get chat => ({required List<LlmMessage> messages}) async {
     captured = messages;
     return LlmResponse(text: reply);
-  }
+  };
 }

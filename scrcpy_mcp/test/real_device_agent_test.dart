@@ -34,7 +34,7 @@ void main() {
         session: session,
         adb: scrcpyAdb,
         agentConfig: AgentConfig(),
-        llmClient: AutoglmLlmClient.fromEnv(),
+        client: AutoGLMOfficialClient.fromEnv(),
       );
       (client, close) = await connectMcpPair(server);
     });

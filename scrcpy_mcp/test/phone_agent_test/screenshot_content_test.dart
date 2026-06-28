@@ -6,7 +6,7 @@ import 'package:logger_utils/logger_utils.dart';
 import 'package:scrcpy_mcp/scrcpy_mcp.dart';
 import 'package:test/test.dart';
 
-import 'visual_assertion.dart';
+import 'utils/visual_assertion.dart';
 
 const _deviceId = '39111FDJH00D47';
 
@@ -16,10 +16,10 @@ void main() {
     () async {
       initLogging();
       final adb = ScrcpyMcpAdb(AdbClient());
-      final client = AutoglmLlmClient.fromTest();
+      final chat = AutoGLMOfficialClient.fromTest().chat;
 
       final r = await checkDeviceScreenContains(
-        client: client,
+        chat: chat,
         adb: adb,
         deviceId: _deviceId,
         expectation: '应用图标',
@@ -36,11 +36,11 @@ void main() {
     () async {
       initLogging();
       final adb = ScrcpyMcpAdb(AdbClient());
-      final client = AutoglmLlmClient.fromTest();
+      final chat = AutoGLMOfficialClient.fromTest().chat;
 
       // Desktop should not contain a calculator app specifically.
       final r = await checkDeviceScreenContains(
-        client: client,
+        chat: chat,
         adb: adb,
         deviceId: _deviceId,
         expectation: '计算器',

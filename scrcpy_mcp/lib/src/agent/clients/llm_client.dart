@@ -1,16 +1,3 @@
-/// A single tool call requested by the LLM.
-class ToolCall {
-  const ToolCall({
-    required this.id,
-    required this.name,
-    required this.arguments,
-  });
-
-  final String id;
-  final String name;
-  final String arguments; // JSON-encoded argument map
-}
-
 /// A message in the LLM conversation history.
 ///
 /// Supports multi-modal: set [imageBase64] + [imageMimeType] to pass a
@@ -57,7 +44,6 @@ class LlmException implements Exception {
   String toString() => 'LlmException: $message';
 }
 
-/// Abstract LLM client — inject a fake in tests.
-abstract class LlmClient {
-  Future<LlmResponse> chat({required List<LlmMessage> messages});
-}
+/// Signature for sending a chat-completion request.
+typedef ChatFn =
+    Future<LlmResponse> Function({required List<LlmMessage> messages});

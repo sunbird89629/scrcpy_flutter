@@ -54,8 +54,10 @@ class AdbProcessRunnerImpl extends AdbProcessRunner {
   /// Package-internal (lives in `src/`, not exported) but non-private so it can
   /// be unit-tested directly.
   static String formatResultLine(String command, ProcessResult r) {
-    final stderr =
-        ((r.stderr as Object?)?.toString() ?? '').trim().replaceAll('\n', ' ');
+    final stderr = ((r.stderr as Object?)?.toString() ?? '').trim().replaceAll(
+      '\n',
+      ' ',
+    );
     return stderr.isEmpty
         ? '$command → exit ${r.exitCode}'
         : '$command → exit ${r.exitCode} | stderr: $stderr';

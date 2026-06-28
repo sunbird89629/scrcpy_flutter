@@ -2,28 +2,25 @@ import 'package:scrcpy_mcp/scrcpy_mcp.dart';
 import 'package:scrcpy_mcp/src/agent/action_summary.dart';
 import 'package:test/test.dart';
 
-// Fake that replays a fixed sequence of LlmResponse values.
-class _FakeLlmClient implements LlmClient {
-  _FakeLlmClient(this._responses);
-  final List<LlmResponse> _responses;
-  int _i = 0;
+import 'utils/fake_model_client.dart';
 
-  @override
-  Future<LlmResponse> chat({required List<LlmMessage> messages}) async =>
-      _responses[_i++];
+/// Returns a [ChatFn] that replays a fixed sequence of [LlmResponse] values.
+ChatFn _fakeChat(List<LlmResponse> responses) {
+  var i = 0;
+  return ({required List<LlmMessage> messages}) async => responses[i++];
 }
 
-class _CapturingLlmClient implements LlmClient {
-  _CapturingLlmClient(this._responses);
-  final List<LlmResponse> _responses;
-  final capturedMessages = <List<LlmMessage>>[];
-  int _i = 0;
-
-  @override
-  Future<LlmResponse> chat({required List<LlmMessage> messages}) async {
+/// Returns a [ChatFn] that replays responses and records every call's messages
+/// into [capturedMessages].
+ChatFn _capturingChat(
+  List<LlmResponse> responses,
+  List<List<LlmMessage>> capturedMessages,
+) {
+  var i = 0;
+  return ({required List<LlmMessage> messages}) async {
     capturedMessages.add(List.from(messages));
-    return _responses[_i++];
-  }
+    return responses[i++];
+  };
 }
 
 /// Fake screenshot provider — returns a dummy 1x1 PNG.
@@ -42,7 +39,7 @@ void main() {
       int maxSteps = 10,
     }) => PhoneAgent(
       config: AgentConfig(maxSteps: maxSteps),
-      llmClient: _FakeLlmClient(responses),
+      client: FakeModelClient(_fakeChat(responses)),
       takeScreenshot: _fakeScreenshot,
       actionRunner: actionRunner ?? (_) async => 'ok',
     );
@@ -95,14 +92,15 @@ void main() {
     });
 
     test('feeds screenshot into message history', () async {
-      final capturingFake = _CapturingLlmClient([
+      final captured = <List<LlmMessage>>[];
+      final chatFn = _capturingChat([
         const LlmResponse(text: 'do(action="Tap", element=[500,300])'),
         const LlmResponse(text: 'finish(message="Done")'),
-      ]);
+      ], captured);
 
       final capturingAgent = PhoneAgent(
         config: const AgentConfig(maxSteps: 5),
-        llmClient: capturingFake,
+        client: FakeModelClient(chatFn),
         takeScreenshot: _fakeScreenshot,
         actionRunner: (_) async => 'ok',
       );
@@ -110,14 +108,14 @@ void main() {
       await capturingAgent.run('tap something');
 
       // First call: system + user (with screenshot)
-      final firstCallMessages = capturingFake.capturedMessages[0];
+      final firstCallMessages = captured[0];
       expect(firstCallMessages.any((m) => m.role == 'user'), isTrue);
       final userMsg = firstCallMessages.firstWhere((m) => m.role == 'user');
       expect(userMsg.imageBase64, isNotNull);
       expect(userMsg.textContent, 'tap something');
 
       // Second call: system + user + assistant + user (with new screenshot)
-      final secondCallMessages = capturingFake.capturedMessages[1];
+      final secondCallMessages = captured[1];
       expect(secondCallMessages.any((m) => m.role == 'assistant'), isTrue);
       final lastMsg = secondCallMessages.last;
       expect(lastMsg.imageBase64, isNotNull);
@@ -126,14 +124,15 @@ void main() {
     test(
       'feeds the previous action result into the next user message',
       () async {
-        final capturingFake = _CapturingLlmClient([
+        final captured = <List<LlmMessage>>[];
+        final chatFn = _capturingChat([
           const LlmResponse(text: 'do(action="Tap", element=[500,300])'),
           const LlmResponse(text: 'finish(message="done")'),
-        ]);
+        ], captured);
 
         final agent = PhoneAgent(
           config: const AgentConfig(maxSteps: 5),
-          llmClient: capturingFake,
+          client: FakeModelClient(chatFn),
           takeScreenshot: _fakeScreenshot,
           actionRunner: (_) async => 'Tapped (540, 1200)',
         );
@@ -143,7 +142,7 @@ void main() {
         // The second call's latest user turn carries the prior action's result,
         // not a constant prompt — this is what gives feedback and breaks the
         // repetition-collapse failure mode.
-        final secondCall = capturingFake.capturedMessages[1];
+        final secondCall = captured[1];
         final lastUser = secondCall.lastWhere((m) => m.role == 'user');
         expect(lastUser.textContent, contains('Tapped (540, 1200)'));
       },
@@ -176,25 +175,26 @@ void main() {
     );
 
     test('strips <think> blocks from assistant history', () async {
-      final capturingFake = _CapturingLlmClient([
+      final captured = <List<LlmMessage>>[];
+      final chatFn = _capturingChat([
         const LlmResponse(
           text:
               '<think>这里是冗长的推理过程</think>'
               'do(action="Tap", element=[1,2])',
         ),
         const LlmResponse(text: 'finish(message="done")'),
-      ]);
+      ], captured);
 
       final agent = PhoneAgent(
         config: const AgentConfig(maxSteps: 5),
-        llmClient: capturingFake,
+        client: FakeModelClient(chatFn),
         takeScreenshot: _fakeScreenshot,
         actionRunner: (_) async => 'ok',
       );
 
       await agent.run('go');
 
-      final secondCall = capturingFake.capturedMessages[1];
+      final secondCall = captured[1];
       final assistant = secondCall.firstWhere((m) => m.role == 'assistant');
       expect(assistant.textContent, isNot(contains('推理过程')));
       expect(assistant.textContent, isNot(contains('<think>')));
@@ -202,13 +202,14 @@ void main() {
     });
 
     test('keeps only the last keepScreenshots screenshots in history', () async {
-      final capturingFake = _CapturingLlmClient([
+      final captured = <List<LlmMessage>>[];
+      final chatFn = _capturingChat([
         const LlmResponse(text: 'do(action="Tap", element=[500,300])'),
         const LlmResponse(text: 'do(action="Tap", element=[600,400])'),
         const LlmResponse(text: 'do(action="Tap", element=[700,500])'),
         const LlmResponse(text: 'do(action="Tap", element=[800,600])'),
         const LlmResponse(text: 'finish(message="Done")'),
-      ]);
+      ], captured);
 
       // Distinct screenshot per step so each is unique (and stall detection
       // never trips).
@@ -218,7 +219,7 @@ void main() {
 
       final agent = PhoneAgent(
         config: const AgentConfig(maxSteps: 6, keepScreenshots: 2),
-        llmClient: capturingFake,
+        client: FakeModelClient(chatFn),
         takeScreenshot: distinctScreenshot,
         actionRunner: (_) async => 'ok',
       );
@@ -227,7 +228,7 @@ void main() {
 
       // Last call (the finish step) carries 5 prior user screenshots, but only
       // the 2 most recent should retain their image.
-      final lastCall = capturingFake.capturedMessages.last;
+      final lastCall = captured.last;
       final withImages = lastCall.where((m) => m.imageBase64 != null).toList();
       expect(withImages.length, 2);
       // The retained images are the two most recent frames.
@@ -270,11 +271,13 @@ void main() {
 
       final agent = PhoneAgent(
         config: const AgentConfig(maxSteps: 30),
-        llmClient: _FakeLlmClient(
-          List.generate(
-            30,
-            (_) => const LlmResponse(
-              text: 'do(action="Swipe", start=[499,614], end=[499,263])',
+        client: FakeModelClient(
+          _fakeChat(
+            List.generate(
+              30,
+              (_) => const LlmResponse(
+                text: 'do(action="Swipe", start=[499,614], end=[499,263])',
+              ),
             ),
           ),
         ),
@@ -328,6 +331,110 @@ void main() {
       expect(result.steps, 1);
     });
 
+    test('injects memory into user messages', () async {
+      final captured = <List<LlmMessage>>[];
+      final chatFn = _capturingChat([
+        const LlmResponse(
+          text:
+              '<think>t</think><memory>视频1: A - 1万</memory>do(action="Tap", element=[1,2])',
+        ),
+        const LlmResponse(text: 'finish(message="done")'),
+      ], captured);
+
+      final agent = PhoneAgent(
+        config: const AgentConfig(maxSteps: 5),
+        client: FakeModelClient(chatFn, memoryEnabled: true),
+        takeScreenshot: _fakeScreenshot,
+        actionRunner: (_) async => 'ok',
+      );
+
+      await agent.run('collect videos');
+
+      // The second call's user message (step 0's feedback) should carry the memory.
+      final secondCall = captured[1];
+      final lastUser = secondCall.lastWhere((m) => m.role == 'user');
+      expect(lastUser.textContent, contains('跨步记录'));
+      expect(lastUser.textContent, contains('视频1: A - 1万'));
+    });
+
+    test(
+      'uses the client systemPromptTemplate as the system message',
+      () async {
+        final captured = <List<LlmMessage>>[];
+        final agent = PhoneAgent(
+          config: const AgentConfig(maxSteps: 1, screenSize: (1080, 2400)),
+          client: FakeModelClient(
+            _capturingChat([
+              const LlmResponse(text: 'finish(message="done")'),
+            ], captured),
+            systemPromptTemplate: 'HELLO {SCREEN_SIZE}',
+          ),
+          takeScreenshot: _fakeScreenshot,
+          actionRunner: (_) async => 'ok',
+        );
+
+        await agent.run('task');
+
+        final system = captured.first.first;
+        expect(system.role, 'system');
+        expect(system.textContent, 'HELLO 1080x2400');
+      },
+    );
+
+    test(
+      'stores only the do() action line in history, stripping prose',
+      () async {
+        final captured = <List<LlmMessage>>[];
+        final agent = PhoneAgent(
+          config: const AgentConfig(maxSteps: 2),
+          client: FakeModelClient(
+            _capturingChat([
+              const LlmResponse(
+                text: '好的，我需要点击。\ndo(action="Tap", element=[100,200])',
+              ),
+              const LlmResponse(text: 'finish(message="done")'),
+            ], captured),
+          ),
+          takeScreenshot: _fakeScreenshot,
+          actionRunner: (_) async => 'ok',
+        );
+
+        await agent.run('task');
+
+        final assistantTurns = captured[1]
+            .where((m) => m.role == 'assistant')
+            .map((m) => m.textContent)
+            .toList();
+        expect(assistantTurns, ['do(action="Tap", element=[100,200])']);
+      },
+    );
+
+    test('returns action trajectory and injects guidance', () async {
+      final seen = <String>[];
+      var i = 0;
+      final client = FakeModelClient(({required messages}) async {
+        // capture the step-0 user text to assert guidance injection
+        for (final m in messages) {
+          if (m.role == 'user' && m.textContent != null) {
+            seen.add(m.textContent!);
+          }
+        }
+        return i++ == 0
+            ? const LlmResponse(text: 'do(action="Tap", element=[1,2])')
+            : const LlmResponse(text: 'finish(message="done")');
+      });
+      final agent = PhoneAgent(
+        config: const AgentConfig(maxSteps: 5),
+        client: client,
+        takeScreenshot: () async => (base64: 'AAA$i', mimeType: 'image/png'),
+        actionRunner: (a) async => 'ok',
+      );
+      final result = await agent.run('开门', guidance: '参考：先点首页');
+      expect(result.success, isTrue);
+      expect(result.trajectory, isNotEmpty);
+      expect(result.trajectory.first, contains('Tap'));
+      expect(seen.any((t) => t.contains('参考：先点首页')), isTrue);
+    });
   });
 
   group('actionSummary', () {

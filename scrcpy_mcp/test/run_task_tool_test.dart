@@ -1,19 +1,54 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:mcp_dart/mcp_dart.dart';
 import 'package:scrcpy_client/scrcpy_client.dart';
 import 'package:scrcpy_mcp/src/agent/agent_config.dart';
-import 'package:scrcpy_mcp/src/agent/llm_client.dart';
+import 'package:scrcpy_mcp/src/agent/clients/llm_client.dart';
 import 'package:scrcpy_mcp/src/scrcpy_mcp_server.dart';
 import 'package:test/test.dart';
 
 import 'real_device_test_utils.dart';
+import 'utils/fake_model_client.dart';
 
-// Fake LLM that immediately completes the task with a finish() action.
-class _DoneLlmClient implements LlmClient {
+// Fake chat that immediately completes the task with a finish() action.
+Future<LlmResponse> _doneChat({required List<LlmMessage> messages}) async =>
+    const LlmResponse(text: 'finish(message="Task done")');
+
+// Returns one Tap, then finishes.
+ChatFn _tapThenFinishChat() {
+  var i = 0;
+  return ({required List<LlmMessage> messages}) async => i++ == 0
+      ? const LlmResponse(text: 'do(action="Tap", element=[540,1200])')
+      : const LlmResponse(text: 'finish(message="done")');
+}
+
+// Returns one Type, then finishes.
+ChatFn _typeThenFinishChat() {
+  var i = 0;
+  return ({required List<LlmMessage> messages}) async => i++ == 0
+      ? const LlmResponse(text: 'do(action="Type", text="hello")')
+      : const LlmResponse(text: 'finish(message="done")');
+}
+
+// Fake ADB that returns a foreground package for dumpsys calls.
+class _ResumedActivityAdb extends MockAdb {
   @override
-  Future<LlmResponse> chat({required List<LlmMessage> messages}) async =>
-      const LlmResponse(text: 'finish(message="Task done")');
+  Future<ProcessResult> shell(
+    List<String> arguments, {
+    String? deviceId,
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    if (arguments.contains('activities')) {
+      return ProcessResult(
+        0,
+        0,
+        'mResumedActivity: ActivityRecord{x u0 com.demo.app/.Main t1}',
+        '',
+      );
+    }
+    return super.shell(arguments, deviceId: deviceId, timeout: timeout);
+  }
 }
 
 // Records an ordered log of control messages (ScrcpyControlMessage) and
@@ -34,26 +69,6 @@ class _RecordingSession extends MockScrcpySession {
   void injectText(String text) => events.add(text);
 }
 
-// Returns one Tap, then finishes.
-class _TapThenFinishLlm implements LlmClient {
-  int _i = 0;
-  @override
-  Future<LlmResponse> chat({required List<LlmMessage> messages}) async =>
-      _i++ == 0
-      ? const LlmResponse(text: 'do(action="Tap", element=[540,1200])')
-      : const LlmResponse(text: 'finish(message="done")');
-}
-
-// Returns one Type, then finishes.
-class _TypeThenFinishLlm implements LlmClient {
-  int _i = 0;
-  @override
-  Future<LlmResponse> chat({required List<LlmMessage> messages}) async =>
-      _i++ == 0
-      ? const LlmResponse(text: 'do(action="Type", text="hello")')
-      : const LlmResponse(text: 'finish(message="done")');
-}
-
 void main() {
   group('run_task tool', () {
     late McpClient client;
@@ -64,7 +79,7 @@ void main() {
         session: MockScrcpySession(),
         adb: MockAdb(),
         agentConfig: const AgentConfig(maxSteps: 5),
-        llmClient: _DoneLlmClient(),
+        client: FakeModelClient(_doneChat),
       );
       (client, close) = await connectMcpPair(server);
     });
@@ -110,7 +125,7 @@ void main() {
         session: session,
         adb: MockAdb(),
         agentConfig: const AgentConfig(maxSteps: 5),
-        llmClient: _TapThenFinishLlm(),
+        client: FakeModelClient(_tapThenFinishChat()),
       );
       final (c, closeFn) = await connectMcpPair(server);
       addTearDown(closeFn);
@@ -138,7 +153,7 @@ void main() {
         session: session,
         adb: MockAdb(),
         agentConfig: const AgentConfig(maxSteps: 5),
-        llmClient: _TypeThenFinishLlm(),
+        client: FakeModelClient(_typeThenFinishChat()),
       );
       final (c, closeFn) = await connectMcpPair(server);
       addTearDown(closeFn);
@@ -169,6 +184,44 @@ void main() {
         isTrue,
         reason: 'expected Del to clear the field before typing',
       );
+    });
+  });
+
+  group('run_task SOP memory', () {
+    test('writes a SOP after a successful run', () async {
+      final dir = Directory.systemTemp.createTempSync('sop_rt');
+      addTearDown(() => dir.deleteSync(recursive: true));
+
+      final server = ScrcpyMcpServer(
+        session: MockScrcpySession(),
+        adb: _ResumedActivityAdb(),
+        agentConfig: AgentConfig(maxSteps: 5, sopDir: dir.path),
+        client: FakeModelClient(({required List<LlmMessage> messages}) async {
+          // If the writer's summary prompt is detected, return JSON.
+          final isSummary = messages.any(
+            (m) => (m.textContent ?? '').contains('请总结成 JSON'),
+          );
+          return isSummary
+              ? const LlmResponse(
+                  text: '{"intent":"打开应用","steps":["点图标"],"pitfall":null}',
+                )
+              : const LlmResponse(text: 'finish(message="done")');
+        }),
+      );
+
+      final (c, closeFn) = await connectMcpPair(server);
+      addTearDown(closeFn);
+
+      await c.callTool(
+        const CallToolRequest(
+          name: 'run_task',
+          arguments: {'device_id': 'device1', 'message': '打开应用'},
+        ),
+      );
+
+      final f = File('${dir.path}/sop/com.demo.app.jsonl');
+      expect(f.existsSync(), isTrue);
+      expect(f.readAsStringSync(), contains('"intent":"打开应用"'));
     });
   });
 }

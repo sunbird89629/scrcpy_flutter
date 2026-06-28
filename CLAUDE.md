@@ -66,6 +66,7 @@ Lower layers must never import from upper layers.
 - Never add `test` package as a dev_dependency in workspace packages — it conflicts with `flutter_test` from SDK
 - scrcpy macOS apps need `com.apple.security.network.client`/`server` entitlements and sandbox disabled
 - Integration tests requiring a physical Android device go in relevant `*_real_device_test.dart`
+- Tests needing a real device or the live LLM API are annotated `@Tags(['real-device'])` (tag declared in `scrcpy_mcp/dart_test.yaml`). **Claude Code must always run the suite with `dart test -x real-device`** so development never drives a physical device or makes a paid API call. A human can still run any such test directly (`dart test <file>` / `dart test --tags real-device`) — the tag is not globally skipped.
 - Assets (scrcpy JAR, web player) are extracted to temp directories at runtime
 - Low-latency encoding: `video_codec_options=i-frame-interval=1,latency=1,profile=1`
 - One PR can span `packages/*` and `scrcpy_*`

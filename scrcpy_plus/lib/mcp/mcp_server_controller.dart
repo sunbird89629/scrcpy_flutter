@@ -35,7 +35,7 @@ class McpServerController {
       final session = _injectedSession ?? await _createSession();
 
       final agentConfig = AgentConfig();
-      final llmClient = AutoglmLlmClient.fromTest();
+      final llmClient = AutoGLMOfficialClient.fromTest();
       _log.info(
         'Agent enabled: model=${llmClient.model}, '
         'maxSteps=${agentConfig.maxSteps}',
@@ -47,7 +47,7 @@ class McpServerController {
         adb: _adb,
         recordingAdb: _adb,
         agentConfig: agentConfig,
-        llmClient: llmClient,
+        client: llmClient,
       );
     } catch (e) {
       _errorMessage = e.toString();

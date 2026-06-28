@@ -4,7 +4,7 @@ import 'package:mcp_dart/mcp_dart.dart';
 import 'package:scrcpy_client/scrcpy_client.dart';
 
 import 'agent/agent_config.dart';
-import 'agent/llm_client.dart';
+import 'agent/clients/agent_model_client.dart';
 import 'recording_adb.dart';
 import 'recording_controller.dart';
 import 'session_context.dart';
@@ -39,11 +39,11 @@ class ScrcpyMcpServer {
     required ScrcpyAdb adb,
     RecordingAdb? recordingAdb,
     AgentConfig? agentConfig,
-    LlmClient? llmClient,
+    AgentModelClient? client,
   }) : _session = session,
        _adb = adb,
        _agentConfig = agentConfig,
-       _llmClient = llmClient,
+       _client = client,
        _ctx = SessionContext() {
     if (recordingAdb != null) {
       _recordingController = RecordingController(recordingAdb);
@@ -65,7 +65,7 @@ class ScrcpyMcpServer {
   final ScrcpyAdb _adb;
   final SessionContext _ctx;
   final AgentConfig? _agentConfig;
-  final LlmClient? _llmClient;
+  final AgentModelClient? _client;
   late final McpServer _mcpServer;
   RecordingController? _recordingController;
 
@@ -106,11 +106,12 @@ class ScrcpyMcpServer {
     ];
 
     // Agent tool — only when both config and client are provided.
-    if (_agentConfig != null && _llmClient != null) {
+    final client = _client;
+    if (_agentConfig != null && client != null) {
       tools.add(
         RunTaskTool(
           config: _agentConfig,
-          llmClient: _llmClient,
+          client: client,
           adb: _adb,
           session: _session,
           ctx: _ctx,

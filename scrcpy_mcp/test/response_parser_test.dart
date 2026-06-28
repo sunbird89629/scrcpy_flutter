@@ -47,7 +47,9 @@ void main() {
     });
 
     test('parses inside <answer> tags', () {
-      final a = expectDo('<answer>do(action="Tap", element=[100, 200])</answer>');
+      final a = expectDo(
+        '<answer>do(action="Tap", element=[100, 200])</answer>',
+      );
       expect(a.action, 'Tap');
       expect(a.element, [100, 200]);
     });
@@ -110,6 +112,45 @@ void main() {
       expect(parsed, isA<ParsedAction>());
       expect(parsed.think, '');
       expect(parsed.content, 'do(action="Back")');
+    });
+
+    test('extracts <memory> when present', () {
+      final parsed = ResponseParser.parse(
+        '<think>推理</think>'
+        '<memory>视频1: "赛博参观极客湾" - 19:27</memory>\n'
+        'do(action="Tap", element=[1, 2])',
+      );
+      expect(parsed.memory, '视频1: "赛博参观极客湾" - 19:27');
+      expect(parsed, isA<ParsedAction>());
+      final a = (parsed as ParsedAction).action as DoAction;
+      expect(a.action, 'Tap');
+      expect(a.element, [1, 2]);
+    });
+
+    test('<memory> is optional / absent → memory is empty', () {
+      final parsed = ResponseParser.parse('do(action="Back")');
+      expect(parsed.memory, '');
+      expect(parsed, isA<ParsedAction>());
+    });
+
+    test('<memory> multiline content preserved verbatim', () {
+      final parsed = ResponseParser.parse(
+        '<think>t</think>\n'
+        '<memory>视频1: "A" - 1万\n视频2: "B" - 2万</memory>\n'
+        'do(action="Tap", element=[1, 2])',
+      );
+      expect(parsed.memory, '视频1: "A" - 1万\n视频2: "B" - 2万');
+    });
+
+    test('<think> + <memory> + <answer> together', () {
+      final parsed = ResponseParser.parse(
+        '<think>推理</think>\n'
+        '<memory>记东西</memory>\n'
+        '<answer>do(action="Back")</answer>',
+      );
+      expect(parsed.think, '推理');
+      expect(parsed.memory, '记东西');
+      expect(parsed, isA<ParsedAction>());
     });
 
     test('handles <think> and <answer> together', () {

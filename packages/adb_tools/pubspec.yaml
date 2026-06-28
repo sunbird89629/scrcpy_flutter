@@ -11,9 +11,10 @@ resolution: workspace
 dependencies:
   archive: ^3.6.1
   logger_utils:
-    git:
-      url: https://github.com/sunbird89629/logger_utils.git
-      ref: v0.1.0
+    # git:
+    #   url: https://github.com/sunbird89629/logger_utils.git
+    #   ref: v0.1.0
+    path: ../../../logger_utils
   dio: ^5.7.0
   path: ^1.9.0
 

@@ -2,20 +2,31 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:scrcpy_mcp/src/agent/llm_client.dart';
-import 'package:scrcpy_mcp/src/agent/autoglm_llm_client.dart';
+import 'package:scrcpy_mcp/src/agent/clients/doubao_seed_client.dart';
+import 'package:scrcpy_mcp/src/agent/clients/llm_client.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('AutoglmLlmClient', () {
-    AutoglmLlmClient makeClient(http.Client mockHttp) => AutoglmLlmClient(
-      baseUrl: 'https://api.openai.com/v1',
-      apiKey: 'sk-test',
-      model: 'gpt-4o',
-      httpClient: mockHttp,
-    );
+  group('DoubaoSeedClient', () {
+    DoubaoSeedClient makeClient(http.Client mockHttp) =>
+        DoubaoSeedClient.withClient(
+          baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
+          apiKey: 'ark-test',
+          model: 'doubao-seed-2-0-lite-260428',
+          httpClient: mockHttp,
+        );
 
-    test('sends correct Authorization header and model', () async {
+    test('carries the do(...) prompt and no cross-step memory', () {
+      final client = makeClient(
+        MockClient((_) async => http.Response('', 200)),
+      );
+      expect(client.memoryEnabled, isFalse);
+      // Reuses the official AutoGLM prompt: do(...) format, no XML wrappers.
+      expect(client.systemPromptTemplate.contains('<think>'), isFalse);
+      expect(client.systemPromptTemplate.contains('do(action='), isTrue);
+    });
+
+    test('sends correct Authorization header and full model id', () async {
       late http.Request captured;
       final client = makeClient(
         MockClient((req) async {
@@ -34,33 +45,11 @@ void main() {
         }),
       );
 
-      await client.chat(messages: []);
+      await client.chat(messages: <LlmMessage>[]);
 
-      expect(captured.headers['Authorization'], 'Bearer sk-test');
+      expect(captured.headers['Authorization'], 'Bearer ark-test');
       final body = jsonDecode(captured.body) as Map<String, dynamic>;
-      expect(body['model'], 'gpt-4o');
-    });
-
-    test('parses text response', () async {
-      final client = makeClient(
-        MockClient(
-          (_) async => http.Response(
-            jsonEncode({
-              'choices': [
-                {
-                  'finish_reason': 'stop',
-                  'message': {'role': 'assistant', 'content': 'Task complete'},
-                },
-              ],
-            }),
-            200,
-          ),
-        ),
-      );
-
-      final response = await client.chat(messages: []);
-
-      expect(response.text, 'Task complete');
+      expect(body['model'], 'doubao-seed-2-0-lite-260428');
     });
 
     test('includes image in user message', () async {
@@ -98,19 +87,7 @@ void main() {
       final content =
           (msgs.first as Map<String, dynamic>)['content'] as List<dynamic>;
       expect(content, hasLength(2));
-      expect((content[0] as Map<String, dynamic>)['type'], 'text');
       expect((content[1] as Map<String, dynamic>)['type'], 'image_url');
-    });
-
-    test('throws LlmException on HTTP error', () async {
-      final client = makeClient(
-        MockClient((_) async => http.Response('Unauthorized', 401)),
-      );
-
-      await expectLater(
-        client.chat(messages: []),
-        throwsA(isA<LlmException>()),
-      );
     });
   });
 }

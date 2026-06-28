@@ -40,15 +40,15 @@ const _systemPrompt =
     '你是一个手机界面分析助手。请根据截图判断用户描述的内容或状态是否出现在界面上。'
     '严格按以下格式回答：第一行只写"是"或"否"，第二行起简要说明理由。';
 
-/// Asks [client] whether [expectation] appears in [base64Screenshot].
+/// Asks [chat] whether [expectation] appears in [base64Screenshot].
 /// Throws [LlmException] if the reply can't be parsed.
 Future<ScreenCheckResult> checkScreenContains({
-  required LlmClient client,
+  required ChatFn chat,
   required String base64Screenshot,
   required String expectation,
   String mimeType = 'image/png',
 }) async {
-  final response = await client.chat(
+  final response = await chat(
     messages: [
       const LlmMessage(role: 'system', textContent: _systemPrompt),
       LlmMessage(
@@ -65,14 +65,14 @@ Future<ScreenCheckResult> checkScreenContains({
 /// Captures a screenshot from [deviceId] via [adb], then runs
 /// [checkScreenContains].
 Future<ScreenCheckResult> checkDeviceScreenContains({
-  required LlmClient client,
+  required ChatFn chat,
   required ScrcpyMcpAdb adb,
   required String deviceId,
   required String expectation,
 }) async {
   final bytes = await adb.takeScreenshot(deviceId);
   return checkScreenContains(
-    client: client,
+    chat: chat,
     base64Screenshot: base64Encode(bytes),
     expectation: expectation,
   );

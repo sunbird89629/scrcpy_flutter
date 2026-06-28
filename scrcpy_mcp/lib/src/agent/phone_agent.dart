@@ -2,7 +2,8 @@ import 'package:logger_utils/logger_utils.dart';
 
 import 'action_summary.dart';
 import 'agent_config.dart';
-import 'llm_client.dart';
+import 'clients/agent_model_client.dart';
+import 'clients/llm_client.dart';
 import 'response_parser.dart';
 
 final _log = Logger('PhoneAgent');
@@ -25,13 +26,13 @@ typedef ActionRunner = Future<String> Function(PhoneAction action);
 class PhoneAgent {
   const PhoneAgent({
     required this.config,
-    required this.llmClient,
+    required this.client,
     required this.takeScreenshot,
     required this.actionRunner,
   });
 
   final AgentConfig config;
-  final LlmClient llmClient;
+  final AgentModelClient client;
   final ScreenshotProvider takeScreenshot;
   final ActionRunner actionRunner;
 
@@ -45,9 +46,13 @@ class PhoneAgent {
     '星期日',
   ];
 
-  Future<AgentResult> run(String message) async {
+  Future<AgentResult> run(String message, {String? guidance}) async {
     _log.info('task: $message');
     final messages = _buildInitialMessages();
+    final memories = <String>[];
+    final trajectory = <String>[];
+    AgentResult done(AgentResult r) =>
+        r.copyWith(trajectory: List.of(trajectory));
 
     String? prevScreenshot;
     var stalledSteps = 0;
@@ -67,11 +72,17 @@ class PhoneAgent {
       final stall = _stallAbort(stalledSteps, step);
       if (stall != null) {
         _log.warning(stall.result);
-        return stall;
+        return done(stall);
       }
 
       // 2. Ask the model for the next action (handles truncation retry).
-      final userContent = _buildUserContent(step, message, lastResult);
+      final userContent = _buildUserContent(
+        step,
+        message,
+        lastResult,
+        memories,
+        guidance,
+      );
       final parsed = await _requestAction(
         messages,
         userContent: userContent,
@@ -84,17 +95,24 @@ class PhoneAgent {
           // A failure here means the output format broke — report it rather
           // than masquerading a format error as success.
           _log.warning('step $step parse failed: $reason');
-          _log.fine('reply(unparsed):\n${_indent(content)}');
-          return AgentResult(
-            result: 'Could not parse an action ($reason): ${content.trim()}',
-            steps: step + 1,
-            success: false,
+          return done(
+            AgentResult(
+              result: 'Could not parse an action ($reason): ${content.trim()}',
+              steps: step + 1,
+              success: false,
+            ),
           );
-        case ParsedAction(:final action, :final content):
+        case ParsedAction(:final action, :final content, :final memory):
           _log.info('step $step  ${actionSummary(action)}');
+          trajectory.add(actionSummary(action));
           _log.fine('reply:\n${_indent(content)}');
-          // Record the assistant turn (content already excludes <think>).
-          messages.add(LlmMessage(role: 'assistant', textContent: content));
+          // Record the assistant turn, keeping only the executable action call —
+          // strips any prose the model (e.g. hosted autoglm-phone) emits before
+          // the do()/finish() call.
+          messages.add(
+            LlmMessage(role: 'assistant', textContent: _actionLine(content)),
+          );
+          if (client.memoryEnabled && memory.isNotEmpty) memories.add(memory);
           final outcome = await _dispatchAction(
             action,
             step,
@@ -104,7 +122,7 @@ class PhoneAgent {
           final resultText =
               outcome.done?.result ?? outcome.result ?? '(no result)';
           _log.info('step $step → $resultText');
-          if (outcome.done != null) return outcome.done!;
+          if (outcome.done != null) return done(outcome.done!);
           lastResult = outcome.result;
           lastActionSig = outcome.sig;
           repeatedActions = outcome.repeats;
@@ -118,18 +136,26 @@ class PhoneAgent {
       success: false,
     );
     _log.warning(exhausted.result);
-    return exhausted;
+    return done(exhausted);
   }
 
   /// Builds the initial message list: a single system message with today's date
-  /// substituted into [AgentConfig.systemPrompt].
+  /// and screen size substituted into the client's `systemPromptTemplate`.
   List<LlmMessage> _buildInitialMessages() {
     final now = DateTime.now();
     final mm = now.month.toString().padLeft(2, '0');
     final dd = now.day.toString().padLeft(2, '0');
     final weekday = _weekdayNames[now.weekday - 1];
     final dateStr = '${now.year}年$mm月$dd日 $weekday';
-    final systemPrompt = config.systemPrompt.replaceFirst('{DATE}', dateStr);
+    var systemPrompt = client.systemPromptTemplate.replaceFirst(
+      '{DATE}',
+      dateStr,
+    );
+    final size = config.screenSize;
+    systemPrompt = systemPrompt.replaceFirst(
+      '{SCREEN_SIZE}',
+      size != null ? '${size.$1}x${size.$2}' : '未知',
+    );
     return <LlmMessage>[LlmMessage(role: 'system', textContent: systemPrompt)];
   }
 
@@ -154,10 +180,31 @@ class PhoneAgent {
   /// the model outcome feedback to self-correct, and — because the text varies
   /// each step — avoids the low-temperature repetition collapse that a fixed
   /// "继续执行任务" can trigger.
-  String _buildUserContent(int step, String message, String? lastResult) =>
-      step == 0
-      ? message
-      : '上一步操作结果：${lastResult ?? '已执行'}。请对照当前截图判断是否生效，并继续完成任务。';
+  String _buildUserContent(
+    int step,
+    String message,
+    String? lastResult,
+    List<String> memories,
+    String? guidance,
+  ) {
+    if (step == 0) {
+      return guidance == null || guidance.isEmpty
+          ? message
+          : '参考经验：\n$guidance\n\n任务：$message';
+    }
+    // Keep only the most recent entries: the cross-step memory block is rebuilt
+    // every turn and otherwise grows unbounded with step count, bloating the
+    // prompt and pushing autoglm into low-temperature repetition collapse.
+    const keepMemories = 6;
+    final recent = memories.length > keepMemories
+        ? memories.sublist(memories.length - keepMemories)
+        : memories;
+    final memoryBlock = recent.isEmpty
+        ? ''
+        : '跨步记录：\n---\n${recent.join('\n---\n')}\n---\n';
+    return '$memoryBlock'
+        '上一步操作结果：${lastResult ?? '已执行'}。请对照当前截图判断是否生效，并继续完成任务。';
+  }
 
   /// Sends a user turn (text + screenshot) and parses the model's reply into a
   /// [ParsedResponse]. On a truncated response (finish_reason="length", usually
@@ -178,7 +225,7 @@ class PhoneAgent {
       ),
     );
     final trimmedHistory = _trimHistory(messages);
-    var response = await llmClient.chat(messages: trimmedHistory);
+    var response = await client.chat(messages: trimmedHistory);
     var parsed = ResponseParser.parse(response.text ?? '');
 
     if (parsed is ParseFailure && response.finishReason == 'length') {
@@ -190,10 +237,17 @@ class PhoneAgent {
               '上次输出过长被截断。请只输出一个动作指令（如 do(action="Tap", element=[x,y]) 或 finish(message="...")），不要输出任何多余内容。',
         ),
       );
-      response = await llmClient.chat(messages: _trimHistory(messages));
+      response = await client.chat(messages: _trimHistory(messages));
       parsed = ResponseParser.parse(response.text ?? '');
     }
     return parsed;
+  }
+
+  /// Keep only the executable action call in history — strips any prose the
+  /// model (e.g. hosted autoglm-phone) emits before the do()/finish() call.
+  static String _actionLine(String content) {
+    final m = RegExp(r'(do\(|finish\()').firstMatch(content);
+    return m == null ? content.trim() : content.substring(m.start).trim();
   }
 
   /// Executes [action] and reports the loop's next state. `done` non-null means

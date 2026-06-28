@@ -1,0 +1,12 @@
+# Tests needing a physical Android device and/or the live LLM API are
+# annotated `@Tags(['real-device'])`. The tag is declared here (no skip) so it
+# is a known tag and can be filtered:
+#
+#   dart test                        # runs everything, incl. real-device
+#   dart test -x real-device         # offline unit suite only (Claude Code uses this)
+#   dart test test/foo_test.dart     # an explicit real-device file runs normally
+#
+# Claude Code always passes `-x real-device` so development never drives a real
+# device or makes a paid API call; a human running a file directly still does.
+tags:
+  real-device:
