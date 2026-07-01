@@ -22,6 +22,9 @@ class DeviceManager {
 
   List<DeviceEntry> get devices => List.unmodifiable(_devices);
 
+  /// Whether at least one device is currently connected.
+  bool get hasConnected => _devices.isNotEmpty;
+
   /// Which tray icon to show based on device count and primary connection type.
   TrayIconState get trayIconState {
     if (_devices.isEmpty) return TrayIconState.noDevice;
