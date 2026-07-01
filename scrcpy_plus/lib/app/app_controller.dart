@@ -4,7 +4,7 @@ import 'package:adb_tools/adb_tools.dart';
 import 'package:flutter/services.dart';
 import 'package:logger_utils/logger_utils.dart';
 import 'package:scrcpy_plus/app/menu_builder.dart';
-import 'package:scrcpy_plus/device/device_manager.dart';
+import 'package:scrcpy_plus/device/device_manager.dart' show DeviceManager, TrayIconState;
 import 'package:scrcpy_plus/device/pair_dialog.dart' show PairDialog;
 import 'package:scrcpy_plus/device/pairing_service.dart';
 import 'package:scrcpy_plus/mcp/mcp_server_controller.dart';
@@ -86,10 +86,13 @@ class AppController implements TrayListener {
     );
     await trayManager.setContextMenu(menu);
 
-    // Update icon based on connection state
-    final icon = deviceManager.hasConnected
-        ? 'assets/tray_icon_connected.png'
-        : 'assets/tray_icon.png';
+    // Update icon based on device connection state
+    final icon = switch (deviceManager.trayIconState) {
+      TrayIconState.noDevice => 'assets/tray_icon.png',
+      TrayIconState.usb => 'assets/tray_icon_usb.png',
+      TrayIconState.wifi => 'assets/tray_icon_wifi.png',
+      TrayIconState.multiDevice => 'assets/tray_icon_multi.png',
+    };
     await trayManager.setIcon(icon);
   }
 

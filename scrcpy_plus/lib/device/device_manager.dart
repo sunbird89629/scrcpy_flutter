@@ -8,6 +8,9 @@ import 'package:scrcpy_plus/device/device_group.dart';
 /// Application-wide logger instance.
 final appLogger = Logger('scrcpy_plus');
 
+/// Tray icon state derived from connected devices.
+enum TrayIconState { noDevice, usb, wifi, multiDevice }
+
 /// Manages device discovery, polling, and state.
 class DeviceManager {
   DeviceManager({AdbClient? adb}) : adb = adb ?? const AdbClient();
@@ -18,7 +21,16 @@ class DeviceManager {
   final List<VoidCallback> _listeners = [];
 
   List<DeviceEntry> get devices => List.unmodifiable(_devices);
-  bool get hasConnected => _devices.isNotEmpty;
+
+  /// Which tray icon to show based on device count and primary connection type.
+  TrayIconState get trayIconState {
+    if (_devices.isEmpty) return TrayIconState.noDevice;
+    if (_devices.length >= 2) return TrayIconState.multiDevice;
+    // Single device — distinguish USB vs wireless.
+    return _devices.first.connectionType == ConnectionType.usb
+        ? TrayIconState.usb
+        : TrayIconState.wifi;
+  }
 
   /// Devices grouped by physical hardware, USB-first within each group.
   List<DeviceGroup> get deviceGroups {
